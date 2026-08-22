@@ -1,4 +1,4 @@
-## Interface: 120000
+## Interface: 120100
 ## Title: PlateSCT
 ## Notes: Midnight-safe nameplate damage numbers with threshold filtering and abbreviation.
 ## Notes-frFR: Nombres de dégâts sur les barres de nom compatibles Midnight, avec seuil et abréviations.
