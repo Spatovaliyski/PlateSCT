@@ -46,7 +46,7 @@ L["Who to show"] = "Что показывать"
 L["Only my damage"] = "Только мой урон"
 L["Show hits on your current target when you recently cast or auto-attacked. Midnight cannot prove who dealt the hit in a group."] =
     "Показывает удары по текущей цели, если вы недавно произнесли заклинание или автоатаковали. Midnight не может доказать, кто нанёс удар в группе."
-L["Target"] = "Цель"
+L["Experimental"] = "Экспериментально"
 L["Best effort on your current target. Other players hitting the same mob can still show up. Off-target cleave and DoTs are not shown."] =
     "Наилучшая попытка по текущей цели. Удары других игроков по тому же мобу всё ещё могут отображаться. Клив мимо цели и DoT не показываются."
 L["All engaged nameplates"] = "Все активные индикаторы"
@@ -110,4 +110,4 @@ L["Restore every PlateSCT setting to its default."] =
 L["Language"] = "Язык"
 L["Choose the language used by PlateSCT panels and messages."] =
     "Выберите язык панелей и сообщений PlateSCT."
-L["Auto (game client)"] = "Авто (клиент игры)"
+L["Auto"] = "Авто"

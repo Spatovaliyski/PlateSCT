@@ -43,7 +43,7 @@ L["Who to show"] = "Who to show"
 L["Only my damage"] = "Only my damage"
 L["Show hits on your current target when you recently cast or auto-attacked. Midnight cannot prove who dealt the hit in a group."] =
     "Show hits on your current target when you recently cast or auto-attacked. Midnight cannot prove who dealt the hit in a group."
-L["Target"] = "Target"
+L["Experimental"] = "Experimental"
 L["Best effort on your current target. Other players hitting the same mob can still show up. Off-target cleave and DoTs are not shown."] =
     "Best effort on your current target. Other players hitting the same mob can still show up. Off-target cleave and DoTs are not shown."
 L["All engaged nameplates"] = "All engaged nameplates"
@@ -108,4 +108,4 @@ L["Restore every PlateSCT setting to its default."] = "Restore every PlateSCT se
 L["Language"] = "Language"
 L["Choose the language used by PlateSCT panels and messages."] =
     "Choose the language used by PlateSCT panels and messages."
-L["Auto (game client)"] = "Auto (game client)"
+L["Auto"] = "Auto"

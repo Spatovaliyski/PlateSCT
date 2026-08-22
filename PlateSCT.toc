@@ -1,63 +1,32 @@
 ## Interface: 120000
-
 ## Title: PlateSCT
-
 ## Notes: Midnight-safe nameplate damage numbers with threshold filtering and abbreviation.
-
 ## Notes-frFR: Nombres de dégâts sur les barres de nom compatibles Midnight, avec seuil et abréviations.
-
 ## Notes-deDE: Midnight-sichere Schadenszahlen auf Namensplaketten mit Schwellenwert und Abkürzungen.
-
 ## Notes-esES: Números de daño en placas de nombre compatibles con Midnight, con umbral y abreviaturas.
-
 ## Notes-esMX: Números de daño en placas de nombre compatibles con Midnight, con umbral y abreviaturas.
-
 ## Notes-ruRU: Безопасные для Midnight числа урона на индикаторах с порогом и сокращениями.
-
 ## Notes-itIT: Numeri di danno sulle barre del nome compatibili con Midnight, con soglia e abbreviazioni.
-
 ## Notes-ptBR: Números de dano em placas de nome compatíveis com Midnight, com limite e abreviações.
-
-## Author: Martin
-
+## Author: Limitedby
 ## Version: 1.0.0
-
 ## SavedVariables: PlateSCTDB
 
-
-
 Core/Init.lua
-
 Locales/Locale.lua
-
 Locales/enUS.lua
-
 Locales/frFR.lua
-
 Locales/deDE.lua
-
 Locales/esES.lua
-
 Locales/ruRU.lua
-
 Locales/itIT.lua
-
 Locales/ptBR.lua
-
 Core/Constants.lua
-
 Core/Animation.lua
-
 Core/Util.lua
-
 Core/Pool.lua
-
 Core/Display.lua
-
 Core/Combat.lua
-
 Core/Probe.lua
-
 Core/Events.lua
-
 Options/Options.lua

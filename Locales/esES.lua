@@ -46,7 +46,7 @@ L["Who to show"] = "Qué mostrar"
 L["Only my damage"] = "Solo mi daño"
 L["Show hits on your current target when you recently cast or auto-attacked. Midnight cannot prove who dealt the hit in a group."] =
     "Muestra golpes en tu objetivo actual cuando has lanzado o atacado automáticamente hace poco. Midnight no puede demostrar quién asestó el golpe en grupo."
-L["Target"] = "Objetivo"
+L["Experimental"] = "Experimental"
 L["Best effort on your current target. Other players hitting the same mob can still show up. Off-target cleave and DoTs are not shown."] =
     "Mejor esfuerzo en tu objetivo actual. Otros jugadores que golpeen al mismo monstruo pueden aparecer. El cleave fuera de objetivo y los DoTs no se muestran."
 L["All engaged nameplates"] = "Todas las placas de nombre en combate"
@@ -110,4 +110,4 @@ L["Restore every PlateSCT setting to its default."] =
 L["Language"] = "Idioma"
 L["Choose the language used by PlateSCT panels and messages."] =
     "Elige el idioma de los paneles y mensajes de PlateSCT."
-L["Auto (game client)"] = "Auto (cliente del juego)"
+L["Auto"] = "Auto"

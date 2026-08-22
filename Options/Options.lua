@@ -2,7 +2,8 @@ local ADDON_NAME, BD = ...
 local L = BD.L
 
 local IS_BETA = true
-local ADDON_PAGE_URL = "https://test.com"
+local ADDON_PAGE_URL = "https://www.curseforge.com/wow/addons/platesct/"
+local ADDON_PAGE_LABEL = "PlateSCT CurseForge"
 
 local PANEL_WIDTH = 780
 local PANEL_HEIGHT = 650
@@ -13,6 +14,8 @@ local CONTENT_PAD = 26
 local CONTENT_WIDTH = 510
 local SECTION_GAP = 26
 local ROW_GAP = 42
+local CHECKBOX_LABEL_GAP = 6
+local CHECKBOX_LABEL_NUDGE_Y = 2
 local AFTER_HEADING = 16
 local SLIDER_WIDTH = 220
 local SLIDER_GAP = 28
@@ -115,6 +118,13 @@ local function GetAddonPageUrl()
     return nil
 end
 
+local function GetAddonPageLabel()
+    if GetAddonPageUrl() then
+        return ADDON_PAGE_LABEL
+    end
+    return nil
+end
+
 local function GetBetaWarningBody()
     return L["This addon is in Beta mode. Inaccuracies and errors may show up. Please report such issues on the addon's page."]
 end
@@ -128,10 +138,6 @@ local function GetBetaWarningTooltip()
 end
 
 local function GetBetaNoticeText()
-    local url = GetAddonPageUrl()
-    if url then
-        return GetBetaWarningBody() .. "\n" .. url
-    end
     return GetBetaWarningBody()
 end
 
@@ -632,7 +638,7 @@ local function CreateCheckbox(parent, label, tooltip, x, y, key, onChanged)
     end
 
     cb.label = cb:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    cb.label:SetPoint("LEFT", cb, "RIGHT", 6, 0)
+    cb.label:SetPoint("LEFT", cb, "RIGHT", CHECKBOX_LABEL_GAP, CHECKBOX_LABEL_NUDGE_Y)
     cb.label:SetJustifyH("LEFT")
     cb.label:SetText(label)
 
@@ -757,8 +763,25 @@ local function NewLayout(parent, x, y, width)
             return desc
         end,
 
+        -- Body text indented to match checkbox title (not the check icon).
+        Note = function(self, text)
+            local inset = self._checkboxTextInset or (26 + CHECKBOX_LABEL_GAP)
+            local desc = CreateBody(self.parent, text, self.x + inset, self.y, math.max(40, self.width - inset))
+            local height = desc:GetStringHeight()
+            if not height or height < 14 then
+                height = 16
+            end
+            self.y = self.y - (height + 14)
+            return desc
+        end,
+
         Checkbox = function(self, label, tooltip, key, onChanged)
             local cb = CreateCheckbox(self.parent, label, tooltip, self.x, self.y, key, onChanged)
+            local cbWidth = cb:GetWidth()
+            if not cbWidth or cbWidth < 1 then
+                cbWidth = 26
+            end
+            self._checkboxTextInset = cbWidth + CHECKBOX_LABEL_GAP
             self.y = self.y - ROW_GAP
             return cb
         end,
@@ -869,17 +892,58 @@ local function CreateLocaleSelector(parent, layout)
     layout:Heading(L["Language"])
     layout:Body(L["Choose the language used by PlateSCT panels and messages."])
 
-    local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    local button = CreateFrame("Button", nil, parent, "BackdropTemplate")
     button:SetPoint("TOPLEFT", layout.x, layout.y)
-    button:SetSize(240, 24)
+    button:SetSize(240, 28)
+    button:EnableMouse(true)
+    ApplyBackdrop(button, 0.10, 0.10, 0.11, 0.96, 0.38, 0.38, 0.40, 0.95)
+
+    local hover = button:CreateTexture(nil, "BACKGROUND")
+    hover:SetPoint("TOPLEFT", 1, -1)
+    hover:SetPoint("BOTTOMRIGHT", -1, 1)
+    hover:SetColorTexture(1, 1, 1, 0.05)
+    hover:Hide()
+    button.hover = hover
+
+    button.label = button:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    button.label:SetPoint("LEFT", 12, 0)
+    button.label:SetPoint("RIGHT", -12, 0)
+    button.label:SetJustifyH("LEFT")
+    button.label:SetWordWrap(false)
+
+    local function SetOpenVisual(isOpen)
+        if isOpen then
+            ApplyBackdrop(button, 0.14, 0.14, 0.15, 0.98, NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, 0.85)
+            hover:Hide()
+        else
+            ApplyBackdrop(button, 0.10, 0.10, 0.11, 0.96, 0.38, 0.38, 0.40, 0.95)
+        end
+    end
+
+    function button:SetOpenVisual(isOpen)
+        SetOpenVisual(isOpen)
+    end
 
     local function SyncLabel()
-        button:SetText(BD:GetLocalePreferenceLabel(BD.db.locale) .. "  v")
+        button.label:SetText(BD:GetLocalePreferenceLabel(BD.db.locale))
     end
 
     SyncLabel()
     button.Refresh = SyncLabel
     AddControl(button)
+
+    button:SetScript("OnEnter", function(self)
+        if not (localeMenu and localeMenu:IsShown() and localeMenu.owner == self) then
+            hover:Show()
+            ApplyBackdrop(self, 0.13, 0.13, 0.14, 0.98, 0.48, 0.48, 0.50, 1)
+        end
+    end)
+    button:SetScript("OnLeave", function(self)
+        hover:Hide()
+        if not (localeMenu and localeMenu:IsShown() and localeMenu.owner == self) then
+            SetOpenVisual(false)
+        end
+    end)
 
     if not localeMenu then
         local menu = CreateFrame("Frame", "PlateSCTLocaleMenu", UIParent, "BackdropTemplate")
@@ -892,6 +956,9 @@ local function CreateLocaleSelector(parent, layout)
         localeMenu = menu
 
         menu:SetScript("OnHide", function(self)
+            if self.owner and self.owner.SetOpenVisual then
+                self.owner:SetOpenVisual(false)
+            end
             self.owner = nil
         end)
 
@@ -911,6 +978,7 @@ local function CreateLocaleSelector(parent, layout)
     local function ShowMenu()
         local menu = localeMenu
         menu.owner = button
+        SetOpenVisual(true)
 
         if menu.buttons then
             for _, entry in ipairs(menu.buttons) do
@@ -921,14 +989,14 @@ local function CreateLocaleSelector(parent, layout)
         end
 
         local selected = BD:NormalizeLocaleCode(BD.db.locale or "auto")
-        local y = -8
-        local width = 220
+        local y = -6
+        local width = math.max(240, button:GetWidth() or 240)
 
         for index, option in ipairs(BD.LOCALE_OPTIONS) do
             local entry = menu.buttons[index]
             if not entry then
                 entry = CreateFrame("Button", nil, menu)
-                entry:SetHeight(24)
+                entry:SetHeight(26)
                 entry.label = entry:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
                 entry.label:SetPoint("LEFT", 12, 0)
                 entry.label:SetPoint("RIGHT", -12, 0)
@@ -937,6 +1005,11 @@ local function CreateLocaleSelector(parent, layout)
                 entry.hover:SetAllPoints()
                 entry.hover:SetColorTexture(1, 1, 1, 0.08)
                 entry.hover:Hide()
+                entry.check = entry:CreateTexture(nil, "ARTWORK")
+                entry.check:SetSize(2, 14)
+                entry.check:SetPoint("LEFT", 4, 0)
+                entry.check:SetColorTexture(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, 1)
+                entry.check:Hide()
                 entry:SetScript("OnEnter", function(self)
                     self.hover:Show()
                 end)
@@ -949,9 +1022,10 @@ local function CreateLocaleSelector(parent, layout)
             entry:ClearAllPoints()
             entry:SetPoint("TOPLEFT", 1, y)
             entry:SetPoint("TOPRIGHT", -1, y)
-            entry:SetText("")
             entry.label:SetText(BD:GetLocaleOptionLabel(option))
-            if option.id == selected then
+            local isSelected = option.id == selected
+            entry.check:SetShown(isSelected)
+            if isSelected then
                 entry.label:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
             else
                 entry.label:SetTextColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
@@ -963,13 +1037,13 @@ local function CreateLocaleSelector(parent, layout)
                 end
             end)
             entry:Show()
-            y = y - 24
-            width = math.max(width, (entry.label:GetStringWidth() or 0) + 28)
+            y = y - 26
+            width = math.max(width, (entry.label:GetStringWidth() or 0) + 36)
         end
 
-        menu:SetSize(width, (#BD.LOCALE_OPTIONS * 24) + 16)
+        menu:SetSize(width, (#BD.LOCALE_OPTIONS * 26) + 12)
         menu:ClearAllPoints()
-        menu:SetPoint("TOPLEFT", button, "BOTTOMLEFT", 0, -2)
+        menu:SetPoint("TOPLEFT", button, "BOTTOMLEFT", 0, -4)
         menu:Show()
         menu:Raise()
     end
@@ -982,7 +1056,7 @@ local function CreateLocaleSelector(parent, layout)
         end
     end)
 
-    layout.y = layout.y - 40
+    layout.y = layout.y - 44
     return button
 end
 
@@ -1025,8 +1099,8 @@ local function BuildPageGeneral(parent, rootPanel)
             rootPanel:UpdateDependentStates()
         end
     )
-    parent.onlyMineTag = CreateTag(parent.whoSection, L["Target"], onlyMine.label)
-    parent.onlyMineBody = whoLayout:Body(
+    parent.onlyMineTag = CreateTag(parent.whoSection, L["Experimental"], onlyMine.label)
+    parent.onlyMineBody = whoLayout:Note(
         L["Best effort on your current target. Other players hitting the same mob can still show up. Off-target cleave and DoTs are not shown."]
     )
     local allPlates = whoLayout:Checkbox(
@@ -1034,7 +1108,7 @@ local function BuildPageGeneral(parent, rootPanel)
         L["Show every hit on every visible hostile nameplate. This is the accurate Midnight mode; it includes damage from every source."],
         "allNameplates"
     )
-    parent.allPlatesBody = whoLayout:Body(
+    parent.allPlatesBody = whoLayout:Note(
         L["Available when Only my damage is off. Use this to see numbers on every enemy plate."]
     )
     local petDamage = whoLayout:Checkbox(
@@ -1064,7 +1138,7 @@ local function BuildPageDisplay(parent, rootPanel)
         "showSpellIcon"
     )
     parent.spellIconCheckbox = spellIcon
-    parent.spellIconBody = layout:Body(
+    parent.spellIconBody = layout:Note(
         L["Uses your last spell in Only my damage mode. Left of the number."]
     )
 
@@ -1239,8 +1313,26 @@ local function BuildConfigFrame()
     versionFooter:SetText(L["/platesct  ·  ESC to close"])
 
     if IS_BETA then
+        local linkLabel = GetAddonPageLabel()
+        local betaLink
+        local betaLinkUnderline
+
+        if linkLabel then
+            betaLink = sidebar:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+            betaLink:SetJustifyH("LEFT")
+            betaLink:SetTextColor(0.95, 0.72, 0.28)
+            betaLink:SetText(linkLabel)
+
+            betaLinkUnderline = sidebar:CreateTexture(nil, "ARTWORK")
+            betaLinkUnderline:SetColorTexture(0.95, 0.72, 0.28, 0.95)
+            betaLinkUnderline:SetHeight(1)
+            betaLinkUnderline:SetPoint("TOPLEFT", betaLink, "BOTTOMLEFT", 0, 0)
+            betaLinkUnderline:SetPoint("TOPRIGHT", betaLink, "BOTTOMRIGHT", 0, 0)
+
+            betaLink:SetPoint("BOTTOMLEFT", 16, 14)
+        end
+
         local betaNotice = sidebar:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-        betaNotice:SetPoint("BOTTOMLEFT", 16, 14)
         betaNotice:SetWidth(SIDEBAR_WIDTH - 32)
         betaNotice:SetJustifyH("LEFT")
         betaNotice:SetJustifyV("BOTTOM")
@@ -1254,11 +1346,17 @@ local function BuildConfigFrame()
         end
         betaNotice:SetHeight(noticeHeight)
 
+        if betaLink then
+            betaNotice:SetPoint("BOTTOMLEFT", betaLink, "TOPLEFT", 0, 6)
+        else
+            betaNotice:SetPoint("BOTTOMLEFT", 16, 14)
+        end
+
         versionFooter:SetPoint("BOTTOMLEFT", betaNotice, "TOPLEFT", 0, 8)
         versionFooter:SetPoint("BOTTOMRIGHT", betaNotice, "TOPRIGHT", 0, 8)
 
         local noticeHit = CreateFrame("Frame", nil, sidebar)
-        noticeHit:SetPoint("BOTTOMLEFT", betaNotice, "BOTTOMLEFT", -4, -4)
+        noticeHit:SetPoint("BOTTOMLEFT", betaLink or betaNotice, "BOTTOMLEFT", -4, -4)
         noticeHit:SetPoint("TOPRIGHT", versionFooter, "TOPRIGHT", 4, 4)
         noticeHit:SetFrameLevel(sidebar:GetFrameLevel() + 3)
         AttachBetaNoticeTooltip(noticeHit)

@@ -4,7 +4,7 @@ BD.LocaleTables = BD.LocaleTables or {}
 
 -- Preference values stored in BD.db.locale. "auto" follows the game client.
 BD.LOCALE_OPTIONS = {
-    { id = "auto", labelKey = "Auto (game client)" },
+    { id = "auto", labelKey = "Auto" },
     { id = "enUS", label = "English" },
     { id = "frFR", label = "Français" },
     { id = "deDE", label = "Deutsch" },
@@ -76,14 +76,22 @@ function BD:GetLocaleOptionLabel(option)
     return option.id
 end
 
-function BD:GetLocalePreferenceLabel(preference)
-    preference = self:NormalizeLocaleCode(preference or (self.db and self.db.locale) or "auto")
+function BD:GetLocaleLabelForCode(code)
+    code = self:NormalizeLocaleCode(code)
     for _, option in ipairs(self.LOCALE_OPTIONS) do
-        if option.id == preference then
+        if option.id == code then
             return self:GetLocaleOptionLabel(option)
         end
     end
-    return preference
+    return code
+end
+
+function BD:GetLocalePreferenceLabel(preference)
+    preference = self:NormalizeLocaleCode(preference or (self.db and self.db.locale) or "auto")
+    if preference == "auto" then
+        return L["Auto"] .. " + " .. self:GetLocaleLabelForCode(self:ResolveLocaleCode("auto"))
+    end
+    return self:GetLocaleLabelForCode(preference)
 end
 
 function BD:ApplyLocale(preference)
