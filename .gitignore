@@ -1,0 +1,36 @@
+# Editor / AI tooling
+.cursor/
+.claude/
+.codex/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS junk
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs / temp
+*.log
+*.tmp
+*.temp
+*.bak
+*.orig
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Archives / build artifacts (if packaging the addon)
+*.zip
+*.rar
+*.7z
+dist/
+build/
+release/
