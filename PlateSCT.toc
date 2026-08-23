@@ -9,7 +9,7 @@
 ## Notes-itIT: Numeri di danno sulle barre del nome compatibili con Midnight, con soglia e abbreviazioni.
 ## Notes-ptBR: Números de dano em placas de nome compatíveis com Midnight, com limite e abreviações.
 ## Author: Limitedby
-## Version: 1.0.1
+## Version: 1.0.2
 ## SavedVariables: PlateSCTDB
 
 Core/Init.lua
