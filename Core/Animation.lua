@@ -119,3 +119,31 @@ function Anim.ComputeAlpha(frame, progress)
     local fadeT = (progress - fadeStart) / span
     return ((1 - fadeT) ^ fadePower) * baseAlpha
 end
+
+-- Modern extra paths (slower / shorter than NameplateSCT defaults).
+-- progress is 0–1; returns dx, dy relative to spawn.
+function Anim.ComputeFountain(progress, arcX, arcTop, arcBottom)
+    local p = Anim.EaseOutCubic(progress)
+    local dx = p * (arcX or 0)
+    local top = arcTop or 20
+    local bottom = arcBottom or -12
+    local dy = -(4 * top - 2 * bottom) * p * p + (4 * top - bottom) * p
+    return dx, dy
+end
+
+function Anim.ComputeRainfall(progress, distance, rainX, rainStartY)
+    local p = Anim.EaseOutCubic(progress)
+    return rainX or 0, (rainStartY or 0) - (distance or 0) * p
+end
+
+function Anim.ComputeVertical(progress, distance)
+    return 0, (distance or 0) * Anim.EaseOutCubic(progress)
+end
+
+Anim.fountainArcDir = 1
+
+function Anim.NextFountainArcX()
+    local dir = Anim.fountainArcDir
+    Anim.fountainArcDir = -dir
+    return dir * math.random(28, 56)
+end

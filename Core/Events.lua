@@ -52,6 +52,23 @@ local function ApplyLayoutMigrations()
         BD.db.attributionArena = BD.DEFAULTS.attributionArena
         BD.db.layoutRevision = 5
     end
+    if (BD.db.layoutRevision or 1) < 6 then
+        BD.db.animHit = BD.DEFAULTS.animHit
+        BD.db.animCrit = BD.DEFAULTS.animCrit
+        BD.db.animMiss = BD.DEFAULTS.animMiss
+        BD.db.iconPosition = BD.DEFAULTS.iconPosition
+        BD.db.showIncoming = BD.DEFAULTS.showIncoming
+        BD.db.incomingOffsetX = BD.DEFAULTS.incomingOffsetX
+        BD.db.incomingOffsetY = BD.DEFAULTS.incomingOffsetY
+        BD.db.layoutRevision = 6
+    end
+    if (BD.db.layoutRevision or 1) < 7 then
+        -- Match NameplateSCT: UIParent center fallback, not PlayerFrame.
+        if BD.db.incomingOffsetY == nil or BD.db.incomingOffsetY == -36 then
+            BD.db.incomingOffsetY = BD.DEFAULTS.incomingOffsetY
+        end
+        BD.db.layoutRevision = 7
+    end
     if BD.db.onlyMyDamage then
         BD.db.allNameplates = false
     end

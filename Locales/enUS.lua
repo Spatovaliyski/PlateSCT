@@ -87,10 +87,15 @@ L["Color by damage school"] = "Color by damage school"
 L["Tint numbers by school (fire orange, frost blue, and so on). Off keeps the default yellow."] =
     "Tint numbers by school (fire orange, frost blue, and so on). Off keeps the default yellow."
 L["Show spell icon"] = "Show spell icon"
-L["Display the spell's icon to the left of the damage number. Uses the matched cast or auto-attack."] =
-    "Display the spell's icon to the left of the damage number. Uses the matched cast or auto-attack."
-L["Uses your matched spell in Only my damage mode. Left of the number."] =
-    "Uses your matched spell in Only my damage mode. Left of the number."
+L["Display the spell's icon next to the damage number. Uses the matched cast or auto-attack."] =
+    "Display the spell's icon next to the damage number. Uses the matched cast or auto-attack."
+L["Uses your matched spell in Only my damage mode. Position is set below."] =
+    "Uses your matched spell in Only my damage mode. Position is set below."
+L["Icon position"] = "Icon position"
+L["Left"] = "Left"
+L["Right"] = "Right"
+L["Top"] = "Top"
+L["Bottom"] = "Bottom"
 L["Text style"] = "Text style"
 L["Abbreviate numbers"] = "Abbreviate numbers"
 L["Display large numbers as 214k or 1.2M."] = "Display large numbers as 214k or 1.2M."
@@ -101,6 +106,38 @@ L["Display duration"] = "Display duration"
 L["Recommended"] = "Recommended"
 L["%d px"] = "%d px"
 L["%.1fs"] = "%.1fs"
+L["Motion (Modern)"] = "Motion (Modern)"
+L["Pick a motion for each hit type. Classic number style ignores these and keeps its own animation."] =
+    "Pick a motion for each hit type. Classic number style ignores these and keeps its own animation."
+L["Classic uses its own animation. Switch to Modern to customize motion."] =
+    "Classic uses its own animation. Switch to Modern to customize motion."
+L["Normal hits"] = "Normal hits"
+L["Critical hits"] = "Critical hits"
+L["Miss / Parry / Dodge"] = "Miss / Parry / Dodge"
+L["Motion used for normal damage numbers."] = "Motion used for normal damage numbers."
+L["Motion used for critical hits."] = "Motion used for critical hits."
+L["Motion used for miss, parry, dodge, and similar outcomes."] =
+    "Motion used for miss, parry, dodge, and similar outcomes."
+L["PlateSCT"] = "PlateSCT"
+L["Classic Slap"] = "Classic Slap"
+L["Fountain"] = "Fountain"
+L["Rainfall"] = "Rainfall"
+L["Vertical Down"] = "Vertical Down"
+L["Motion used for critical hits."] = "Motion used for critical hits."
+L["Motion used for critical hits. Classic Slap uses the Classic grow-and-settle pow."] =
+    "Motion used for critical hits. Classic Slap uses the Classic grow-and-settle pow."
+
+-- Incoming
+L["Incoming"] = "Incoming"
+L["Show incoming hits"] = "Show incoming hits"
+L["Show damage you take near your character. Independent of Only my damage."] =
+    "Show damage you take near your character. Independent of Only my damage. Ignores the minimum damage threshold."
+L["Uses your personal nameplate when available; otherwise floats near screen center."] =
+    "Uses your personal nameplate when available; otherwise floats near screen center."
+L["Uses your personal nameplate when available; otherwise sits on your unit frame."] =
+    "Uses your personal nameplate when available; otherwise floats near screen center."
+L["Incoming X"] = "Incoming X"
+L["Incoming Y"] = "Incoming Y"
 
 -- Damage
 L["Minimum damage threshold"] = "Minimum damage threshold"

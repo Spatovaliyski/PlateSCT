@@ -207,6 +207,56 @@ function BD:ShouldUseSchoolColors()
     return self:GetStylePreset().useSchoolColors and true or false
 end
 
+function BD:ResolveMotionStyle(hitKind)
+    if (self.db.numberStyle or "retail") == "classic" then
+        return "platesct"
+    end
+    local key = "animHit"
+    if hitKind == "crit" then
+        key = "animCrit"
+    elseif hitKind == "miss" then
+        key = "animMiss"
+    end
+    local style = self.db[key] or "platesct"
+    if style == "fountain" or style == "rainfall" or style == "verticalDown" then
+        return style
+    end
+    if style == "classicSlap" and hitKind == "crit" then
+        return "classicSlap"
+    end
+    return "platesct"
+end
+
+function BD.IsExtraMotionPath(motionStyle)
+    return motionStyle == "fountain"
+        or motionStyle == "rainfall"
+        or motionStyle == "verticalDown"
+end
+
+function BD.GetIncomingAnchor()
+    -- Prefer the personal nameplate (world-anchored on the character), like NameplateSCT.
+    local plate = BD.GetNamePlateFrame("player")
+    if plate then
+        return plate, "CENTER", "player"
+    end
+
+    -- Some clients expose the personal plate as nameplateN rather than unit "player".
+    if C_NamePlate and C_NamePlate.GetNamePlates then
+        local ok, plates = pcall(C_NamePlate.GetNamePlates)
+        if ok and plates then
+            for _, candidate in ipairs(plates) do
+                local token = candidate.namePlateUnitToken
+                if token and BD.UnitsMatch(token, "player") then
+                    return candidate, "CENTER", "player"
+                end
+            end
+        end
+    end
+
+    -- No personal nameplate: screen-center on UIParent (not PlayerFrame).
+    return UIParent, "CENTER", "player"
+end
+
 function BD.GetNamePlateFrame(unit)
     if not unit or not C_NamePlate or not C_NamePlate.GetNamePlateForUnit then
         return nil

@@ -5,6 +5,7 @@ BD.DEFAULTS = {
     minDamage = 0,
     abbreviate = true,
     showSpellIcon = false,
+    iconPosition = "left",
     fontSize = 14,
     duration = 1.0,
     floatDistance = 20,
@@ -12,11 +13,17 @@ BD.DEFAULTS = {
     onlyMyDamage = true,
     allNameplates = false,
     includePetDamage = true,
+    showIncoming = false,
+    incomingOffsetX = 0,
+    incomingOffsetY = -100,
     debug = false,
     numberStyle = "retail",
     useSchoolColors = false,
+    animHit = "platesct",
+    animCrit = "platesct",
+    animMiss = "platesct",
     locale = "auto",
-    layoutRevision = 5,
+    layoutRevision = 7,
     attributionAuto = true,
     attributionManual = "balanced",
     attributionOpenWorld = "loose",
@@ -24,6 +31,31 @@ BD.DEFAULTS = {
     attributionRaid = "strict",
     attributionBattleground = "strict",
     attributionArena = "balanced",
+}
+
+BD.INCOMING_COLOR = { 1.0, 0.32, 0.28 }
+
+BD.ANIM_STYLES = {
+    { id = "platesct", labelKey = "PlateSCT", recommended = true },
+    { id = "fountain", labelKey = "Fountain" },
+    { id = "rainfall", labelKey = "Rainfall" },
+    { id = "verticalDown", labelKey = "Vertical Down" },
+}
+
+-- Crit dropdown includes Classic Slap (Classic grow-and-settle pow on Modern).
+BD.ANIM_STYLES_CRIT = {
+    { id = "platesct", labelKey = "PlateSCT", recommended = true },
+    { id = "classicSlap", labelKey = "Classic Slap" },
+    { id = "fountain", labelKey = "Fountain" },
+    { id = "rainfall", labelKey = "Rainfall" },
+    { id = "verticalDown", labelKey = "Vertical Down" },
+}
+
+BD.ICON_POSITIONS = {
+    { id = "left", labelKey = "Left", recommended = true },
+    { id = "right", labelKey = "Right" },
+    { id = "top", labelKey = "Top" },
+    { id = "bottom", labelKey = "Bottom" },
 }
 
 BD.STYLE_PRESETS = {

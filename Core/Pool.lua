@@ -23,8 +23,12 @@ local function ReleaseFrame(frame)
     frame.text:SetShadowOffset(0, 0)
     frame.icon:SetTexture(nil)
     frame.icon:Hide()
+    frame.icon:ClearAllPoints()
     frame.anchor = nil
     frame.unitToken = nil
+    frame.incoming = nil
+    frame.motionStyle = nil
+    frame.anchorRelPoint = nil
     frame:ClearAllPoints()
     frame:SetParent(UIParent)
     frame:SetIgnoreParentScale(false)
@@ -41,6 +45,8 @@ local function ComputeMotion(frame)
     local scale = 1
     local extraY = 0
     local introDuration = 0
+    local motionStyle = frame.motionStyle or "platesct"
+    local useExtraPath = BD.IsExtraMotionPath(motionStyle)
 
     if frame.isCrit then
         if frame.animMode == "classicPow" then
@@ -70,14 +76,28 @@ local function ComputeMotion(frame)
     end
 
     local floatProgress = progress
-    if frame.isCrit and introDuration > 0 and frame.duration and frame.duration > introDuration and frame.critsHold then
+    if frame.isCrit and introDuration > 0 and frame.duration and frame.duration > introDuration and frame.critsHold and not useExtraPath then
         local introRatio = introDuration / frame.duration
         floatProgress = math.max(0, (progress - introRatio) / (1 - introRatio))
     end
 
     local floatDistance = frame.floatDistance or 0
-    if frame.isCrit and frame.critsHold then
+    if frame.isCrit and frame.critsHold and not useExtraPath then
         floatDistance = 0
+    end
+
+    if useExtraPath then
+        local dx, dy = 0, 0
+        if motionStyle == "fountain" then
+            dx, dy = Anim.ComputeFountain(progress, frame.arcX, frame.arcTop, frame.arcBottom)
+        elseif motionStyle == "rainfall" then
+            dx, dy = Anim.ComputeRainfall(progress, frame.rainDistance, frame.rainX, frame.rainStartY)
+        elseif motionStyle == "verticalDown" then
+            dx, dy = Anim.ComputeVertical(progress, -(floatDistance > 0 and floatDistance or 20))
+        end
+        local x = (frame.startX or 0) + dx
+        local y = (frame.startY or 0) + extraY + dy
+        return x, y, scale, Anim.ComputeAlpha(frame, progress)
     end
 
     if frame.floatEase == "outQuad" then
@@ -132,9 +152,19 @@ local function FrameOnUpdate(frame, elapsed)
         return
     end
 
+    -- Drop if the nameplate (or UIParent) is gone. UIParent stays shown for screen-center incoming.
+    local ok, shown = pcall(function()
+        return frame.anchor:IsShown()
+    end)
+    if not ok or not shown then
+        ReleaseFrame(frame)
+        return
+    end
+
     local x, y, scale, alpha = ComputeMotion(frame)
+    local relPoint = frame.anchorRelPoint or "TOP"
     frame:ClearAllPoints()
-    frame:SetPoint("CENTER", frame.anchor, "TOP", x, y)
+    frame:SetPoint("CENTER", frame.anchor, relPoint, x, y)
     frame:SetScale(scale)
     frame:SetAlpha(alpha)
 end

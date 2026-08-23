@@ -890,6 +890,7 @@ end
 
 local localeMenu
 local attributionMenu
+local choiceMenu
 
 local function HideLocaleMenu()
     if localeMenu then
@@ -903,6 +904,12 @@ local function HideAttributionMenu()
     end
 end
 
+local function HideChoiceMenu()
+    if choiceMenu then
+        choiceMenu:Hide()
+    end
+end
+
 local function CloseOptionsPanel()
     if localeMenu and localeMenu:IsShown() then
         HideLocaleMenu()
@@ -912,8 +919,13 @@ local function CloseOptionsPanel()
         HideAttributionMenu()
         return
     end
+    if choiceMenu and choiceMenu:IsShown() then
+        HideChoiceMenu()
+        return
+    end
     HideLocaleMenu()
     HideAttributionMenu()
+    HideChoiceMenu()
     if BD.configFrame then
         BD.configFrame:Hide()
     end
@@ -1109,6 +1121,7 @@ local function CreateStrictnessDropdown(parent, layout, label, dbKey, tooltip, i
 
     local function ShowMenu()
         HideLocaleMenu()
+        HideChoiceMenu()
         local menu = attributionMenu
         menu.owner = button
         SetOpenVisual(true)
@@ -1139,6 +1152,285 @@ local function CreateStrictnessDropdown(parent, layout, label, dbKey, tooltip, i
 
     layout.y = layout.y - 52
     return button
+end
+
+local function CreateChoiceDropdown(parent, layout, label, dbKey, options, tooltip, isEnabled)
+    local caption = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    caption:SetPoint("TOPLEFT", layout.x, layout.y)
+    caption:SetText(label)
+
+    local button = CreateFrame("Button", nil, parent, "BackdropTemplate")
+    button:SetPoint("TOPLEFT", layout.x, layout.y - 18)
+    button:SetSize(240, 26)
+    button:EnableMouse(true)
+    ApplyBackdrop(button, 0.10, 0.10, 0.11, 0.96, 0.38, 0.38, 0.40, 0.95)
+
+    local hover = button:CreateTexture(nil, "BACKGROUND")
+    hover:SetPoint("TOPLEFT", 1, -1)
+    hover:SetPoint("BOTTOMRIGHT", -1, 1)
+    hover:SetColorTexture(1, 1, 1, 0.05)
+    hover:Hide()
+
+    button.label = button:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    button.label:SetPoint("LEFT", 12, 0)
+    button.label:SetPoint("RIGHT", -12, 0)
+    button.label:SetJustifyH("LEFT")
+    button.label:SetWordWrap(false)
+    button.caption = caption
+    button.dbKey = dbKey
+    button.options = options
+    button.isEnabled = isEnabled
+
+    local function OptionLabel(opt)
+        local text = L[opt.labelKey] or opt.id
+        if opt.recommended then
+            return text .. " " .. RECOMMENDED_COLOR .. "(" .. L["Recommended"] .. ")|r"
+        end
+        return text
+    end
+
+    local function SelectedLabel()
+        local current = BD.db[dbKey]
+        for _, opt in ipairs(options) do
+            if opt.id == current then
+                local text = L[opt.labelKey] or opt.id
+                if opt.recommended then
+                    return text .. " (" .. L["Recommended"] .. ")"
+                end
+                return text
+            end
+        end
+        return tostring(current or "")
+    end
+
+    local function SetOpenVisual(isOpen)
+        if isOpen then
+            ApplyBackdrop(button, 0.14, 0.14, 0.15, 0.98, NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, 0.85)
+            hover:Hide()
+        else
+            ApplyBackdrop(button, 0.10, 0.10, 0.11, 0.96, 0.38, 0.38, 0.40, 0.95)
+        end
+    end
+
+    function button:SetOpenVisual(isOpen)
+        SetOpenVisual(isOpen)
+    end
+
+    local function SyncLabel()
+        button.label:SetText(SelectedLabel())
+    end
+
+    SyncLabel()
+    button.Refresh = function(self)
+        SyncLabel()
+        local enabled = true
+        if self.isEnabled then
+            enabled = self.isEnabled() and true or false
+        end
+        self:SetEnabled(enabled)
+        self:SetAlpha(enabled and 1 or 0.55)
+        if enabled then
+            self.caption:SetTextColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
+            self.label:SetTextColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
+        else
+            self.caption:SetTextColor(0.5, 0.5, 0.5)
+            self.label:SetTextColor(0.5, 0.5, 0.5)
+        end
+        self:SetShown(true)
+    end
+    AddControl(button)
+    AttachTooltip(button, tooltip)
+
+    button:SetScript("OnEnter", function(self)
+        if not self:IsEnabled() then
+            return
+        end
+        if not (choiceMenu and choiceMenu:IsShown() and choiceMenu.owner == self) then
+            hover:Show()
+            ApplyBackdrop(self, 0.13, 0.13, 0.14, 0.98, 0.48, 0.48, 0.50, 1)
+        end
+    end)
+    button:SetScript("OnLeave", function(self)
+        hover:Hide()
+        if not (choiceMenu and choiceMenu:IsShown() and choiceMenu.owner == self) then
+            SetOpenVisual(false)
+        end
+    end)
+
+    if not choiceMenu then
+        local menu = CreateFrame("Frame", "PlateSCTChoiceMenu", UIParent, "BackdropTemplate")
+        menu:SetFrameStrata("FULLSCREEN_DIALOG")
+        menu:SetToplevel(true)
+        menu:SetClampedToScreen(true)
+        menu:EnableMouse(true)
+        menu:Hide()
+        ApplyBackdrop(menu, 0.08, 0.08, 0.09, 0.98, 0.38, 0.38, 0.40, 0.95)
+        choiceMenu = menu
+        tinsert(UISpecialFrames, "PlateSCTChoiceMenu")
+        menu.entries = {}
+
+        menu:SetScript("OnHide", function(self)
+            if self.owner and self.owner.SetOpenVisual then
+                self.owner:SetOpenVisual(false)
+            end
+            self.owner = nil
+        end)
+
+        local closeWatcher = CreateFrame("Frame", nil, menu)
+        closeWatcher:SetScript("OnUpdate", function()
+            if not menu:IsShown() then
+                return
+            end
+            if IsMouseButtonDown("LeftButton") or IsMouseButtonDown("RightButton") then
+                if not menu:IsMouseOver() and not (menu.owner and menu.owner:IsMouseOver()) then
+                    HideChoiceMenu()
+                end
+            end
+        end)
+    end
+
+    local function ShowMenu()
+        HideLocaleMenu()
+        HideAttributionMenu()
+        local menu = choiceMenu
+        menu.owner = button
+        SetOpenVisual(true)
+
+        for _, entry in ipairs(menu.entries) do
+            entry:Hide()
+        end
+
+        local width = 200
+        local y = -6
+        for index, opt in ipairs(options) do
+            local entry = menu.entries[index]
+            if not entry then
+                entry = CreateFrame("Button", nil, menu)
+                entry:SetHeight(26)
+                entry.label = entry:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+                entry.label:SetPoint("LEFT", 8, 0)
+                entry.label:SetJustifyH("LEFT")
+                entry.hover = entry:CreateTexture(nil, "BACKGROUND")
+                entry.hover:SetAllPoints()
+                entry.hover:SetColorTexture(1, 1, 1, 0.08)
+                entry.hover:Hide()
+                entry:SetScript("OnEnter", function(self)
+                    self.hover:Show()
+                end)
+                entry:SetScript("OnLeave", function(self)
+                    self.hover:Hide()
+                end)
+                menu.entries[index] = entry
+            end
+
+            entry:ClearAllPoints()
+            entry:SetPoint("TOPLEFT", 6, y)
+            entry:SetPoint("TOPRIGHT", -6, y)
+            entry.label:SetText(OptionLabel(opt))
+            local selected = BD.db[dbKey] == opt.id
+            if selected then
+                entry.label:SetTextColor(1, 0.82, 0.45)
+            else
+                entry.label:SetTextColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
+            end
+            entry:SetScript("OnClick", function()
+                BD.db[dbKey] = opt.id
+                if button.Refresh then
+                    button:Refresh()
+                end
+                HideChoiceMenu()
+            end)
+            entry:Show()
+            width = math.max(width, (entry.label:GetStringWidth() or 0) + 36)
+            y = y - 26
+        end
+
+        menu:SetSize(width, (#options * 26) + 12)
+        menu:ClearAllPoints()
+        menu:SetPoint("TOPLEFT", button, "BOTTOMLEFT", 0, -4)
+        menu:Show()
+        menu:Raise()
+    end
+
+    button:SetScript("OnClick", function(self)
+        if not self:IsEnabled() then
+            return
+        end
+        if choiceMenu and choiceMenu:IsShown() and choiceMenu.owner == self then
+            HideChoiceMenu()
+        else
+            ShowMenu()
+        end
+    end)
+
+    layout.y = layout.y - 52
+    return button
+end
+
+local function CreateIconPositionSelector(parent, layout)
+    local caption = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    caption:SetPoint("TOPLEFT", layout.x, layout.y)
+    caption:SetText(L["Icon position"])
+
+    local radios = {}
+    local x = layout.x
+    local y = layout.y - 22
+    local prev
+
+    local function SyncRadios()
+        local current = BD.db.iconPosition or "left"
+        for _, radio in ipairs(radios) do
+            radio:SetChecked(radio.posId == current)
+        end
+    end
+
+    for _, opt in ipairs(BD.ICON_POSITIONS) do
+        local radio = CreateFrame("CheckButton", nil, parent, "UIRadioButtonTemplate")
+        if prev then
+            radio:SetPoint("LEFT", prev.text, "RIGHT", 18, 0)
+        else
+            radio:SetPoint("TOPLEFT", x, y)
+        end
+        radio.text = radio:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        radio.text:SetPoint("LEFT", radio, "RIGHT", 4, 0)
+        local label = L[opt.labelKey] or opt.id
+        if opt.recommended then
+            label = label .. " (" .. L["Recommended"] .. ")"
+        end
+        radio.text:SetText(label)
+        radio:SetHitRectInsets(0, -(radio.text:GetStringWidth() + 8), 0, 0)
+        radio.posId = opt.id
+        radio:SetScript("OnClick", function()
+            BD.db.iconPosition = opt.id
+            SyncRadios()
+        end)
+        radio.Refresh = SyncRadios
+        AddControl(radio)
+        radios[#radios + 1] = radio
+        prev = radio
+    end
+
+    layout.y = layout.y - 48
+    return {
+        caption = caption,
+        radios = radios,
+        SetEnabled = function(_, enabled)
+            caption:SetTextColor(
+                enabled and HIGHLIGHT_FONT_COLOR.r or 0.5,
+                enabled and HIGHLIGHT_FONT_COLOR.g or 0.5,
+                enabled and HIGHLIGHT_FONT_COLOR.b or 0.5
+            )
+            for _, radio in ipairs(radios) do
+                radio:SetEnabled(enabled)
+                radio:SetAlpha(enabled and 1 or 0.55)
+                if enabled then
+                    radio.text:SetTextColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
+                else
+                    radio.text:SetTextColor(0.5, 0.5, 0.5)
+                end
+            end
+        end,
+    }
 end
 
 local function CreateLocaleSelector(parent, layout)
@@ -1231,6 +1523,7 @@ local function CreateLocaleSelector(parent, layout)
 
     local function ShowMenu()
         HideAttributionMenu()
+        HideChoiceMenu()
         local menu = localeMenu
         menu.owner = button
         SetOpenVisual(true)
@@ -1375,6 +1668,52 @@ local function BuildPageGeneral(parent, rootPanel)
     parent.petDamageCheckbox = petDamage
 
     layout:Gap(SECTION_GAP)
+    layout:Heading(L["Incoming"])
+    layout:Checkbox(
+        L["Show incoming hits"],
+        L["Show damage you take near your character. Independent of Only my damage."],
+        "showIncoming",
+        function()
+            rootPanel:UpdateDependentStates()
+        end
+    )
+    parent.incomingBody = layout:Note(
+        L["Uses your personal nameplate when available; otherwise floats near screen center."]
+    )
+    local incomingSliderY = layout.y
+    parent.incomingOffsetXSlider = CreateSlider(
+        parent,
+        L["Incoming X"],
+        layout.x,
+        incomingSliderY,
+        "incomingOffsetX",
+        -200,
+        200,
+        2,
+        function(value)
+            return string.format(L["%d px"], value)
+        end,
+        SLIDER_WIDTH,
+        0
+    )
+    parent.incomingOffsetYSlider = CreateSlider(
+        parent,
+        L["Incoming Y"],
+        layout.x + SLIDER_WIDTH + SLIDER_GAP,
+        incomingSliderY,
+        "incomingOffsetY",
+        -200,
+        200,
+        2,
+        function(value)
+            return string.format(L["%d px"], value)
+        end,
+        SLIDER_WIDTH,
+        -100
+    )
+    layout.y = incomingSliderY - SLIDER_BLOCK
+
+    layout:Gap(SECTION_GAP)
     layout:Heading(L["Attribution profiles"])
     layout:Body(L["How strict PlateSCT is when guessing which hits are yours. Auto-switch follows the instance type."])
 
@@ -1482,13 +1821,17 @@ local function BuildPageDisplay(parent, rootPanel)
     )
     local spellIcon = layout:Checkbox(
         L["Show spell icon"],
-        L["Display the spell's icon to the left of the damage number. Uses your last cast or auto-attack."],
-        "showSpellIcon"
+        L["Display the spell's icon next to the damage number. Uses the matched cast or auto-attack."],
+        "showSpellIcon",
+        function()
+            rootPanel:UpdateDependentStates()
+        end
     )
     parent.spellIconCheckbox = spellIcon
     parent.spellIconBody = layout:Note(
-        L["Uses your last spell in Only my damage mode. Left of the number."]
+        L["Uses your matched spell in Only my damage mode. Position is set below."]
     )
+    parent.iconPositionSelector = CreateIconPositionSelector(parent, layout)
 
     layout:Gap(SECTION_GAP)
     layout:Heading(L["Text style"])
@@ -1508,6 +1851,47 @@ local function BuildPageDisplay(parent, rootPanel)
         return string.format(L["%.1fs"], value)
     end, SLIDER_WIDTH, 0.8)
     layout.y = layout.y - SLIDER_BLOCK
+
+    layout:Gap(SECTION_GAP)
+    parent.motionHeading = CreateHeading(parent, L["Motion (Modern)"], layout.x, layout.y, CONTENT_WIDTH)
+    layout.y = layout.y - (16 + 6 + AFTER_HEADING)
+    parent.motionBody = layout:Body(
+        L["Pick a motion for each hit type. Classic number style ignores these and keeps its own animation."]
+    )
+
+    local isModern = function()
+        return BD.db.numberStyle ~= "classic"
+    end
+
+    parent.motionDropdowns = {
+        CreateChoiceDropdown(
+            parent,
+            layout,
+            L["Normal hits"],
+            "animHit",
+            BD.ANIM_STYLES,
+            L["Motion used for normal damage numbers."],
+            isModern
+        ),
+        CreateChoiceDropdown(
+            parent,
+            layout,
+            L["Critical hits"],
+            "animCrit",
+            BD.ANIM_STYLES_CRIT,
+            L["Motion used for critical hits. Classic Slap uses the Classic grow-and-settle pow."],
+            isModern
+        ),
+        CreateChoiceDropdown(
+            parent,
+            layout,
+            L["Miss / Parry / Dodge"],
+            "animMiss",
+            BD.ANIM_STYLES,
+            L["Motion used for miss, parry, dodge, and similar outcomes."],
+            isModern
+        ),
+    }
 
     parent:SetHeight(math.max(1, -layout.y + CONTENT_PAD))
     local scrollFrame = parent:GetParent()
@@ -1844,6 +2228,45 @@ local function BuildConfigFrame()
                 display.spellIconBody:SetTextColor(0.45, 0.45, 0.46)
             end
         end
+        local showIconOn = onlyMineOn and BD.db.showSpellIcon
+        if display and display.iconPositionSelector then
+            display.iconPositionSelector:SetEnabled(showIconOn and true or false)
+        end
+        if display and display.motionBody then
+            local modern = BD.db.numberStyle ~= "classic"
+            if modern then
+                display.motionBody:SetText(
+                    L["Pick a motion for each hit type. Classic number style ignores these and keeps its own animation."]
+                )
+                display.motionBody:SetTextColor(0.70, 0.70, 0.72)
+            else
+                display.motionBody:SetText(
+                    L["Classic uses its own animation. Switch to Modern to customize motion."]
+                )
+                display.motionBody:SetTextColor(0.55, 0.55, 0.56)
+            end
+        end
+        if display and display.motionDropdowns then
+            for _, dropdown in ipairs(display.motionDropdowns) do
+                if dropdown.Refresh then
+                    dropdown:Refresh()
+                end
+            end
+        end
+        if general.incomingOffsetXSlider and general.incomingOffsetYSlider then
+            local incomingOn = BD.db.showIncoming and true or false
+            for _, slider in ipairs({ general.incomingOffsetXSlider, general.incomingOffsetYSlider }) do
+                slider:SetEnabled(incomingOn)
+                slider:SetAlpha(incomingOn and 1 or 0.55)
+            end
+        end
+        if general.incomingBody then
+            if BD.db.showIncoming then
+                general.incomingBody:SetTextColor(0.70, 0.70, 0.72)
+            else
+                general.incomingBody:SetTextColor(0.45, 0.45, 0.46)
+            end
+        end
     end
 
     function frame:Refresh()
@@ -1955,6 +2378,8 @@ end
 
 function BD:RebuildOptionsPanel()
     HideLocaleMenu()
+    HideAttributionMenu()
+    HideChoiceMenu()
     local wasShown = self.configFrame and self.configFrame:IsShown()
     if self.configFrame then
         self.configFrame:Hide()
@@ -1974,6 +2399,8 @@ end
 
 function BD:OpenOptions()
     HideLocaleMenu()
+    HideAttributionMenu()
+    HideChoiceMenu()
     if not self.configFrame then
         self:RegisterOptionsPanel()
     end

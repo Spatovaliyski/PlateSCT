@@ -1,17 +1,49 @@
 local _, BD = ...
 local L = BD.L
+local Anim = BD.Anim
 
-function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isHeal, spellIcon)
-    local plate = BD.GetNamePlateFrame(unit)
-    if not plate then
-        self:DebugPrint("No nameplate for", unit)
-        return
+local ICON_GAP = 4
+
+local function ApplyIconLayout(frame, iconSize, position)
+    frame.text:ClearAllPoints()
+    frame.icon:ClearAllPoints()
+    frame.icon:SetSize(iconSize, iconSize)
+
+    local pos = position or "left"
+    if pos == "right" then
+        frame.text:SetPoint("CENTER", frame, "CENTER", -(iconSize + ICON_GAP) / 2, 0)
+        frame.icon:SetPoint("LEFT", frame.text, "RIGHT", ICON_GAP, 0)
+    elseif pos == "top" then
+        frame.text:SetPoint("CENTER", frame, "CENTER", 0, -(iconSize + ICON_GAP) / 2)
+        frame.icon:SetPoint("BOTTOM", frame.text, "TOP", 0, ICON_GAP)
+    elseif pos == "bottom" then
+        frame.text:SetPoint("CENTER", frame, "CENTER", 0, (iconSize + ICON_GAP) / 2)
+        frame.icon:SetPoint("TOP", frame.text, "BOTTOM", 0, -ICON_GAP)
+    else
+        -- left (default)
+        frame.text:SetPoint("CENTER", frame, "CENTER", (iconSize + ICON_GAP) / 2, 0)
+        frame.icon:SetPoint("RIGHT", frame.text, "LEFT", -ICON_GAP, 0)
     end
+end
 
-    local preset = self:GetStylePreset()
-    local frame = BD.Pool.Acquire()
-    frame.anchor = plate
+local function ApplyMotionSpawnParams(frame, motionStyle, floatDistance)
+    frame.motionStyle = motionStyle or "platesct"
+    if frame.motionStyle == "fountain" then
+        frame.arcX = Anim.NextFountainArcX()
+        frame.arcTop = math.random(10, 28)
+        frame.arcBottom = -math.random(8, 22)
+    elseif frame.motionStyle == "rainfall" then
+        frame.rainDistance = (floatDistance or 20) * 1.2
+        frame.rainX = math.random(-18, 18)
+        frame.rainStartY = math.random(4, 12)
+    end
+end
+
+local function ConfigureFrameCommon(self, frame, preset, isCrit, hitKind, isIncoming)
     frame.isCrit = isCrit and true or false
+    frame.incoming = isIncoming and true or false
+    frame.hitKind = hitKind or (isCrit and "crit" or "hit")
+
     local durationMult = preset.durationMult
     if frame.isCrit and preset.critDurationMult then
         durationMult = durationMult * preset.critDurationMult
@@ -40,7 +72,54 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
     frame.spawnMinDist = preset.spawnMinDist
     frame.spawnMinDistCrit = preset.spawnMinDistCrit
     frame.spawnJitter = preset.spawnJitter
+    frame.spawnCritY = preset.spawnCritY
 
+    local motionStyle = self:ResolveMotionStyle(frame.hitKind)
+
+    -- Classic Slap: Modern look, Classic grow-and-settle crit pow.
+    if motionStyle == "classicSlap" and frame.isCrit then
+        local classic = self.STYLE_PRESETS.classic
+        frame.animMode = "classicPow"
+        frame.critsHold = true
+        frame.critRestScale = classic.critRestScale or 2.0
+        frame.critPowStartScale = classic.critPowStartScale or 1.0
+        frame.critPowPeakScale = classic.critPowPeakScale or 4.0
+        frame.critPowDuration = classic.critPowDuration or 0.2
+        frame.spawnCritY = classic.spawnCritY or -8
+        frame.floatEase = classic.floatEase or "outQuad"
+        frame.fadeMode = classic.fadeMode or "inExpo"
+        frame.fadeInRatio = classic.fadeInRatio or 0.3
+        frame.popScale = classic.popScale or 1
+        frame.popDuration = classic.popDuration or 0
+        -- Match Classic crit duration stretch while keeping Modern float distance base.
+        local baseDuration = (self.db.duration or self.DEFAULTS.duration) * (preset.durationMult or 1)
+        frame.duration = baseDuration * (classic.critDurationMult or 1.6)
+    elseif BD.IsExtraMotionPath(motionStyle) then
+        -- Extra Modern paths skip Classic-style crit hold.
+        frame.critsHold = false
+    end
+
+    ApplyMotionSpawnParams(frame, motionStyle, frame.floatDistance)
+end
+
+function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isHeal, spellIcon, hitKind)
+    local plate = BD.GetNamePlateFrame(unit)
+    if not plate then
+        self:DebugPrint("No nameplate for", unit)
+        return
+    end
+
+    local kind = hitKind
+    if not kind then
+        kind = isCrit and "crit" or "hit"
+    end
+
+    local preset = self:GetStylePreset()
+    local frame = BD.Pool.Acquire()
+    ConfigureFrameCommon(self, frame, preset, isCrit, kind, false)
+
+    frame.anchor = plate
+    frame.anchorRelPoint = "TOP"
     frame:SetParent(plate)
     frame:SetIgnoreParentScale(true)
     frame:SetFrameStrata("HIGH")
@@ -49,7 +128,7 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
 
     local baseY = preset.spawnBaseY or 8
     if frame.isCrit and frame.critsHold then
-        baseY = preset.spawnCritY or -8
+        baseY = frame.spawnCritY or preset.spawnCritY or -8
     end
     frame.startX, frame.startY = BD.Pool.PickClearSpawn(plate, frame, 0, baseY, frame.isCrit)
     frame:ClearAllPoints()
@@ -70,10 +149,9 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
     local showIcon = self.db.onlyMyDamage and self.db.showSpellIcon and BD.ValuePresent(spellIcon)
     if showIcon then
         local iconSize = math.max(12, math.floor((fontSize * 1.1) + 0.5))
-        frame.icon:SetSize(iconSize, iconSize)
         local ok = pcall(frame.icon.SetTexture, frame.icon, spellIcon)
         if ok then
-            frame.text:SetPoint("CENTER", frame, "CENTER", (iconSize + 4) / 2, 0)
+            ApplyIconLayout(frame, iconSize, self.db.iconPosition or "left")
             frame.icon:SetVertexColor(1, 1, 1, 1)
             frame.icon:Show()
         else
@@ -126,6 +204,88 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
     frame:Show()
 end
 
+function BD:ShowIncoming(text, r, g, b, amountForThreshold, isCrit, hitKind)
+    local anchor, relPoint, unitToken = BD.GetIncomingAnchor()
+    if not anchor then
+        return
+    end
+
+    local kind = hitKind
+    if not kind then
+        kind = isCrit and "crit" or "hit"
+    end
+
+    local preset = self:GetStylePreset()
+    local frame = BD.Pool.Acquire()
+    ConfigureFrameCommon(self, frame, preset, isCrit, kind, true)
+
+    frame.anchor = anchor
+    frame.anchorRelPoint = relPoint or "CENTER"
+    frame:SetParent(anchor)
+    frame:SetIgnoreParentScale(true)
+    frame:SetFrameStrata("HIGH")
+    frame:SetFrameLevel((anchor.GetFrameLevel and anchor:GetFrameLevel() or 0) + 20)
+    frame.unitToken = unitToken
+
+    local ox = self.db.incomingOffsetX or self.DEFAULTS.incomingOffsetX or 0
+    local oy = self.db.incomingOffsetY or self.DEFAULTS.incomingOffsetY or -100
+    -- On personal nameplate, keep spawn tight; offsets alone place the cluster.
+    -- On UIParent, offsets are the whole placement (default center + Y -100).
+    local baseY = 0
+    if frame.isCrit and frame.critsHold then
+        baseY = (frame.spawnCritY or -8) * 0.15
+    end
+    frame.startX, frame.startY = BD.Pool.PickClearSpawn(anchor, frame, ox, oy + baseY, frame.isCrit)
+    frame:ClearAllPoints()
+    frame:SetPoint("CENTER", anchor, frame.anchorRelPoint, frame.startX, frame.startY)
+
+    local fontSize = (self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale
+    local fontPath = STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"
+    frame.text:SetFont(fontPath, fontSize, preset.fontFlags)
+    if preset.shadowOffset then
+        frame.text:SetShadowOffset(preset.shadowOffset[1], preset.shadowOffset[2])
+        frame.text:SetShadowColor(0, 0, 0, 1)
+    else
+        frame.text:SetShadowOffset(0, 0)
+    end
+    frame.text:SetText(text)
+    frame.text:ClearAllPoints()
+    frame.text:SetPoint("CENTER", frame, "CENTER", 0, 0)
+    frame.icon:SetTexture(nil)
+    frame.icon:Hide()
+
+    local color = BD.INCOMING_COLOR
+    frame.text:SetTextColor(r or color[1], g or color[2], b or color[3], 1)
+
+    local thresholdCurve = self:GetThresholdCurve()
+    if amountForThreshold and self.db.minDamage and self.db.minDamage > 0 and BD.IsSecret(amountForThreshold) and thresholdCurve then
+        local ok = pcall(function()
+            local colorCurve = thresholdCurve:Evaluate(amountForThreshold)
+            frame.baseAlpha = select(4, colorCurve:GetRGBA())
+        end)
+        if not ok then
+            frame.baseAlpha = 1
+        end
+    end
+
+    if frame.baseAlpha <= 0 then
+        BD.Pool.Release(frame)
+        return
+    end
+
+    frame:SetAlpha(frame.baseAlpha)
+    if frame.isCrit then
+        if frame.animMode == "classicPow" then
+            frame:SetScale(frame.critPowStartScale or 1)
+        else
+            frame:SetScale(frame.critPopStartScale or 0.72)
+        end
+    else
+        frame:SetScale(frame.popScale or 1)
+    end
+    frame:Show()
+end
+
 function BD:ShowTestNumbers()
     if not UnitExists("target") then
         print("|cff66ccffPlateSCT:|r", L["Target something to preview test numbers."])
@@ -133,18 +293,31 @@ function BD:ShowTestNumbers()
     end
 
     local samples = {
-        { amount = 12400, crit = false, spellID = 6603 },
-        { amount = 18650, crit = false, spellID = 133 },
-        { amount = 214200, crit = true, spellID = 116 },
-        { amount = 842, crit = false, spellID = 585 },
-        { amount = 1800000, crit = true, spellID = 686 },
+        { amount = 12400, crit = false, spellID = 6603, hitKind = "hit" },
+        { amount = 18650, crit = false, spellID = 133, hitKind = "hit" },
+        { amount = 214200, crit = true, spellID = 116, hitKind = "crit" },
+        { amount = 842, crit = false, spellID = 585, hitKind = "hit" },
+        { amount = 1800000, crit = true, spellID = 686, hitKind = "crit" },
+        { miss = true, text = "DODGE", hitKind = "miss" },
     }
     for index, sample in ipairs(samples) do
         C_Timer.After((index - 1) * 0.12, function()
+            if sample.miss then
+                self:ShowOnNameplate("target", sample.text, 1, 0.85, 0.2, nil, false, false, nil, "miss")
+                return
+            end
             local display = BD.FormatAmount(sample.amount, self.db.abbreviate)
             local r, g, b = 1, 0.92, 0.35
             local spellIcon = self.db.showSpellIcon and BD.GetSpellIconTexture(sample.spellID) or nil
-            self:ShowOnNameplate("target", display, r, g, b, sample.amount, sample.crit, false, spellIcon)
+            self:ShowOnNameplate("target", display, r, g, b, sample.amount, sample.crit, false, spellIcon, sample.hitKind)
+        end)
+    end
+
+    if self.db.showIncoming then
+        C_Timer.After(#samples * 0.12, function()
+            local display = BD.FormatAmount(8420, self.db.abbreviate)
+            local color = BD.INCOMING_COLOR
+            self:ShowIncoming(display, color[1], color[2], color[3], 8420, false, "hit")
         end)
     end
 end
