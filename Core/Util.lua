@@ -234,7 +234,6 @@ function BD.IsExtraMotionPath(motionStyle)
 end
 
 function BD.GetIncomingAnchor()
-    -- Prefer the personal nameplate (world-anchored on the character), like NameplateSCT.
     local plate = BD.GetNamePlateFrame("player")
     if plate then
         return plate, "CENTER", "player"

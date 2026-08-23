@@ -63,7 +63,6 @@ local function ApplyLayoutMigrations()
         BD.db.layoutRevision = 6
     end
     if (BD.db.layoutRevision or 1) < 7 then
-        -- Match NameplateSCT: UIParent center fallback, not PlayerFrame.
         if BD.db.incomingOffsetY == nil or BD.db.incomingOffsetY == -36 then
             BD.db.incomingOffsetY = BD.DEFAULTS.incomingOffsetY
         end

@@ -120,8 +120,6 @@ function Anim.ComputeAlpha(frame, progress)
     return ((1 - fadeT) ^ fadePower) * baseAlpha
 end
 
--- Modern extra paths (slower / shorter than NameplateSCT defaults).
--- progress is 0–1; returns dx, dy relative to spawn.
 function Anim.ComputeFountain(progress, arcX, arcTop, arcBottom)
     local p = Anim.EaseOutCubic(progress)
     local dx = p * (arcX or 0)
