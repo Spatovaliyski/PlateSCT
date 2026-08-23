@@ -16,7 +16,14 @@ BD.DEFAULTS = {
     numberStyle = "retail",
     useSchoolColors = false,
     locale = "auto",
-    layoutRevision = 4,
+    layoutRevision = 5,
+    attributionAuto = true,
+    attributionManual = "balanced",
+    attributionOpenWorld = "loose",
+    attributionDungeon = "balanced",
+    attributionRaid = "strict",
+    attributionBattleground = "strict",
+    attributionArena = "balanced",
 }
 
 BD.STYLE_PRESETS = {
@@ -154,8 +161,62 @@ BD.DAMAGE_SCHOOL_COLORS = {
     [64] = { 1.0, 0.50, 1.0 },
 }
 
-BD.OUTGOING_ATTRIBUTION_WINDOW = 1.25
-BD.AUTO_ATTACK_FALLBACK_GAP = 0.9
 BD.AUTO_ATTACK_SPELL_ID = 6603
 BD.POOL_SIZE = 24
 BD.METER_PROBE_MAX_SPELLS = 6
+BD.PENDING_CAP = 8
+
+BD.STRICTNESS = {
+    loose = {
+        instantWindow = 0.80,
+        castWindow = 0.60,
+        hitsLeft = 8,
+        linger = 8.0,
+        destRequired = false,
+        autoFallback = true,
+        autoFallbackGap = 0.9,
+        useThreatGate = false,
+    },
+    balanced = {
+        instantWindow = 0.45,
+        castWindow = 0.40,
+        hitsLeft = 4,
+        linger = 4.0,
+        destRequired = false,
+        autoFallback = true,
+        autoFallbackGap = 1.2,
+        useThreatGate = true,
+    },
+    strict = {
+        instantWindow = 0.30,
+        castWindow = 0.25,
+        hitsLeft = 2,
+        linger = 0,
+        destRequired = true,
+        autoFallback = false,
+        autoFallbackGap = 1.2,
+        useThreatGate = true,
+    },
+}
+
+BD.SCENARIO_DB_KEYS = {
+    openWorld = "attributionOpenWorld",
+    dungeon = "attributionDungeon",
+    raid = "attributionRaid",
+    battleground = "attributionBattleground",
+    arena = "attributionArena",
+}
+
+BD.SCENARIO_ORDER = {
+    "openWorld",
+    "dungeon",
+    "raid",
+    "battleground",
+    "arena",
+}
+
+BD.STRICTNESS_ORDER = {
+    "loose",
+    "balanced",
+    "strict",
+}

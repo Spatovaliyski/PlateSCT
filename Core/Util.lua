@@ -267,6 +267,11 @@ function BD:IsNameplateInConfiguredScope(unit)
         local targetPlate = BD.GetNamePlateFrame("target")
         return targetPlate ~= nil and targetPlate == BD.GetNamePlateFrame(unit)
     end
+
+    local strict = self.GetActiveStrictness and self:GetActiveStrictness()
+    if strict and strict.useThreatGate and self.PlayerIsEngagedWith then
+        return self:PlayerIsEngagedWith(unit)
+    end
     return true
 end
 

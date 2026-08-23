@@ -67,6 +67,9 @@ function BD:ResolveLocaleCode(preference)
 end
 
 function BD:GetLocaleOptionLabel(option)
+    if option.id == "auto" then
+        return L["Auto"] .. " (" .. self:GetLocaleLabelForCode(self:ResolveLocaleCode("auto")) .. ")"
+    end
     if option.label then
         return option.label
     end
@@ -89,7 +92,7 @@ end
 function BD:GetLocalePreferenceLabel(preference)
     preference = self:NormalizeLocaleCode(preference or (self.db and self.db.locale) or "auto")
     if preference == "auto" then
-        return L["Auto"] .. " + " .. self:GetLocaleLabelForCode(self:ResolveLocaleCode("auto"))
+        return self:GetLocaleOptionLabel({ id = "auto" })
     end
     return self:GetLocaleLabelForCode(preference)
 end

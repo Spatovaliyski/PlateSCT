@@ -41,11 +41,11 @@ L["Enemy nameplates are turned off. PlateSCT needs them to show numbers.\nPress 
     "Enemy nameplates are turned off. PlateSCT needs them to show numbers.\nPress V (default) or enable them under Interface → Game → Names."
 L["Who to show"] = "Who to show"
 L["Only my damage"] = "Only my damage"
-L["Show hits on your current target when you recently cast or auto-attacked. Midnight cannot prove who dealt the hit in a group."] =
-    "Show hits on your current target when you recently cast or auto-attacked. Midnight cannot prove who dealt the hit in a group."
+L["Show hits when a recent cast or auto-attack matches the nameplate. Midnight cannot prove who dealt the hit in a group."] =
+    "Show hits when a recent cast or auto-attack matches the nameplate. Midnight cannot prove who dealt the hit in a group."
 L["Experimental"] = "Experimental"
-L["Best effort on your current target. Other players hitting the same mob can still show up. Off-target cleave and DoTs are not shown."] =
-    "Best effort on your current target. Other players hitting the same mob can still show up. Off-target cleave and DoTs are not shown."
+L["Best effort: matches your casts to nameplates by destination and timing. Dest-matched cleave can show. Other players on the same target can still appear. Mythic+ uses the Dungeon profile."] =
+    "Best effort: matches your casts to nameplates by destination and timing. Dest-matched cleave can show. Other players on the same target can still appear. Mythic+ uses the Dungeon profile."
 L["All engaged nameplates"] = "All engaged nameplates"
 L["Show every hit on every visible hostile nameplate. This is the accurate Midnight mode; it includes damage from every source."] =
     "Show every hit on every visible hostile nameplate. This is the accurate Midnight mode; it includes damage from every source."
@@ -54,6 +54,28 @@ L["Available when Only my damage is off. Use this to see numbers on every enemy 
 L["Include pet damage"] = "Include pet damage"
 L["In Only my damage mode, also treat a recent pet cast as your hit."] =
     "In Only my damage mode, also treat a recent pet cast as your hit."
+L["Attribution profiles"] = "Attribution profiles"
+L["How strict PlateSCT is when guessing which hits are yours. Auto-switch follows the instance type."] =
+    "How strict PlateSCT is when guessing which hits are yours. Auto-switch follows the instance type."
+L["Current profile"] = "Current profile"
+L["Auto-switch by instance"] = "Auto-switch by instance"
+L["Pick Open world, Dungeon, Raid, Battleground, or Arena settings from the zone you are in."] =
+    "Pick Open world, Dungeon, Raid, Battleground, or Arena settings from the zone you are in."
+L["Manual strictness"] = "Manual strictness"
+L["Used when Auto-switch is off."] = "Used when Auto-switch is off."
+L["Open world"] = "Open world"
+L["Dungeon"] = "Dungeon"
+L["Raid"] = "Raid"
+L["Battleground"] = "Battleground"
+L["Arena"] = "Arena"
+L["Loose"] = "Loose"
+L["Balanced"] = "Balanced"
+L["Strict"] = "Strict"
+L["Loose: longer windows, more numbers."] = "Loose: longer windows, more numbers."
+L["Balanced: medium windows and cleave hits."] = "Balanced: medium windows and cleave hits."
+L["Strict: short windows, fewer foreign hits."] = "Strict: short windows, fewer foreign hits."
+L["Active: %s (%s)"] = "Active: %s (%s)"
+L["Recommended"] = "Recommended"
 
 -- Display
 L["Number style"] = "Number style"
@@ -65,10 +87,10 @@ L["Color by damage school"] = "Color by damage school"
 L["Tint numbers by school (fire orange, frost blue, and so on). Off keeps the default yellow."] =
     "Tint numbers by school (fire orange, frost blue, and so on). Off keeps the default yellow."
 L["Show spell icon"] = "Show spell icon"
-L["Display the spell's icon to the left of the damage number. Uses your last cast or auto-attack."] =
-    "Display the spell's icon to the left of the damage number. Uses your last cast or auto-attack."
-L["Uses your last spell in Only my damage mode. Left of the number."] =
-    "Uses your last spell in Only my damage mode. Left of the number."
+L["Display the spell's icon to the left of the damage number. Uses the matched cast or auto-attack."] =
+    "Display the spell's icon to the left of the damage number. Uses the matched cast or auto-attack."
+L["Uses your matched spell in Only my damage mode. Left of the number."] =
+    "Uses your matched spell in Only my damage mode. Left of the number."
 L["Text style"] = "Text style"
 L["Abbreviate numbers"] = "Abbreviate numbers"
 L["Display large numbers as 214k or 1.2M."] = "Display large numbers as 214k or 1.2M."

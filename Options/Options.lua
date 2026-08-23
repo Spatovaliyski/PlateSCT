@@ -881,11 +881,256 @@ local function CreateStyleSelector(parent, layout, rootPanel)
 end
 
 local localeMenu
+local attributionMenu
 
 local function HideLocaleMenu()
     if localeMenu then
         localeMenu:Hide()
     end
+end
+
+local function HideAttributionMenu()
+    if attributionMenu then
+        attributionMenu:Hide()
+    end
+end
+
+local function CloseOptionsPanel()
+    if localeMenu and localeMenu:IsShown() then
+        HideLocaleMenu()
+        return
+    end
+    if attributionMenu and attributionMenu:IsShown() then
+        HideAttributionMenu()
+        return
+    end
+    HideLocaleMenu()
+    HideAttributionMenu()
+    if BD.configFrame then
+        BD.configFrame:Hide()
+    end
+end
+
+local SCENARIO_LABEL_KEYS = {
+    openWorld = "Open world",
+    dungeon = "Dungeon",
+    raid = "Raid",
+    battleground = "Battleground",
+    arena = "Arena",
+}
+
+local STRICTNESS_LABEL_KEYS = {
+    loose = "Loose",
+    balanced = "Balanced",
+    strict = "Strict",
+}
+
+local function ScenarioLabel(id)
+    return L[SCENARIO_LABEL_KEYS[id] or "Open world"]
+end
+
+local function StrictnessLabel(id)
+    return L[STRICTNESS_LABEL_KEYS[id] or "Balanced"]
+end
+
+local RECOMMENDED_COLOR = "|cffFFCC00"
+
+local function StrictnessMenuLabel(id, recommendedId)
+    local text = StrictnessLabel(id)
+    if recommendedId and id == recommendedId then
+        return text .. " " .. RECOMMENDED_COLOR .. "(" .. L["Recommended"] .. ")|r"
+    end
+    return text
+end
+
+local function ApplyStrictnessMenuEntry(entry, selected, recommendedId)
+    entry.label:SetText(StrictnessMenuLabel(entry.id, recommendedId))
+    if selected then
+        entry.label:SetTextColor(1, 0.82, 0.45)
+    else
+        entry.label:SetTextColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
+    end
+end
+
+local function CreateStrictnessDropdown(parent, layout, label, dbKey, tooltip, isEnabled, recommendedId)
+    local caption = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    caption:SetPoint("TOPLEFT", layout.x, layout.y)
+    caption:SetText(label)
+
+    local button = CreateFrame("Button", nil, parent, "BackdropTemplate")
+    button:SetPoint("TOPLEFT", layout.x, layout.y - 18)
+    button:SetSize(240, 26)
+    button:EnableMouse(true)
+    ApplyBackdrop(button, 0.10, 0.10, 0.11, 0.96, 0.38, 0.38, 0.40, 0.95)
+
+    local hover = button:CreateTexture(nil, "BACKGROUND")
+    hover:SetPoint("TOPLEFT", 1, -1)
+    hover:SetPoint("BOTTOMRIGHT", -1, 1)
+    hover:SetColorTexture(1, 1, 1, 0.05)
+    hover:Hide()
+
+    button.label = button:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    button.label:SetPoint("LEFT", 12, 0)
+    button.label:SetPoint("RIGHT", -12, 0)
+    button.label:SetJustifyH("LEFT")
+    button.label:SetWordWrap(false)
+    button.caption = caption
+    button.recommendedId = recommendedId
+    button.dbKey = dbKey
+    button.isEnabled = isEnabled
+
+    local function SetOpenVisual(isOpen)
+        if isOpen then
+            ApplyBackdrop(button, 0.14, 0.14, 0.15, 0.98, NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b, 0.85)
+            hover:Hide()
+        else
+            ApplyBackdrop(button, 0.10, 0.10, 0.11, 0.96, 0.38, 0.38, 0.40, 0.95)
+        end
+    end
+
+    function button:SetOpenVisual(isOpen)
+        SetOpenVisual(isOpen)
+    end
+
+    local function SyncLabel()
+        button.label:SetText(StrictnessLabel(BD.db[dbKey]))
+    end
+
+    SyncLabel()
+    button.Refresh = function(self)
+        SyncLabel()
+        local enabled = true
+        if self.isEnabled then
+            enabled = self.isEnabled() and true or false
+        end
+        self:SetEnabled(enabled)
+        self:SetAlpha(enabled and 1 or 0.55)
+        if enabled then
+            self.caption:SetTextColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
+            self.label:SetTextColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
+        else
+            self.caption:SetTextColor(0.5, 0.5, 0.5)
+            self.label:SetTextColor(0.5, 0.5, 0.5)
+        end
+    end
+    AddControl(button)
+    AttachTooltip(button, tooltip)
+
+    button:SetScript("OnEnter", function(self)
+        if not self:IsEnabled() then
+            return
+        end
+        if not (attributionMenu and attributionMenu:IsShown() and attributionMenu.owner == self) then
+            hover:Show()
+            ApplyBackdrop(self, 0.13, 0.13, 0.14, 0.98, 0.48, 0.48, 0.50, 1)
+        end
+    end)
+    button:SetScript("OnLeave", function(self)
+        hover:Hide()
+        if not (attributionMenu and attributionMenu:IsShown() and attributionMenu.owner == self) then
+            SetOpenVisual(false)
+        end
+    end)
+
+    if not attributionMenu then
+        local menu = CreateFrame("Frame", "PlateSCTAttributionMenu", UIParent, "BackdropTemplate")
+        menu:SetFrameStrata("FULLSCREEN_DIALOG")
+        menu:SetToplevel(true)
+        menu:SetClampedToScreen(true)
+        menu:EnableMouse(true)
+        menu:Hide()
+        ApplyBackdrop(menu, 0.08, 0.08, 0.09, 0.98, 0.38, 0.38, 0.40, 0.95)
+        attributionMenu = menu
+        tinsert(UISpecialFrames, "PlateSCTAttributionMenu")
+        menu.entries = {}
+
+        menu:SetScript("OnHide", function(self)
+            if self.owner and self.owner.SetOpenVisual then
+                self.owner:SetOpenVisual(false)
+            end
+            self.owner = nil
+        end)
+
+        local closeWatcher = CreateFrame("Frame", nil, menu)
+        closeWatcher:SetScript("OnUpdate", function()
+            if not menu:IsShown() then
+                return
+            end
+            if IsMouseButtonDown("LeftButton") or IsMouseButtonDown("RightButton") then
+                if not menu:IsMouseOver() and not (menu.owner and menu.owner:IsMouseOver()) then
+                    HideAttributionMenu()
+                end
+            end
+        end)
+
+        for index, id in ipairs(BD.STRICTNESS_ORDER) do
+            local entry = CreateFrame("Button", nil, menu)
+            entry:SetHeight(26)
+            entry:SetPoint("TOPLEFT", 6, -6 - ((index - 1) * 26))
+            entry:SetPoint("TOPRIGHT", -6, -6 - ((index - 1) * 26))
+            entry.label = entry:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+            entry.label:SetPoint("LEFT", 8, 0)
+            entry.label:SetJustifyH("LEFT")
+            entry.id = id
+            menu.entries[index] = entry
+
+            entry:SetScript("OnEnter", function(self)
+                ApplyStrictnessMenuEntry(self, menu.owner and BD.db[menu.owner.dbKey] == self.id, menu.owner and menu.owner.recommendedId)
+                self.label:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
+            end)
+            entry:SetScript("OnLeave", function(self)
+                ApplyStrictnessMenuEntry(self, menu.owner and BD.db[menu.owner.dbKey] == self.id, menu.owner and menu.owner.recommendedId)
+            end)
+            entry:SetScript("OnClick", function(self)
+                if menu.owner and menu.owner.dbKey then
+                    BD.db[menu.owner.dbKey] = self.id
+                    if BD.RefreshScenario then
+                        BD:RefreshScenario()
+                    end
+                    if menu.owner.Refresh then
+                        menu.owner:Refresh()
+                    end
+                    if parent.GetRootPanel and parent:GetRootPanel().Refresh then
+                        parent:GetRootPanel():Refresh()
+                    end
+                end
+                HideAttributionMenu()
+            end)
+        end
+    end
+
+    local function ShowMenu()
+        HideLocaleMenu()
+        local menu = attributionMenu
+        menu.owner = button
+        SetOpenVisual(true)
+        local width = 180
+        local ownerRecommended = button.recommendedId
+        for _, entry in ipairs(menu.entries) do
+            local selected = BD.db[dbKey] == entry.id
+            ApplyStrictnessMenuEntry(entry, selected, ownerRecommended)
+            width = math.max(width, (entry.label:GetStringWidth() or 0) + 36)
+        end
+        menu:SetSize(width, (#BD.STRICTNESS_ORDER * 26) + 12)
+        menu:ClearAllPoints()
+        menu:SetPoint("TOPLEFT", button, "BOTTOMLEFT", 0, -4)
+        menu:Show()
+        menu:Raise()
+    end
+
+    button:SetScript("OnClick", function(self)
+        if not self:IsEnabled() then
+            return
+        end
+        if attributionMenu and attributionMenu:IsShown() and attributionMenu.owner == self then
+            HideAttributionMenu()
+        else
+            ShowMenu()
+        end
+    end)
+
+    layout.y = layout.y - 52
+    return button
 end
 
 local function CreateLocaleSelector(parent, layout)
@@ -954,6 +1199,7 @@ local function CreateLocaleSelector(parent, layout)
         menu:Hide()
         ApplyBackdrop(menu, 0.08, 0.08, 0.09, 0.98, 0.38, 0.38, 0.40, 0.95)
         localeMenu = menu
+        tinsert(UISpecialFrames, "PlateSCTLocaleMenu")
 
         menu:SetScript("OnHide", function(self)
             if self.owner and self.owner.SetOpenVisual then
@@ -976,6 +1222,7 @@ local function CreateLocaleSelector(parent, layout)
     end
 
     local function ShowMenu()
+        HideAttributionMenu()
         local menu = localeMenu
         menu.owner = button
         SetOpenVisual(true)
@@ -1081,16 +1328,14 @@ local function BuildPageGeneral(parent, rootPanel)
     layout:Gap(SECTION_GAP)
     parent.nameplateWarning = CreateNameplateWarningBox(parent, CONTENT_WIDTH)
     parent.nameplateWarning:SetPoint("TOPLEFT", parent, "TOPLEFT", layout.x, layout.y)
+    parent.nameplateWarning:Refresh()
+    local warningHeight = parent.nameplateWarning:IsShown() and (parent.nameplateWarning:GetHeight() or 0) or 0
+    layout.y = layout.y - math.max(warningHeight, 0) - 14
 
-    parent.whoSection = CreateFrame("Frame", nil, parent)
-    parent.whoSection:SetPoint("TOPLEFT", parent.nameplateWarning, "BOTTOMLEFT", 0, -14)
-    parent.whoSection:SetWidth(CONTENT_WIDTH)
-
-    local whoLayout = NewLayout(parent.whoSection, 0, -6, CONTENT_WIDTH)
-    whoLayout:Heading(L["Who to show"])
-    local onlyMine = whoLayout:Checkbox(
+    layout:Heading(L["Who to show"])
+    local onlyMine = layout:Checkbox(
         L["Only my damage"],
-        L["Show hits on your current target when you recently cast or auto-attacked. Midnight cannot prove who dealt the hit in a group."],
+        L["Show hits when a recent cast or auto-attack matches the nameplate. Midnight cannot prove who dealt the hit in a group."],
         "onlyMyDamage",
         function(checked)
             if checked then
@@ -1099,19 +1344,19 @@ local function BuildPageGeneral(parent, rootPanel)
             rootPanel:UpdateDependentStates()
         end
     )
-    parent.onlyMineTag = CreateTag(parent.whoSection, L["Experimental"], onlyMine.label)
-    parent.onlyMineBody = whoLayout:Note(
-        L["Best effort on your current target. Other players hitting the same mob can still show up. Off-target cleave and DoTs are not shown."]
+    parent.onlyMineTag = CreateTag(parent, L["Experimental"], onlyMine.label)
+    parent.onlyMineBody = layout:Note(
+        L["Best effort: matches your casts to nameplates by destination and timing. Dest-matched cleave can show. Other players on the same target can still appear. Mythic+ uses the Dungeon profile."]
     )
-    local allPlates = whoLayout:Checkbox(
+    local allPlates = layout:Checkbox(
         L["All engaged nameplates"],
         L["Show every hit on every visible hostile nameplate. This is the accurate Midnight mode; it includes damage from every source."],
         "allNameplates"
     )
-    parent.allPlatesBody = whoLayout:Note(
+    parent.allPlatesBody = layout:Note(
         L["Available when Only my damage is off. Use this to see numbers on every enemy plate."]
     )
-    local petDamage = whoLayout:Checkbox(
+    local petDamage = layout:Checkbox(
         L["Include pet damage"],
         L["In Only my damage mode, also treat a recent pet cast as your hit."],
         "includePetDamage"
@@ -1120,7 +1365,102 @@ local function BuildPageGeneral(parent, rootPanel)
     parent.allPlatesCheckbox = allPlates
     parent.onlyMineCheckbox = onlyMine
     parent.petDamageCheckbox = petDamage
-    parent.whoSection:SetHeight(math.max(-whoLayout.y + 12, 120))
+
+    layout:Gap(SECTION_GAP)
+    layout:Heading(L["Attribution profiles"])
+    layout:Body(L["How strict PlateSCT is when guessing which hits are yours. Auto-switch follows the instance type."])
+
+    parent.scenarioReadout = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    parent.scenarioReadout:SetPoint("TOPLEFT", layout.x, layout.y)
+    parent.scenarioReadout:SetWidth(CONTENT_WIDTH)
+    parent.scenarioReadout:SetJustifyH("LEFT")
+    parent.scenarioReadout:SetTextColor(1, 0.82, 0.45)
+    parent.scenarioReadout.Refresh = function(self)
+        if BD.RefreshScenario then
+            BD:RefreshScenario()
+        end
+        local scenario = BD.scenario or (BD.DetectScenario and BD:DetectScenario()) or "openWorld"
+        local strictId = BD.GetActiveStrictnessId and BD:GetActiveStrictnessId() or "balanced"
+        self:SetText(string.format(L["Active: %s (%s)"], ScenarioLabel(scenario), StrictnessLabel(strictId)))
+    end
+    AddControl(parent.scenarioReadout)
+    parent.scenarioReadout:Refresh()
+    layout.y = layout.y - 28
+
+    layout:Checkbox(
+        L["Auto-switch by instance"],
+        L["Pick Open world, Dungeon, Raid, Battleground, or Arena settings from the zone you are in."],
+        "attributionAuto",
+        function()
+            if BD.RefreshScenario then
+                BD:RefreshScenario()
+            end
+            rootPanel:UpdateDependentStates()
+        end
+    )
+
+    parent.manualStrictness = CreateStrictnessDropdown(
+        parent,
+        layout,
+        L["Manual strictness"],
+        "attributionManual",
+        L["Used when Auto-switch is off."],
+        function()
+            return not BD.db.attributionAuto
+        end
+    )
+
+    parent.profileDropdowns = {}
+    local profileSpecs = {
+        {
+            key = "attributionOpenWorld",
+            label = L["Open world"],
+            tip = L["Loose: longer windows, more numbers."],
+            recommended = "loose",
+        },
+        {
+            key = "attributionDungeon",
+            label = L["Dungeon"],
+            tip = L["Balanced: medium windows and cleave hits."],
+            recommended = "balanced",
+        },
+        {
+            key = "attributionRaid",
+            label = L["Raid"],
+            tip = L["Strict: short windows, fewer foreign hits."],
+            recommended = "strict",
+        },
+        {
+            key = "attributionBattleground",
+            label = L["Battleground"],
+            tip = L["Strict: short windows, fewer foreign hits."],
+            recommended = "strict",
+        },
+        {
+            key = "attributionArena",
+            label = L["Arena"],
+            tip = L["Balanced: medium windows and cleave hits."],
+            recommended = "balanced",
+        },
+    }
+    for _, spec in ipairs(profileSpecs) do
+        parent.profileDropdowns[#parent.profileDropdowns + 1] = CreateStrictnessDropdown(
+            parent,
+            layout,
+            spec.label,
+            spec.key,
+            spec.tip,
+            function()
+                return BD.db.attributionAuto and true or false
+            end,
+            spec.recommended
+        )
+    end
+
+    if parent.UpdateScrollBar then
+        parent:SetHeight(math.max(1, -layout.y + 40))
+        C_Timer.After(0, parent.UpdateScrollBar)
+    end
 end
 
 local function BuildPageDisplay(parent, rootPanel)
@@ -1229,6 +1569,15 @@ local function BuildConfigFrame()
         self:SetUserPlaced(false)
     end)
     tinsert(UISpecialFrames, "PlateSCTConfigFrame")
+    frame:EnableKeyboard(true)
+    frame:SetScript("OnKeyDown", function(self, key)
+        if key == "ESCAPE" then
+            CloseOptionsPanel()
+            self:SetPropagateKeyboardInput(false)
+        else
+            self:SetPropagateKeyboardInput(true)
+        end
+    end)
 
     ApplyBackdrop(frame, 0.07, 0.07, 0.08, 0.97, 0.38, 0.38, 0.40, 0.95)
 
@@ -1284,7 +1633,7 @@ local function BuildConfigFrame()
     local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", -6, -6)
     close:SetScript("OnClick", function()
-        frame:Hide()
+        CloseOptionsPanel()
     end)
 
     local titleRule = frame:CreateTexture(nil, "ARTWORK")
@@ -1390,7 +1739,7 @@ local function BuildConfigFrame()
         page.GetRootPanel = function()
             return frame
         end
-        if index == 2 then
+        if index == 1 or index == 2 then
             page.scrollFrame, page.scrollChild = CreateCustomScrollPage(page)
             page.scrollChild.GetRootPanel = page.GetRootPanel
         end
@@ -1404,19 +1753,32 @@ local function BuildConfigFrame()
         end)
     end
 
-    BuildPageGeneral(pages[1], frame)
+    BuildPageGeneral(pages[1].scrollChild or pages[1], frame)
     BuildPageDisplay(pages[2].scrollChild or pages[2], frame)
     BuildPageDamage(pages[3])
     BuildPageTools(pages[4])
 
     function frame:UpdateDependentStates()
-        local general = pages[1]
+        local general = pages[1].scrollChild or pages[1]
         local display = pages[2].scrollChild or pages[2]
         if not general then
             return
         end
         if general.nameplateWarning then
             general.nameplateWarning:Refresh()
+        end
+        if general.scenarioReadout and general.scenarioReadout.Refresh then
+            general.scenarioReadout:Refresh()
+        end
+        if general.manualStrictness and general.manualStrictness.Refresh then
+            general.manualStrictness:Refresh()
+        end
+        if general.profileDropdowns then
+            for _, dropdown in ipairs(general.profileDropdowns) do
+                if dropdown.Refresh then
+                    dropdown:Refresh()
+                end
+            end
         end
         if not general.allPlatesCheckbox then
             return
@@ -1482,7 +1844,7 @@ local function BuildConfigFrame()
     end
 
     local function HookNameplateWarningEvents()
-        local general = pages[1]
+        local general = pages[1].scrollChild or pages[1]
         if not general or not general.nameplateWarning then
             return
         end
@@ -1495,7 +1857,7 @@ local function BuildConfigFrame()
     end
 
     local function UnhookNameplateWarningEvents()
-        local general = pages[1]
+        local general = pages[1].scrollChild or pages[1]
         if not general or not general.nameplateWarning then
             return
         end
@@ -1504,6 +1866,7 @@ local function BuildConfigFrame()
     end
 
     frame:SetScript("OnShow", function(self)
+        self:EnableKeyboard(true)
         if SOUNDKIT and SOUNDKIT.IG_MAINMENU_OPTION then
             pcall(PlaySound, SOUNDKIT.IG_MAINMENU_OPTION)
         end
@@ -1608,7 +1971,7 @@ function BD:OpenOptions()
     end
 
     if self.configFrame:IsShown() then
-        self.configFrame:Hide()
+        CloseOptionsPanel()
         return
     end
 

@@ -26,6 +26,7 @@ Core/Animation.lua
 Core/Util.lua
 Core/Pool.lua
 Core/Display.lua
+Core/Attribution.lua
 Core/Combat.lua
 Core/Probe.lua
 Core/Events.lua
