@@ -14,6 +14,9 @@ local CONTENT_PAD = 26
 local CONTENT_WIDTH = 510
 local SECTION_GAP = 26
 local ROW_GAP = 42
+local CHECKBOX_HEIGHT = 26
+local NOTE_TOP_GAP = 8
+local NOTE_BOTTOM_GAP = 16
 local CHECKBOX_LABEL_GAP = 6
 local CHECKBOX_LABEL_NUDGE_Y = 2
 local AFTER_HEADING = 16
@@ -759,19 +762,24 @@ local function NewLayout(parent, x, y, width)
             if not height or height < 14 then
                 height = 16
             end
-            self.y = self.y - (height + 14)
+            self.y = self.y - (height + NOTE_BOTTOM_GAP)
             return desc
         end,
 
         -- Body text indented to match checkbox title (not the check icon).
         Note = function(self, text)
+            local checkboxAdvance = ROW_GAP
+            local desiredTop = CHECKBOX_HEIGHT + NOTE_TOP_GAP
+            if checkboxAdvance > desiredTop then
+                self.y = self.y + (checkboxAdvance - desiredTop)
+            end
             local inset = self._checkboxTextInset or (26 + CHECKBOX_LABEL_GAP)
             local desc = CreateBody(self.parent, text, self.x + inset, self.y, math.max(40, self.width - inset))
             local height = desc:GetStringHeight()
             if not height or height < 14 then
                 height = 16
             end
-            self.y = self.y - (height + 14)
+            self.y = self.y - (height + NOTE_BOTTOM_GAP)
             return desc
         end,
 
