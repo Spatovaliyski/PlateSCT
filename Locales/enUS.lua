@@ -54,6 +54,12 @@ L["Available when Only my damage is off. Use this to see numbers on every enemy 
 L["Include pet damage"] = "Include pet damage"
 L["In Only my damage mode, also treat a recent pet cast as your hit."] =
     "In Only my damage mode, also treat a recent pet cast as your hit."
+L["Also show damage from your pet and guardians on nameplates."] =
+    "Also show damage from your pet and guardians on nameplates."
+L["Shows your damage on hostile nameplates. Source is read from the combat log."] =
+    "Shows your damage on hostile nameplates. Source is read from the combat log."
+L["Display the spell's icon next to the damage number. Uses the spell from the combat log."] =
+    "Display the spell's icon next to the damage number. Uses the spell from the combat log."
 L["Attribution profiles"] = "Attribution profiles"
 L["How strict PlateSCT is when guessing which hits are yours. Auto-switch follows the instance type."] =
     "How strict PlateSCT is when guessing which hits are yours. Auto-switch follows the instance type."
@@ -79,8 +85,8 @@ L["Recommended"] = "Recommended"
 
 -- Display
 L["Number style"] = "Number style"
-L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the grow-and-settle pow, packed close to the plate."] =
-    "Modern scrolls up from the nameplate with a small crit pop. Classic keeps the grow-and-settle pow, packed close to the plate."
+L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the grow-and-settle pow, newest hit takes center, and older numbers snap aside."] =
+    "Modern scrolls up from the nameplate with a small crit pop. Classic keeps the grow-and-settle pow, newest hit takes center, and older numbers snap aside."
 L["Modern"] = "Modern"
 L["Classic"] = "Classic"
 L["Color by damage school"] = "Color by damage school"

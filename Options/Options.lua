@@ -1,10 +1,6 @@
 local ADDON_NAME, BD = ...
 local L = BD.L
 
-local IS_BETA = true
-local ADDON_PAGE_URL = "https://www.curseforge.com/wow/addons/platesct/"
-local ADDON_PAGE_LABEL = "PlateSCT CurseForge"
-
 local PANEL_WIDTH = 780
 local PANEL_HEIGHT = 650
 local TITLE_HEIGHT = 44
@@ -25,6 +21,10 @@ local SLIDER_GAP = 28
 local SLIDER_BLOCK = 68
 local NAV_HEIGHT = 36
 local NAV_GAP = 8
+
+local function IsModernUI()
+    return BD.API and BD.API.IsModern()
+end
 
 StaticPopupDialogs["PLATESCT_RESET_CONFIRM"] = {
     text = L["Reset PlateSCT settings to defaults?"],
@@ -111,39 +111,6 @@ local function GetAddonVersion()
     return version
 end
 
-local function GetAddonPageUrl()
-    if type(ADDON_PAGE_URL) == "string" then
-        local url = ADDON_PAGE_URL:match("^%s*(.-)%s*$") or ""
-        if url ~= "" then
-            return url
-        end
-    end
-    return nil
-end
-
-local function GetAddonPageLabel()
-    if GetAddonPageUrl() then
-        return ADDON_PAGE_LABEL
-    end
-    return nil
-end
-
-local function GetBetaWarningBody()
-    return L["This addon is in Beta mode. Inaccuracies and errors may show up. Please report such issues on the addon's page."]
-end
-
-local function GetBetaWarningTooltip()
-    local url = GetAddonPageUrl()
-    if url then
-        return GetBetaWarningBody() .. "\n\n" .. url
-    end
-    return GetBetaWarningBody()
-end
-
-local function GetBetaNoticeText()
-    return GetBetaWarningBody()
-end
-
 local function AttachTooltip(widget, text)
     if not text or text == "" then
         return
@@ -170,108 +137,6 @@ local function ApplyBackdrop(frame, r, g, b, a, br, bg, bb, ba)
     })
     frame:SetBackdropColor(r, g, b, a)
     frame:SetBackdropBorderColor(br, bg, bb, ba)
-end
-
-local urlDialog
-
-local function ShowAddonPageUrlDialog()
-    local url = GetAddonPageUrl()
-    if not url then
-        return
-    end
-
-    if not urlDialog then
-        local frame = CreateFrame("Frame", "PlateSCTUrlDialog", UIParent, "BackdropTemplate")
-        frame:SetSize(440, 156)
-        frame:SetPoint("CENTER")
-        frame:SetFrameStrata("FULLSCREEN_DIALOG")
-        frame:SetToplevel(true)
-        frame:EnableMouse(true)
-        frame:SetMovable(true)
-        frame:RegisterForDrag("LeftButton")
-        frame:SetScript("OnDragStart", frame.StartMoving)
-        frame:SetScript("OnDragStop", function(self)
-            self:StopMovingOrSizing()
-            self:SetUserPlaced(false)
-        end)
-        tinsert(UISpecialFrames, "PlateSCTUrlDialog")
-        ApplyBackdrop(frame, 0.07, 0.07, 0.08, 0.97, 0.38, 0.38, 0.40, 0.95)
-
-        local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-        title:SetPoint("TOP", 0, -16)
-        title:SetText(L["Addon page"])
-
-        local help = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        help:SetPoint("TOP", title, "BOTTOM", 0, -10)
-        help:SetWidth(392)
-        help:SetJustifyH("CENTER")
-        help:SetTextColor(0.75, 0.75, 0.76)
-        help:SetText(L["Select the URL below, copy it, then paste it in your browser."])
-
-        local edit = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
-        edit:SetSize(372, 24)
-        edit:SetPoint("TOP", help, "BOTTOM", 2, -16)
-        edit:SetAutoFocus(true)
-        edit:SetMaxLetters(512)
-        edit:SetScript("OnEscapePressed", function()
-            frame:Hide()
-        end)
-        edit:SetScript("OnEnterPressed", function()
-            frame:Hide()
-        end)
-        edit:SetScript("OnEditFocusGained", function(self)
-            self:HighlightText()
-        end)
-        edit:SetScript("OnMouseUp", function(self)
-            self:HighlightText()
-        end)
-        edit:SetScript("OnTextChanged", function(self, userInput)
-            if userInput and self.lockedText and self:GetText() ~= self.lockedText then
-                self:SetText(self.lockedText)
-                self:HighlightText()
-            end
-        end)
-        frame.edit = edit
-
-        local close = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-        close:SetSize(96, 24)
-        close:SetPoint("BOTTOM", 0, 16)
-        close:SetText(CLOSE)
-        close:SetScript("OnClick", function()
-            frame:Hide()
-        end)
-
-        urlDialog = frame
-    end
-
-    urlDialog.edit.lockedText = url
-    urlDialog.edit:SetText(url)
-    urlDialog:Show()
-    urlDialog:Raise()
-    urlDialog.edit:SetFocus()
-    urlDialog.edit:HighlightText()
-end
-
-local function AttachBetaNoticeTooltip(widget)
-    widget:EnableMouse(true)
-    widget:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:SetText(L["PlateSCT is in Beta"], 1, 0.82, 0)
-        GameTooltip:AddLine(GetBetaWarningTooltip(), 1, 1, 1, true)
-        if GetAddonPageUrl() then
-            GameTooltip:AddLine(L["Click to open the addon page URL."], 0.55, 0.78, 1, true)
-        end
-        GameTooltip:Show()
-    end)
-    widget:SetScript("OnLeave", function()
-        GameTooltip:Hide()
-    end)
-    widget:SetScript("OnMouseUp", function(_, button)
-        if button == "LeftButton" then
-            GameTooltip:Hide()
-            ShowAddonPageUrlDialog()
-        end
-    end)
 end
 
 local function CreateHeading(parent, text, x, y, width)
@@ -841,7 +706,9 @@ local function CreateThresholdInput(parent, layout)
 
     AddControl(box)
     layout.y = layout.y - 40
-    layout:Body(L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."])
+    if IsModernUI() then
+        layout:Body(L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."])
+    end
     return box
 end
 
@@ -1634,34 +1501,45 @@ local function BuildPageGeneral(parent, rootPanel)
     layout.y = layout.y - math.max(warningHeight, 0) - 14
 
     layout:Heading(L["Who to show"])
-    local onlyMine = layout:Checkbox(
-        L["Only my damage"],
-        L["Show hits when a recent cast or auto-attack matches the nameplate. Midnight cannot prove who dealt the hit in a group."],
-        "onlyMyDamage",
-        function(checked)
-            if checked then
-                BD.db.allNameplates = false
+    local onlyMine, allPlates, petDamage
+
+    if IsModernUI() then
+        onlyMine = layout:Checkbox(
+            L["Only my damage"],
+            L["Show hits when a recent cast or auto-attack matches the nameplate. Midnight cannot prove who dealt the hit in a group."],
+            "onlyMyDamage",
+            function(checked)
+                if checked then
+                    BD.db.allNameplates = false
+                end
+                rootPanel:UpdateDependentStates()
             end
-            rootPanel:UpdateDependentStates()
-        end
-    )
-    parent.onlyMineTag = CreateTag(parent, L["Experimental"], onlyMine.label)
-    parent.onlyMineBody = layout:Note(
-        L["Best effort: matches your casts to nameplates by destination and timing. Dest-matched cleave can show. Other players on the same target can still appear. Mythic+ uses the Dungeon profile."]
-    )
-    local allPlates = layout:Checkbox(
-        L["All engaged nameplates"],
-        L["Show every hit on every visible hostile nameplate. This is the accurate Midnight mode; it includes damage from every source."],
-        "allNameplates"
-    )
-    parent.allPlatesBody = layout:Note(
-        L["Available when Only my damage is off. Use this to see numbers on every enemy plate."]
-    )
-    local petDamage = layout:Checkbox(
-        L["Include pet damage"],
-        L["In Only my damage mode, also treat a recent pet cast as your hit."],
-        "includePetDamage"
-    )
+        )
+        parent.onlyMineTag = CreateTag(parent, L["Experimental"], onlyMine.label)
+        parent.onlyMineBody = layout:Note(
+            L["Best effort: matches your casts to nameplates by destination and timing. Dest-matched cleave can show. Other players on the same target can still appear. Mythic+ uses the Dungeon profile."]
+        )
+        allPlates = layout:Checkbox(
+            L["All engaged nameplates"],
+            L["Show every hit on every visible hostile nameplate. This is the accurate Midnight mode; it includes damage from every source."],
+            "allNameplates"
+        )
+        parent.allPlatesBody = layout:Note(
+            L["Available when Only my damage is off. Use this to see numbers on every enemy plate."]
+        )
+        petDamage = layout:Checkbox(
+            L["Include pet damage"],
+            L["In Only my damage mode, also treat a recent pet cast as your hit."],
+            "includePetDamage"
+        )
+    else
+        layout:Body(L["Shows your damage on hostile nameplates. Source is read from the combat log."])
+        petDamage = layout:Checkbox(
+            L["Include pet damage"],
+            L["Also show damage from your pet and guardians on nameplates."],
+            "includePetDamage"
+        )
+    end
 
     parent.allPlatesCheckbox = allPlates
     parent.onlyMineCheckbox = onlyMine
@@ -1713,95 +1591,97 @@ local function BuildPageGeneral(parent, rootPanel)
     )
     layout.y = incomingSliderY - SLIDER_BLOCK
 
-    layout:Gap(SECTION_GAP)
-    layout:Heading(L["Attribution profiles"])
-    layout:Body(L["How strict PlateSCT is when guessing which hits are yours. Auto-switch follows the instance type."])
+    if IsModernUI() then
+        layout:Gap(SECTION_GAP)
+        layout:Heading(L["Attribution profiles"])
+        layout:Body(L["How strict PlateSCT is when guessing which hits are yours. Auto-switch follows the instance type."])
 
-    parent.scenarioReadout = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    parent.scenarioReadout:SetPoint("TOPLEFT", layout.x, layout.y)
-    parent.scenarioReadout:SetWidth(CONTENT_WIDTH)
-    parent.scenarioReadout:SetJustifyH("LEFT")
-    parent.scenarioReadout:SetTextColor(1, 0.82, 0.45)
-    parent.scenarioReadout.Refresh = function(self)
-        if BD.RefreshScenario then
-            BD:RefreshScenario()
-        end
-        local scenario = BD.scenario or (BD.DetectScenario and BD:DetectScenario()) or "openWorld"
-        local strictId = BD.GetActiveStrictnessId and BD:GetActiveStrictnessId() or "balanced"
-        self:SetText(string.format(L["Active: %s (%s)"], ScenarioLabel(scenario), StrictnessLabel(strictId)))
-    end
-    AddControl(parent.scenarioReadout)
-    parent.scenarioReadout:Refresh()
-    layout.y = layout.y - 28
-
-    layout:Checkbox(
-        L["Auto-switch by instance"],
-        L["Pick Open world, Dungeon, Raid, Battleground, or Arena settings from the zone you are in."],
-        "attributionAuto",
-        function()
+        parent.scenarioReadout = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        parent.scenarioReadout:SetPoint("TOPLEFT", layout.x, layout.y)
+        parent.scenarioReadout:SetWidth(CONTENT_WIDTH)
+        parent.scenarioReadout:SetJustifyH("LEFT")
+        parent.scenarioReadout:SetTextColor(1, 0.82, 0.45)
+        parent.scenarioReadout.Refresh = function(self)
             if BD.RefreshScenario then
                 BD:RefreshScenario()
             end
-            rootPanel:UpdateDependentStates()
+            local scenario = BD.scenario or (BD.DetectScenario and BD:DetectScenario()) or "openWorld"
+            local strictId = BD.GetActiveStrictnessId and BD:GetActiveStrictnessId() or "balanced"
+            self:SetText(string.format(L["Active: %s (%s)"], ScenarioLabel(scenario), StrictnessLabel(strictId)))
         end
-    )
+        AddControl(parent.scenarioReadout)
+        parent.scenarioReadout:Refresh()
+        layout.y = layout.y - 28
 
-    parent.manualStrictness = CreateStrictnessDropdown(
-        parent,
-        layout,
-        L["Manual strictness"],
-        "attributionManual",
-        L["Used when Auto-switch is off."],
-        function()
-            return not BD.db.attributionAuto
-        end
-    )
+        layout:Checkbox(
+            L["Auto-switch by instance"],
+            L["Pick Open world, Dungeon, Raid, Battleground, or Arena settings from the zone you are in."],
+            "attributionAuto",
+            function()
+                if BD.RefreshScenario then
+                    BD:RefreshScenario()
+                end
+                rootPanel:UpdateDependentStates()
+            end
+        )
 
-    parent.profileDropdowns = {}
-    local profileSpecs = {
-        {
-            key = "attributionOpenWorld",
-            label = L["Open world"],
-            tip = L["Loose: longer windows, more numbers."],
-            recommended = "loose",
-        },
-        {
-            key = "attributionDungeon",
-            label = L["Dungeon"],
-            tip = L["Balanced: medium windows and cleave hits."],
-            recommended = "balanced",
-        },
-        {
-            key = "attributionRaid",
-            label = L["Raid"],
-            tip = L["Strict: short windows, fewer foreign hits."],
-            recommended = "strict",
-        },
-        {
-            key = "attributionBattleground",
-            label = L["Battleground"],
-            tip = L["Strict: short windows, fewer foreign hits."],
-            recommended = "strict",
-        },
-        {
-            key = "attributionArena",
-            label = L["Arena"],
-            tip = L["Balanced: medium windows and cleave hits."],
-            recommended = "balanced",
-        },
-    }
-    for _, spec in ipairs(profileSpecs) do
-        parent.profileDropdowns[#parent.profileDropdowns + 1] = CreateStrictnessDropdown(
+        parent.manualStrictness = CreateStrictnessDropdown(
             parent,
             layout,
-            spec.label,
-            spec.key,
-            spec.tip,
+            L["Manual strictness"],
+            "attributionManual",
+            L["Used when Auto-switch is off."],
             function()
-                return BD.db.attributionAuto and true or false
-            end,
-            spec.recommended
+                return not BD.db.attributionAuto
+            end
         )
+
+        parent.profileDropdowns = {}
+        local profileSpecs = {
+            {
+                key = "attributionOpenWorld",
+                label = L["Open world"],
+                tip = L["Loose: longer windows, more numbers."],
+                recommended = "loose",
+            },
+            {
+                key = "attributionDungeon",
+                label = L["Dungeon"],
+                tip = L["Balanced: medium windows and cleave hits."],
+                recommended = "balanced",
+            },
+            {
+                key = "attributionRaid",
+                label = L["Raid"],
+                tip = L["Strict: short windows, fewer foreign hits."],
+                recommended = "strict",
+            },
+            {
+                key = "attributionBattleground",
+                label = L["Battleground"],
+                tip = L["Strict: short windows, fewer foreign hits."],
+                recommended = "strict",
+            },
+            {
+                key = "attributionArena",
+                label = L["Arena"],
+                tip = L["Balanced: medium windows and cleave hits."],
+                recommended = "balanced",
+            },
+        }
+        for _, spec in ipairs(profileSpecs) do
+            parent.profileDropdowns[#parent.profileDropdowns + 1] = CreateStrictnessDropdown(
+                parent,
+                layout,
+                spec.label,
+                spec.key,
+                spec.tip,
+                function()
+                    return BD.db.attributionAuto and true or false
+                end,
+                spec.recommended
+            )
+        end
     end
 
     if parent.UpdateScrollBar then
@@ -1821,7 +1701,9 @@ local function BuildPageDisplay(parent, rootPanel)
     )
     local spellIcon = layout:Checkbox(
         L["Show spell icon"],
-        L["Display the spell's icon next to the damage number. Uses the matched cast or auto-attack."],
+        IsModernUI()
+            and L["Display the spell's icon next to the damage number. Uses the matched cast or auto-attack."]
+            or L["Display the spell's icon next to the damage number. Uses the spell from the combat log."],
         "showSpellIcon",
         function()
             rootPanel:UpdateDependentStates()
@@ -1829,7 +1711,9 @@ local function BuildPageDisplay(parent, rootPanel)
     )
     parent.spellIconCheckbox = spellIcon
     parent.spellIconBody = layout:Note(
-        L["Uses your matched spell in Only my damage mode. Position is set below."]
+        IsModernUI()
+            and L["Uses your matched spell in Only my damage mode. Position is set below."]
+            or L["Uses the spell from the combat log. Position is set below."]
     )
     parent.iconPositionSelector = CreateIconPositionSelector(parent, layout)
 
@@ -1842,14 +1726,14 @@ local function BuildPageDisplay(parent, rootPanel)
     local sliderY = layout.y
     CreateSlider(parent, L["Font size"], layout.x, sliderY, "fontSize", 10, 24, 1, function(value)
         return tostring(value)
-    end, SLIDER_WIDTH, 12)
+    end, SLIDER_WIDTH, BD.DEFAULTS.fontSize)
     CreateSlider(parent, L["Scroll offset"], layout.x + SLIDER_WIDTH + SLIDER_GAP, sliderY, "floatDistance", 10, 40, 5, function(value)
         return string.format(L["%d px"], value)
-    end, SLIDER_WIDTH, 20)
+    end, SLIDER_WIDTH, BD.DEFAULTS.floatDistance)
     layout.y = sliderY - SLIDER_BLOCK
     CreateSlider(parent, L["Display duration"], layout.x, layout.y, "duration", 0.5, 2.0, 0.1, function(value)
         return string.format(L["%.1fs"], value)
-    end, SLIDER_WIDTH, 0.8)
+    end, SLIDER_WIDTH, BD.DEFAULTS.duration)
     layout.y = layout.y - SLIDER_BLOCK
 
     layout:Gap(SECTION_GAP)
@@ -1923,10 +1807,12 @@ local function BuildPageTools(parent)
     layout:Gap(SECTION_GAP)
     layout:Heading(L["Maintenance"])
     layout:Checkbox(L["Debug mode"], L["Print combat events to chat for troubleshooting."], "debug")
-    layout:Gap(8)
-    layout:Button(L["Dump meter now"], 160, L["Open a copyable snapshot of C_DamageMeter fields. Use this in combat while hitting a target."], function()
-        BD:DumpDamageMeterProbe()
-    end)
+    if IsModernUI() then
+        layout:Gap(8)
+        layout:Button(L["Dump meter now"], 160, L["Open a copyable snapshot of C_DamageMeter fields. Use this in combat while hitting a target."], function()
+            BD:DumpDamageMeterProbe()
+        end)
+    end
     layout:Gap(8)
     layout:Button(L["Reset Defaults"], 160, L["Restore every PlateSCT setting to its default."], function()
         StaticPopup_Show("PLATESCT_RESET_CONFIRM")
@@ -1942,6 +1828,36 @@ local function RefreshControls(panel)
     if panel.UpdateDependentStates then
         panel:UpdateDependentStates()
     end
+end
+
+local function CreatePanelCloseButton(parent, onClick)
+    local close
+    if IsModernUI() then
+        close = CreateFrame("Button", nil, parent, "UIPanelCloseButton")
+        close:SetPoint("TOPRIGHT", -6, -6)
+    else
+        close = CreateFrame("Button", nil, parent)
+        close:SetSize(28, 28)
+        close:SetPoint("TOPRIGHT", -4, -4)
+        local label = close:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        label:SetPoint("CENTER", 1, 0)
+        label:SetText("×")
+        label:SetTextColor(0.9, 0.9, 0.9)
+        local highlight = close:CreateTexture(nil, "HIGHLIGHT")
+        highlight:SetAllPoints()
+        highlight:SetColorTexture(1, 1, 1, 0.12)
+    end
+    close:SetFrameLevel(parent:GetFrameLevel() + 20)
+    if IsModernUI() then
+        close:SetScript("OnClick", onClick)
+    else
+        close:SetScript("OnMouseUp", function(_, button)
+            if button == "LeftButton" then
+                onClick()
+            end
+        end)
+    end
+    return close
 end
 
 local function BuildConfigFrame()
@@ -2004,29 +1920,7 @@ local function BuildConfigFrame()
     version:SetPoint("LEFT", title, "RIGHT", 10, 0)
     version:SetText(GetAddonVersion())
 
-    if IS_BETA then
-        local betaTag = CreateFrame("Frame", nil, titleBar)
-        betaTag:SetPoint("LEFT", version, "RIGHT", 10, 1)
-        betaTag:SetSize(42, 16)
-        betaTag:EnableMouse(true)
-
-        local betaBg = betaTag:CreateTexture(nil, "BACKGROUND")
-        betaBg:SetAllPoints()
-        betaBg:SetColorTexture(0.82, 0.42, 0.08, 0.95)
-
-        local betaLabel = betaTag:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        betaLabel:SetPoint("CENTER", 0, 0)
-        betaLabel:SetText("BETA")
-        betaLabel:SetTextColor(1, 0.96, 0.82)
-
-        AttachBetaNoticeTooltip(betaTag)
-    end
-
-    local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", -6, -6)
-    close:SetScript("OnClick", function()
-        CloseOptionsPanel()
-    end)
+    local close = CreatePanelCloseButton(frame, CloseOptionsPanel)
 
     local titleRule = frame:CreateTexture(nil, "ARTWORK")
     titleRule:SetColorTexture(1, 1, 1, 0.08)
@@ -2052,59 +1946,8 @@ local function BuildConfigFrame()
     local versionFooter = sidebar:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
     versionFooter:SetJustifyH("LEFT")
     versionFooter:SetText(L["/platesct  ·  ESC to close"])
-
-    if IS_BETA then
-        local linkLabel = GetAddonPageLabel()
-        local betaLink
-        local betaLinkUnderline
-
-        if linkLabel then
-            betaLink = sidebar:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-            betaLink:SetJustifyH("LEFT")
-            betaLink:SetTextColor(0.95, 0.72, 0.28)
-            betaLink:SetText(linkLabel)
-
-            betaLinkUnderline = sidebar:CreateTexture(nil, "ARTWORK")
-            betaLinkUnderline:SetColorTexture(0.95, 0.72, 0.28, 0.95)
-            betaLinkUnderline:SetHeight(1)
-            betaLinkUnderline:SetPoint("TOPLEFT", betaLink, "BOTTOMLEFT", 0, 0)
-            betaLinkUnderline:SetPoint("TOPRIGHT", betaLink, "BOTTOMRIGHT", 0, 0)
-
-            betaLink:SetPoint("BOTTOMLEFT", 16, 14)
-        end
-
-        local betaNotice = sidebar:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-        betaNotice:SetWidth(SIDEBAR_WIDTH - 32)
-        betaNotice:SetJustifyH("LEFT")
-        betaNotice:SetJustifyV("BOTTOM")
-        betaNotice:SetSpacing(2)
-        betaNotice:SetWordWrap(true)
-        betaNotice:SetTextColor(0.95, 0.72, 0.28)
-        betaNotice:SetText(GetBetaNoticeText())
-        local noticeHeight = betaNotice:GetStringHeight()
-        if not noticeHeight or noticeHeight < 48 then
-            noticeHeight = 62
-        end
-        betaNotice:SetHeight(noticeHeight)
-
-        if betaLink then
-            betaNotice:SetPoint("BOTTOMLEFT", betaLink, "TOPLEFT", 0, 6)
-        else
-            betaNotice:SetPoint("BOTTOMLEFT", 16, 14)
-        end
-
-        versionFooter:SetPoint("BOTTOMLEFT", betaNotice, "TOPLEFT", 0, 8)
-        versionFooter:SetPoint("BOTTOMRIGHT", betaNotice, "TOPRIGHT", 0, 8)
-
-        local noticeHit = CreateFrame("Frame", nil, sidebar)
-        noticeHit:SetPoint("BOTTOMLEFT", betaLink or betaNotice, "BOTTOMLEFT", -4, -4)
-        noticeHit:SetPoint("TOPRIGHT", versionFooter, "TOPRIGHT", 4, 4)
-        noticeHit:SetFrameLevel(sidebar:GetFrameLevel() + 3)
-        AttachBetaNoticeTooltip(noticeHit)
-    else
-        versionFooter:SetPoint("BOTTOMLEFT", 16, 14)
-        versionFooter:SetPoint("BOTTOMRIGHT", -16, 14)
-    end
+    versionFooter:SetPoint("BOTTOMLEFT", 16, 14)
+    versionFooter:SetPoint("BOTTOMRIGHT", -16, 14)
 
     local pages = {}
     local navButtons = {}
@@ -2173,9 +2016,30 @@ local function BuildConfigFrame()
             end
         end
         if not general.allPlatesCheckbox then
+            if general.petDamageCheckbox and not IsModernUI() then
+                general.petDamageCheckbox:SetEnabled(true)
+                general.petDamageCheckbox:SetAlpha(1)
+                general.petDamageCheckbox.label:SetTextColor(
+                    HIGHLIGHT_FONT_COLOR.r,
+                    HIGHLIGHT_FONT_COLOR.g,
+                    HIGHLIGHT_FONT_COLOR.b
+                )
+            end
+            if display and display.spellIconCheckbox and not IsModernUI() then
+                display.spellIconCheckbox:SetEnabled(true)
+                display.spellIconCheckbox:SetAlpha(1)
+                display.spellIconCheckbox.label:SetTextColor(
+                    HIGHLIGHT_FONT_COLOR.r,
+                    HIGHLIGHT_FONT_COLOR.g,
+                    HIGHLIGHT_FONT_COLOR.b
+                )
+                if display.iconPositionSelector then
+                    display.iconPositionSelector:SetEnabled(BD.db.showSpellIcon and true or false)
+                end
+            end
             return
         end
-        local onlyMineOn = BD.db.onlyMyDamage and true or false
+        local onlyMineOn = IsModernUI() and BD.db.onlyMyDamage and true or false
         if onlyMineOn then
             BD.db.allNameplates = false
         end
@@ -2427,7 +2291,11 @@ SLASH_PLATESCT2 = "/psct"
 SlashCmdList["PLATESCT"] = function(msg)
     msg = string.lower(strtrim(msg or ""))
     if msg == "probe" or msg == "meter" then
-        BD:DumpDamageMeterProbe()
+        if IsModernUI() then
+            BD:DumpDamageMeterProbe()
+        else
+            print("|cffff6600PlateSCT:|r Meter probe is only available on Midnight.")
+        end
         return
     end
     if not BD.configFrame then

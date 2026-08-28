@@ -297,6 +297,7 @@ local function ProbeSession(label, sessionType, sourceGUID)
 end
 
 function BD:DumpDamageMeterProbe()
+    BD.API.AssertModern("Probe.DumpDamageMeterProbe")
     wipe(probeBuffer)
     local stamp = tostring(time and time() or GetTime())
     if date then

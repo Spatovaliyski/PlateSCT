@@ -15,7 +15,6 @@ local function ShowPersonalDamage(unit, amount, isCrit, schoolMask)
         return false
     end
 
-    local spellIcon = BD.db.showSpellIcon and BD.GetSpellIconTexture(spellID) or nil
     local preset = BD:GetStylePreset()
     local display = BD.FormatAmount(amount, BD.db.abbreviate)
     local r, g, b = BD.GetSchoolColor(schoolMask)
@@ -24,7 +23,8 @@ local function ShowPersonalDamage(unit, amount, isCrit, schoolMask)
     end
     local hitKind = isCrit and "crit" or "hit"
     BD:DebugPrint("personal", token, display, hitKind, usedAuto and "auto" or spellID)
-    BD:ShowOnNameplate(token, display, r, g, b, amount, isCrit, false, spellIcon, hitKind)
+    -- Modern-only: spellId comes from attribution, not UNIT_COMBAT.
+    BD:ShowOnNameplate(token, display, r, g, b, amount, isCrit, false, nil, hitKind, spellID)
     return true
 end
 
@@ -52,6 +52,7 @@ local function HandleIncoming(self, action, flagText, amount)
 end
 
 function BD:HandleUnitCombat(unit, action, flagText, amount, schoolMask)
+    BD.API.AssertModern("Combat.HandleUnitCombat")
     if not self.db.enabled then
         return
     end

@@ -7,6 +7,10 @@ function BD:GetStylePreset()
     return self.STYLE_PRESETS[style] or self.STYLE_PRESETS.retail
 end
 
+function BD:IsClassicNumberStyle()
+    return (self.db.numberStyle or "retail") == "classic"
+end
+
 function BD:DebugPrint(...)
     if self.db.debug then
         print("|cff66ccffPlateSCT:|r", ...)
@@ -28,6 +32,7 @@ function BD.CopyDefaults(source, defaults)
 end
 
 function BD.IsSecret(value)
+    -- Classic clients have no combat restrictions; this stays false there.
     if issecretvalue then
         local ok, result = pcall(issecretvalue, value)
         return ok and result
@@ -189,6 +194,53 @@ function BD.GetSpellIconTexture(spellID)
     return nil
 end
 
+BD.petIconByGUID = BD.petIconByGUID or {}
+
+function BD.CacheLivePetIcon()
+    if not UnitExists("pet") then
+        return nil
+    end
+    local guid = UnitGUID("pet")
+    if not guid then
+        return nil
+    end
+    if type(GetPetIcon) == "function" then
+        local ok, icon = pcall(GetPetIcon)
+        if ok and type(icon) == "string" and icon ~= "" then
+            BD.petIconByGUID[guid] = icon
+            return icon
+        end
+    end
+    return BD.petIconByGUID[guid]
+end
+
+function BD.GetPetIconTexture(sourceGUID)
+    if sourceGUID and BD.petIconByGUID[sourceGUID] then
+        return BD.petIconByGUID[sourceGUID]
+    end
+    local live = BD.CacheLivePetIcon()
+    if live and (not sourceGUID or sourceGUID == UnitGUID("pet")) then
+        return live
+    end
+    if sourceGUID and BD.petIconByGUID[sourceGUID] then
+        return BD.petIconByGUID[sourceGUID]
+    end
+    return BD.GENERIC_PET_ICON
+end
+
+function BD:ResolveOutgoingSpellIcon(spellIcon, spellId)
+    if not self.db.showSpellIcon then
+        return nil
+    end
+    if spellIcon and BD.ValuePresent(spellIcon) then
+        return spellIcon
+    end
+    if spellId and BD.ValuePresent(spellId) then
+        return BD.GetSpellIconTexture(spellId)
+    end
+    return nil
+end
+
 function BD.GetSchoolColor(schoolMask)
     if not schoolMask then
         return 1.0, 0.93, 0.0
@@ -309,6 +361,9 @@ function BD.UnitLooksHostile(unit)
 end
 
 function BD:IsNameplateInConfiguredScope(unit)
+    if BD.API.IsClassic() then
+        return true
+    end
     if not self.db.allNameplates then
         if BD.UnitsMatch(unit, "target") then
             return true

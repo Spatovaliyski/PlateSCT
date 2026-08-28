@@ -3,7 +3,7 @@ local _, BD = ...
 BD.DEFAULTS = {
     enabled = true,
     minDamage = 0,
-    abbreviate = true,
+    abbreviate = false,
     showSpellIcon = false,
     iconPosition = "left",
     fontSize = 14,
@@ -17,13 +17,13 @@ BD.DEFAULTS = {
     incomingOffsetX = 0,
     incomingOffsetY = -100,
     debug = false,
-    numberStyle = "retail",
+    numberStyle = "retail", -- "retail" = Modern style; "classic" = Classic style (not Classic version)
     useSchoolColors = false,
     animHit = "platesct",
     animCrit = "platesct",
     animMiss = "platesct",
     locale = "auto",
-    layoutRevision = 7,
+    layoutRevision = 9,
     attributionAuto = true,
     attributionManual = "balanced",
     attributionOpenWorld = "loose",
@@ -82,7 +82,7 @@ BD.STYLE_PRESETS = {
         animMode = "retailPop",
         critsHold = false,
         floatEase = "outCubic",
-        spawnBaseY = -26,
+        spawnBaseY = -10,
         spawnLanes = {
             { 0, 0 },
             { 0, 14 },
@@ -110,16 +110,16 @@ BD.STYLE_PRESETS = {
         critColor = { 1.0, 0.93, 0.0 },
         animMode = "classicPow",
         critsHold = true,
-        critRestScale = 2.0,
+        critRestScale = 1.4,
         critPowStartScale = 1.0,
-        critPowPeakScale = 4.0,
+        critPowPeakScale = 2.0,
         critPowDuration = 0.2,
         durationMult = 1.0,
         floatMult = 1.0,
         critDurationMult = 1.6,
         floatEase = "outQuad",
-        spawnBaseY = 20,
-        spawnCritY = -8,
+        spawnBaseY = 36,
+        spawnCritY = 8,
         spawnLanes = {
             { 0, 0 },
             { 18, 0 },
@@ -194,6 +194,7 @@ BD.DAMAGE_SCHOOL_COLORS = {
 }
 
 BD.AUTO_ATTACK_SPELL_ID = 6603
+BD.GENERIC_PET_ICON = "Interface\\Icons\\Ability_Hunter_BeastTaming"
 BD.POOL_SIZE = 24
 BD.METER_PROBE_MAX_SPELLS = 6
 BD.PENDING_CAP = 8
@@ -252,3 +253,7 @@ BD.STRICTNESS_ORDER = {
     "balanced",
     "strict",
 }
+
+if BD.API and BD.API.ApplyFlavorDefaults then
+    BD.API.ApplyFlavorDefaults(BD.DEFAULTS)
+end

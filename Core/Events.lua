@@ -14,8 +14,10 @@ function BD:ResetToDefaults()
     self:ApplyLocale()
     self:RebuildThresholdCurve()
     self:ApplyBlizzardFCTSetting()
-    self:RefreshScenario()
-    if self.ClearAttributionState then
+    if BD.API.IsModern() and self.RefreshScenario then
+        self:RefreshScenario()
+    end
+    if BD.API.IsModern() and self.ClearAttributionState then
         self:ClearAttributionState()
     end
     if self.RebuildOptionsPanel then
@@ -32,15 +34,17 @@ local function ApplyLayoutMigrations()
         BD.db.duration = BD.DEFAULTS.duration
         BD.db.layoutRevision = 2
     end
-    if (BD.db.layoutRevision or 1) < 3 then
-        BD.db.allNameplates = true
-        BD.db.layoutRevision = 3
-    end
-    if (BD.db.layoutRevision or 1) < 4 then
-        if BD.db.onlyMyDamage then
-            BD.db.allNameplates = false
+    if BD.API.IsModern() then
+        if (BD.db.layoutRevision or 1) < 3 then
+            BD.db.allNameplates = true
+            BD.db.layoutRevision = 3
         end
-        BD.db.layoutRevision = 4
+        if (BD.db.layoutRevision or 1) < 4 then
+            if BD.db.onlyMyDamage then
+                BD.db.allNameplates = false
+            end
+            BD.db.layoutRevision = 4
+        end
     end
     if (BD.db.layoutRevision or 1) < 5 then
         BD.db.attributionAuto = BD.DEFAULTS.attributionAuto
@@ -68,38 +72,50 @@ local function ApplyLayoutMigrations()
         end
         BD.db.layoutRevision = 7
     end
-    if BD.db.onlyMyDamage then
+    if BD.API.IsClassic() and (BD.db.layoutRevision or 1) < 8 then
+        if BD.db.fontSize == nil or BD.db.fontSize == 14 then
+            BD.db.fontSize = BD.DEFAULTS.fontSize
+        end
+        BD.db.layoutRevision = 8
+    end
+    if (BD.db.layoutRevision or 1) < 9 then
+        BD.db.abbreviate = false
+        BD.db.layoutRevision = 9
+    end
+    if BD.API.IsModern() and BD.db.onlyMyDamage then
         BD.db.allNameplates = false
     end
 end
 
 local trackFrame = CreateFrame("Frame")
-pcall(function()
-    trackFrame:RegisterEvent("UNIT_SPELLCAST_SENT")
-end)
-pcall(function()
-    trackFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", "player", "pet")
-end)
-pcall(function()
-    trackFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player", "pet")
-end)
+if BD.API.IsModern() then
+    pcall(function()
+        trackFrame:RegisterEvent("UNIT_SPELLCAST_SENT")
+    end)
+    pcall(function()
+        trackFrame:RegisterUnitEvent("UNIT_SPELLCAST_START", "player", "pet")
+    end)
+    pcall(function()
+        trackFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player", "pet")
+    end)
 
-trackFrame:SetScript("OnEvent", function(_, event, ...)
-    if event == "UNIT_SPELLCAST_SENT" then
-        local unit, destName, castGUID, spellID = ...
-        BD:NoteOutgoingSent(unit, destName, castGUID, spellID)
-        return
-    end
-    if event == "UNIT_SPELLCAST_START" then
-        local unit, castGUID, spellID = ...
-        BD:NoteOutgoingStart(unit, castGUID, spellID)
-        return
-    end
-    if event == "UNIT_SPELLCAST_SUCCEEDED" then
-        local unit, castGUID, spellID = ...
-        BD:NoteOutgoingSpell(unit, castGUID, spellID)
-    end
-end)
+    trackFrame:SetScript("OnEvent", function(_, event, ...)
+        if event == "UNIT_SPELLCAST_SENT" then
+            local unit, destName, castGUID, spellID = ...
+            BD:NoteOutgoingSent(unit, destName, castGUID, spellID)
+            return
+        end
+        if event == "UNIT_SPELLCAST_START" then
+            local unit, castGUID, spellID = ...
+            BD:NoteOutgoingStart(unit, castGUID, spellID)
+            return
+        end
+        if event == "UNIT_SPELLCAST_SUCCEEDED" then
+            local unit, castGUID, spellID = ...
+            BD:NoteOutgoingSpell(unit, castGUID, spellID)
+        end
+    end)
+end
 
 local eventFrame = CreateFrame("Frame")
 eventFrame:SetScript("OnEvent", function(_, event, ...)
@@ -112,7 +128,12 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         ApplyLayoutMigrations()
         BD:ApplyLocale()
         BD:RebuildThresholdCurve()
-        BD:RefreshScenario()
+        if BD.API.IsModern() and BD.RefreshScenario then
+            BD:RefreshScenario()
+        end
+        if BD.API.IsClassic() and BD.OnClassicPlayerLogin then
+            BD:OnClassicPlayerLogin()
+        end
         C_Timer.After(0, function()
             BD:ApplyBlizzardFCTSetting()
         end)
@@ -120,7 +141,12 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     end
 
     if event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
-        BD:RefreshScenario()
+        if BD.API.IsModern() and BD.RefreshScenario then
+            BD:RefreshScenario()
+        end
+        if BD.API.IsClassic() and event == "PLAYER_ENTERING_WORLD" and BD.OnClassicPlayerEnteringWorld then
+            BD:OnClassicPlayerEnteringWorld()
+        end
         if event == "PLAYER_ENTERING_WORLD" then
             C_Timer.After(0, function()
                 BD:ApplyBlizzardFCTSetting()
@@ -135,14 +161,55 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         return
     end
 
+    if event == "COMBAT_LOG_EVENT_UNFILTERED" then
+        BD:HandleClassicCombatLog()
+        return
+    end
+
+    if event == "NAME_PLATE_UNIT_ADDED" then
+        local unit = ...
+        BD:OnClassicNamePlateAdded(unit)
+        return
+    end
+
+    if event == "UNIT_PET" then
+        if BD.API.IsClassic() and BD.OnClassicPetChanged then
+            BD:OnClassicPetChanged()
+        end
+        return
+    end
+
+    if event == "PET_ATTACK_START" then
+        if BD.API.IsClassic() and BD.OnClassicPetChanged then
+            BD:OnClassicPetChanged()
+        end
+        return
+    end
+
     if event == "NAME_PLATE_UNIT_REMOVED" then
         local unit = ...
-        BD:ReleaseFramesForUnit(unit)
+        if BD.API.IsClassic() and BD.OnClassicNamePlateRemoved then
+            BD:OnClassicNamePlateRemoved(unit)
+        else
+            BD:DetachFramesForUnit(unit)
+        end
     end
 end)
 
 eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-eventFrame:RegisterEvent("UNIT_COMBAT")
 eventFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
+
+if BD.API.IsModern() then
+    eventFrame:RegisterEvent("UNIT_COMBAT")
+elseif BD.API.IsClassic() then
+    eventFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+    eventFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")
+    pcall(function()
+        eventFrame:RegisterUnitEvent("UNIT_PET", "player")
+    end)
+    pcall(function()
+        eventFrame:RegisterEvent("PET_ATTACK_START")
+    end)
+end

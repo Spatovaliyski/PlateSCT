@@ -178,6 +178,7 @@ local function PushPending(spellID, source, destToken, kind)
 end
 
 function BD:NoteOutgoingSent(unit, destName, castGUID, spellID)
+    BD.API.AssertModern("Attribution.NoteOutgoingSent")
     if unit ~= "player" and unit ~= "pet" then
         return
     end
@@ -187,6 +188,7 @@ function BD:NoteOutgoingSent(unit, destName, castGUID, spellID)
 end
 
 function BD:NoteOutgoingStart(unit, castGUID, spellID)
+    BD.API.AssertModern("Attribution.NoteOutgoingStart")
     if unit ~= "player" and unit ~= "pet" then
         return
     end
@@ -194,6 +196,7 @@ function BD:NoteOutgoingStart(unit, castGUID, spellID)
 end
 
 function BD:NoteOutgoingSpell(unit, castGUID, spellID)
+    BD.API.AssertModern("Attribution.NoteOutgoingSpell")
     if unit ~= "player" and unit ~= "pet" then
         return
     end
@@ -317,6 +320,7 @@ end
 
 --- Returns spellID, usedAuto (or nil if no match).
 function BD:MatchOutgoingHit(unit, schoolMask)
+    BD.API.AssertModern("Attribution.MatchOutgoingHit")
     local now = GetTime()
     local strict = self:GetActiveStrictness()
     local spellID = TryMatchPending(unit, now, strict)

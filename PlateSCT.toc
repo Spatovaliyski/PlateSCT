@@ -1,18 +1,19 @@
-## Interface: 120100
+## Interface: 120100, 50504, 20506, 11509
 ## Title: PlateSCT
-## Notes: Midnight-safe nameplate damage numbers with threshold filtering and abbreviation.
-## Notes-frFR: Nombres de dégâts sur les barres de nom compatibles Midnight, avec seuil et abréviations.
-## Notes-deDE: Midnight-sichere Schadenszahlen auf Namensplaketten mit Schwellenwert und Abkürzungen.
-## Notes-esES: Números de daño en placas de nombre compatibles con Midnight, con umbral y abreviaturas.
-## Notes-esMX: Números de daño en placas de nombre compatibles con Midnight, con umbral y abreviaturas.
-## Notes-ruRU: Безопасные для Midnight числа урона на индикаторах с порогом и сокращениями.
-## Notes-itIT: Numeri di danno sulle barre del nome compatibili con Midnight, con soglia e abbreviazioni.
-## Notes-ptBR: Números de dano em placas de nome compatíveis com Midnight, com limite e abreviações.
+## Notes: Nameplate damage numbers with threshold filtering and abbreviation. Midnight and Classic clients supported.
+## Notes-frFR: Nombres de dégâts sur les barres de nom avec seuil et abréviations. Midnight et Classic pris en charge.
+## Notes-deDE: Schadenszahlen auf Namensplaketten mit Schwellenwert und Abkürzungen. Midnight und Classic unterstützt.
+## Notes-esES: Números de daño en placas de nombre con umbral y abreviaturas. Compatible con Midnight y Classic.
+## Notes-esMX: Números de daño en placas de nombre con umbral y abreviaturas. Compatible con Midnight y Classic.
+## Notes-ruRU: Числа урона на индикаторах с порогом и сокращениями. Поддержка Midnight и Classic.
+## Notes-itIT: Numeri di danno sulle barre del nome con soglia e abbreviazioni. Supporta Midnight e Classic.
+## Notes-ptBR: Números de dano em placas de nome com limite e abreviações. Suporta Midnight e Classic.
 ## Author: Limitedby
-## Version: 1.0.4
+## Version: 1.0.5
 ## SavedVariables: PlateSCTDB
 
 Core/Init.lua
+Core/API.lua
 Locales/Locale.lua
 Locales/enUS.lua
 Locales/frFR.lua
@@ -28,6 +29,7 @@ Core/Pool.lua
 Core/Display.lua
 Core/Attribution.lua
 Core/Combat.lua
+Core/CombatClassic.lua
 Core/Probe.lua
 Core/Events.lua
 Options/Options.lua

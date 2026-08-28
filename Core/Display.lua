@@ -60,13 +60,13 @@ local function ConfigureFrameCommon(self, frame, preset, isCrit, hitKind, isInco
     frame.floatEase = preset.floatEase
     frame.animMode = preset.animMode
     frame.critsHold = preset.critsHold and true or false
-    frame.critRestScale = preset.critRestScale or 2.0
+    frame.critRestScale = preset.critRestScale or 1.4
     frame.critPopStartScale = preset.critPopStartScale or 0.72
     frame.critSlapScale = preset.critSlapScale or 1.42
     frame.critSlapDuration = preset.critSlapDuration or 0
     frame.critSlapDrop = preset.critSlapDrop or 0
     frame.critPowStartScale = preset.critPowStartScale or 1
-    frame.critPowPeakScale = preset.critPowPeakScale or 4
+    frame.critPowPeakScale = preset.critPowPeakScale or 2.0
     frame.critPowDuration = preset.critPowDuration or 0.22
     frame.spawnLanes = preset.spawnLanes
     frame.spawnMinDist = preset.spawnMinDist
@@ -81,11 +81,11 @@ local function ConfigureFrameCommon(self, frame, preset, isCrit, hitKind, isInco
         local classic = self.STYLE_PRESETS.classic
         frame.animMode = "classicPow"
         frame.critsHold = true
-        frame.critRestScale = classic.critRestScale or 2.0
+        frame.critRestScale = classic.critRestScale or 1.4
         frame.critPowStartScale = classic.critPowStartScale or 1.0
-        frame.critPowPeakScale = classic.critPowPeakScale or 4.0
+        frame.critPowPeakScale = classic.critPowPeakScale or 2.0
         frame.critPowDuration = classic.critPowDuration or 0.2
-        frame.spawnCritY = classic.spawnCritY or -8
+        frame.spawnCritY = classic.spawnCritY or 8
         frame.floatEase = classic.floatEase or "outQuad"
         frame.fadeMode = classic.fadeMode or "inExpo"
         frame.fadeInRatio = classic.fadeInRatio or 0.3
@@ -102,7 +102,7 @@ local function ConfigureFrameCommon(self, frame, preset, isCrit, hitKind, isInco
     ApplyMotionSpawnParams(frame, motionStyle, frame.floatDistance)
 end
 
-function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isHeal, spellIcon, hitKind)
+function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isHeal, spellIcon, hitKind, spellId)
     local plate = BD.GetNamePlateFrame(unit)
     if not plate then
         self:DebugPrint("No nameplate for", unit)
@@ -120,17 +120,30 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
 
     frame.anchor = plate
     frame.anchorRelPoint = "TOP"
-    frame:SetParent(plate)
+    -- Parent UIParent, point at plate: plate hide must not hide numbers, and
+    -- GetCenter on a nameplate child is restricted on Classic.
+    frame:SetParent(UIParent)
     frame:SetIgnoreParentScale(true)
+    pcall(function()
+        frame:SetIgnoreParentAlpha(true)
+    end)
     frame:SetFrameStrata("HIGH")
-    frame:SetFrameLevel((plate.GetFrameLevel and plate:GetFrameLevel() or 0) + 8)
+    frame:SetFrameLevel(100)
     frame.unitToken = unit
 
     local baseY = preset.spawnBaseY or 8
     if frame.isCrit and frame.critsHold then
-        baseY = frame.spawnCritY or preset.spawnCritY or -8
+        baseY = frame.spawnCritY or preset.spawnCritY or 8
     end
-    frame.startX, frame.startY = BD.Pool.PickClearSpawn(plate, frame, 0, baseY, frame.isCrit)
+    if self:IsClassicNumberStyle() then
+        frame.usesClassicShove = true
+        frame.classicBaseX = 0
+        frame.classicBaseY = baseY
+        frame.startX = 0
+        frame.startY = baseY
+    else
+        frame.startX, frame.startY = BD.Pool.PickClearSpawn(plate, frame, 0, baseY, frame.isCrit)
+    end
     frame:ClearAllPoints()
     frame:SetPoint("CENTER", plate, "TOP", frame.startX, frame.startY)
 
@@ -146,10 +159,11 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
     frame.text:SetText(text)
 
     frame.text:ClearAllPoints()
-    local showIcon = self.db.onlyMyDamage and self.db.showSpellIcon and BD.ValuePresent(spellIcon)
+    local resolvedIcon = self:ResolveOutgoingSpellIcon(spellIcon, spellId)
+    local showIcon = resolvedIcon ~= nil
     if showIcon then
         local iconSize = math.max(12, math.floor((fontSize * 1.1) + 0.5))
-        local ok = pcall(frame.icon.SetTexture, frame.icon, spellIcon)
+        local ok = pcall(frame.icon.SetTexture, frame.icon, resolvedIcon)
         if ok then
             ApplyIconLayout(frame, iconSize, self.db.iconPosition or "left")
             frame.icon:SetVertexColor(1, 1, 1, 1)
@@ -191,6 +205,10 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
         return
     end
 
+    if frame.usesClassicShove then
+        frame.amountScale = BD.ComputeClassicAmountScale(amountForThreshold)
+    end
+
     frame:SetAlpha(frame.baseAlpha)
     if frame.isCrit then
         if frame.animMode == "classicPow" then
@@ -200,6 +218,9 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
         end
     else
         frame:SetScale(frame.popScale or 1)
+    end
+    if frame.usesClassicShove then
+        BD.Pool.RelayoutClassic(plate)
     end
     frame:Show()
 end
@@ -221,10 +242,13 @@ function BD:ShowIncoming(text, r, g, b, amountForThreshold, isCrit, hitKind)
 
     frame.anchor = anchor
     frame.anchorRelPoint = relPoint or "CENTER"
-    frame:SetParent(anchor)
+    frame:SetParent(UIParent)
     frame:SetIgnoreParentScale(true)
+    pcall(function()
+        frame:SetIgnoreParentAlpha(true)
+    end)
     frame:SetFrameStrata("HIGH")
-    frame:SetFrameLevel((anchor.GetFrameLevel and anchor:GetFrameLevel() or 0) + 20)
+    frame:SetFrameLevel(120)
     frame.unitToken = unitToken
 
     local ox = self.db.incomingOffsetX or self.DEFAULTS.incomingOffsetX or 0
@@ -235,7 +259,16 @@ function BD:ShowIncoming(text, r, g, b, amountForThreshold, isCrit, hitKind)
     if frame.isCrit and frame.critsHold then
         baseY = (frame.spawnCritY or -8) * 0.15
     end
-    frame.startX, frame.startY = BD.Pool.PickClearSpawn(anchor, frame, ox, oy + baseY, frame.isCrit)
+    local spawnY = oy + baseY
+    if self:IsClassicNumberStyle() then
+        frame.usesClassicShove = true
+        frame.classicBaseX = ox
+        frame.classicBaseY = spawnY
+        frame.startX = ox
+        frame.startY = spawnY
+    else
+        frame.startX, frame.startY = BD.Pool.PickClearSpawn(anchor, frame, ox, spawnY, frame.isCrit)
+    end
     frame:ClearAllPoints()
     frame:SetPoint("CENTER", anchor, frame.anchorRelPoint, frame.startX, frame.startY)
 
@@ -273,6 +306,10 @@ function BD:ShowIncoming(text, r, g, b, amountForThreshold, isCrit, hitKind)
         return
     end
 
+    if frame.usesClassicShove then
+        frame.amountScale = BD.ComputeClassicAmountScale(amountForThreshold)
+    end
+
     frame:SetAlpha(frame.baseAlpha)
     if frame.isCrit then
         if frame.animMode == "classicPow" then
@@ -282,6 +319,9 @@ function BD:ShowIncoming(text, r, g, b, amountForThreshold, isCrit, hitKind)
         end
     else
         frame:SetScale(frame.popScale or 1)
+    end
+    if frame.usesClassicShove then
+        BD.Pool.RelayoutClassic(anchor)
     end
     frame:Show()
 end
@@ -309,7 +349,7 @@ function BD:ShowTestNumbers()
             local display = BD.FormatAmount(sample.amount, self.db.abbreviate)
             local r, g, b = 1, 0.92, 0.35
             local spellIcon = self.db.showSpellIcon and BD.GetSpellIconTexture(sample.spellID) or nil
-            self:ShowOnNameplate("target", display, r, g, b, sample.amount, sample.crit, false, spellIcon, sample.hitKind)
+            self:ShowOnNameplate("target", display, r, g, b, sample.amount, sample.crit, false, spellIcon, sample.hitKind, sample.spellID)
         end)
     end
 
