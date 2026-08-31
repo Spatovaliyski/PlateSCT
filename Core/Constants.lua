@@ -22,6 +22,7 @@ BD.DEFAULTS = {
     animHit = "platesct",
     animCrit = "platesct",
     animMiss = "platesct",
+    showCritLabel = false,
     locale = "auto",
     layoutRevision = 9,
     attributionAuto = true,
@@ -36,7 +37,7 @@ BD.DEFAULTS = {
 BD.INCOMING_COLOR = { 1.0, 0.32, 0.28 }
 
 BD.ANIM_STYLES = {
-    { id = "platesct", labelKey = "PlateSCT", recommended = true },
+    { id = "platesct", labelKey = "Vertical Up", recommended = true },
     { id = "fountain", labelKey = "Fountain" },
     { id = "rainfall", labelKey = "Rainfall" },
     { id = "verticalDown", labelKey = "Vertical Down" },
@@ -44,7 +45,7 @@ BD.ANIM_STYLES = {
 
 -- Crit dropdown includes Classic Slap (Classic grow-and-settle pow on Modern).
 BD.ANIM_STYLES_CRIT = {
-    { id = "platesct", labelKey = "PlateSCT", recommended = true },
+    { id = "platesct", labelKey = "Vertical Up", recommended = true },
     { id = "classicSlap", labelKey = "Classic Slap" },
     { id = "fountain", labelKey = "Fountain" },
     { id = "rainfall", labelKey = "Rainfall" },
@@ -72,8 +73,8 @@ BD.STYLE_PRESETS = {
         defaultColor = { 1.0, 0.93, 0.0 },
         critColor = { 1.0, 0.93, 0.0 },
         critPopStartScale = 0.72,
-        critRestScale = 1.18,
-        critSlapScale = 1.42,
+        critRestScale = 1.26,
+        critSlapScale = 1.50,
         critSlapDuration = 0.18,
         critSlapDrop = 0,
         durationMult = 1.0,

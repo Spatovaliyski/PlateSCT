@@ -14,6 +14,7 @@ local DEFAULT_SPAWN_LANES = {
     { 0, 28 },
 }
 
+local CRIT_LABEL_GAP = 3
 local CLASSIC_LAYOUT_PAD = 9
 local ROLLING_AVERAGE_WINDOW = 10
 local ROLLING_AVERAGE_MAX_AGE = 8.0
@@ -95,8 +96,8 @@ local function ComputeIntroScale(frame)
             frame.elapsed,
             introDuration,
             frame.critPopStartScale or 0.72,
-            frame.critSlapScale or 1.42,
-            frame.critRestScale or 1.18
+            frame.critSlapScale or 1.50,
+            frame.critRestScale or 1.26
         ), introDuration
     end
 
@@ -111,6 +112,10 @@ local function GetVisualHalfExtents(frame)
     local textH = frame.text:GetStringHeight() or 0
     local width = textW
     local height = textH
+    if frame.critLabel and frame.critLabel:IsShown() then
+        width = width + (frame.critLabel:GetStringWidth() or 0) + CRIT_LABEL_GAP
+        height = math.max(height, frame.critLabel:GetStringHeight() or 0)
+    end
     if frame.icon:IsShown() then
         local iconW = frame.icon:GetWidth() or 0
         width = width + iconW + 4
@@ -281,7 +286,7 @@ local function SafeSetPoint(frame, point, relTo, relPoint, x, y)
 end
 
 local function DetachFrameToScreen(frame)
-    if frame.detached or frame.incoming then
+    if frame.detached or frame.incoming or frame.isPreview then
         return frame.detached and true or false
     end
 
@@ -343,6 +348,12 @@ local function ReleaseFrame(frame)
     frame.icon:SetTexture(nil)
     frame.icon:Hide()
     frame.icon:ClearAllPoints()
+    if frame.critLabel then
+        frame.critLabel:SetText("")
+        frame.critLabel:Hide()
+        frame.critLabel:ClearAllPoints()
+    end
+    frame.isPreview = nil
     frame.anchor = nil
     frame.unitToken = nil
     frame.incoming = nil
@@ -414,6 +425,10 @@ local function FrameOnUpdate(frame, elapsed)
             return frame.anchor:IsShown()
         end)
         if not ok or not shown then
+            if frame.isPreview then
+                ReleaseFrame(frame)
+                return
+            end
             if not DetachFrameToScreen(frame) then
                 ReleaseFrame(frame)
                 return
@@ -476,6 +491,10 @@ local function CreatePooledFrame()
     icon:Hide()
     frame.icon = icon
 
+    local critLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+    critLabel:Hide()
+    frame.critLabel = critLabel
+
     frame.elapsed = 0
     frame.duration = 1
     frame.startX = 0
@@ -500,11 +519,20 @@ for _ = 1, BD.POOL_SIZE do
     table.insert(pool, CreatePooledFrame())
 end
 
+local function ReleasePreviewFrames(anchor)
+    for frame in pairs(active) do
+        if frame.isPreview and (not anchor or frame.anchor == anchor) then
+            ReleaseFrame(frame)
+        end
+    end
+end
+
 BD.Pool = {
     Acquire = AcquireFrame,
     Release = ReleaseFrame,
     PickClearSpawn = PickClearSpawn,
     RelayoutClassic = RelayoutClassicAnchor,
+    ReleasePreviewFrames = ReleasePreviewFrames,
 }
 
 function BD:DetachFramesForUnit(unit)

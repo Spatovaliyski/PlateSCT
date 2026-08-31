@@ -81,6 +81,10 @@ L["Display duration"] = "Duração da exibição"
 L["Recommended"] = "Recomendado"
 L["%d px"] = "%d px"
 L["%.1fs"] = "%.1fs"
+L["Show CRITICAL"] = "Mostrar CRÍTICO"
+L["Show the word CRITICAL in small caps next to critical hit numbers."] =
+    "Mostra a palavra CRÍTICO em letras maiúsculas pequenas ao lado de acertos críticos."
+L["CRITICAL"] = "CRÍTICO"
 
 L["Minimum damage threshold"] = "Limite mínimo de dano"
 L["Hits below this amount are hidden. Type 50k or 2m. Set to 0 to show everything."] =

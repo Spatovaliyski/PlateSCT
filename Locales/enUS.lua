@@ -124,7 +124,7 @@ L["Motion used for normal damage numbers."] = "Motion used for normal damage num
 L["Motion used for critical hits."] = "Motion used for critical hits."
 L["Motion used for miss, parry, dodge, and similar outcomes."] =
     "Motion used for miss, parry, dodge, and similar outcomes."
-L["PlateSCT"] = "PlateSCT"
+L["Vertical Up"] = "Vertical Up"
 L["Classic Slap"] = "Classic Slap"
 L["Fountain"] = "Fountain"
 L["Rainfall"] = "Rainfall"
@@ -132,6 +132,10 @@ L["Vertical Down"] = "Vertical Down"
 L["Motion used for critical hits."] = "Motion used for critical hits."
 L["Motion used for critical hits. Classic Slap uses the Classic grow-and-settle pow."] =
     "Motion used for critical hits. Classic Slap uses the Classic grow-and-settle pow."
+L["Show CRITICAL"] = "Show CRITICAL"
+L["Show the word CRITICAL in small caps next to critical hit numbers."] =
+    "Show the word CRITICAL in small caps next to critical hit numbers."
+L["CRITICAL"] = "CRITICAL"
 
 -- Incoming
 L["Incoming"] = "Incoming"

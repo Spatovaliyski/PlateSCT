@@ -52,7 +52,7 @@ end
 
 function Anim.ComputeRetailPopScale(elapsed, duration, startScale, peakScale, restScale)
     if not duration or duration <= 0 or elapsed >= duration then
-        return restScale or 1.18
+        return restScale or 1.26
     end
     local t = elapsed / duration
     if t < 0.38 then

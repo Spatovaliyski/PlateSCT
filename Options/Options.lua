@@ -793,6 +793,7 @@ local function CloseOptionsPanel()
     HideLocaleMenu()
     HideAttributionMenu()
     HideChoiceMenu()
+    BD:ReleaseMotionPreviews()
     if BD.configFrame then
         BD.configFrame:Hide()
     end
@@ -1021,7 +1022,49 @@ local function CreateStrictnessDropdown(parent, layout, label, dbKey, tooltip, i
     return button
 end
 
-local function CreateChoiceDropdown(parent, layout, label, dbKey, options, tooltip, isEnabled)
+local MOTION_PREVIEW_X = 256
+
+local function MotionPreviewHitKind(dbKey)
+    if dbKey == "animCrit" then
+        return "crit"
+    end
+    if dbKey == "animMiss" then
+        return "miss"
+    end
+    return "hit"
+end
+
+local function CreateMotionPreview(parent, firstDropdown, lastDropdown)
+    local pane = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    pane:SetPoint("TOPLEFT", firstDropdown.caption, "TOPLEFT", MOTION_PREVIEW_X, 4)
+    pane:SetPoint("BOTTOMRIGHT", lastDropdown, "BOTTOMRIGHT", MOTION_PREVIEW_X, 0)
+    ApplyBackdrop(pane, 0.06, 0.06, 0.07, 0.55, 0.38, 0.38, 0.40, 0.75)
+    pcall(function()
+        pane:SetClipsChildren(true)
+    end)
+
+    local caption = pane:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    caption:SetPoint("TOPLEFT", 10, -8)
+    caption:SetText(L["Preview"])
+
+    local stage = CreateFrame("Frame", nil, pane)
+    stage:SetPoint("TOPLEFT", 8, -24)
+    stage:SetPoint("BOTTOMRIGHT", -8, 8)
+    pane.stage = stage
+
+    function pane:RefreshVisibility()
+        local modern = BD.db.numberStyle ~= "classic"
+        self:SetShown(modern)
+        if not modern then
+            BD:ReleaseMotionPreviews()
+        end
+    end
+
+    pane:RefreshVisibility()
+    return pane
+end
+
+local function CreateChoiceDropdown(parent, layout, label, dbKey, options, tooltip, isEnabled, onSelect)
     local caption = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     caption:SetPoint("TOPLEFT", layout.x, layout.y)
     caption:SetText(label)
@@ -1206,6 +1249,9 @@ local function CreateChoiceDropdown(parent, layout, label, dbKey, options, toolt
                     button:Refresh()
                 end
                 HideChoiceMenu()
+                if onSelect then
+                    onSelect(dbKey)
+                end
             end)
             entry:Show()
             width = math.max(width, (entry.label:GetStringWidth() or 0) + 36)
@@ -1718,10 +1764,6 @@ local function BuildPageDisplay(parent, rootPanel)
     parent.iconPositionSelector = CreateIconPositionSelector(parent, layout)
 
     layout:Gap(SECTION_GAP)
-    layout:Heading(L["Text style"])
-    layout:Checkbox(L["Abbreviate numbers"], L["Display large numbers as 214k or 1.2M."], "abbreviate")
-
-    layout:Gap(SECTION_GAP)
     layout:Heading(L["Animation"])
     local sliderY = layout.y
     CreateSlider(parent, L["Font size"], layout.x, sliderY, "fontSize", 10, 24, 1, function(value)
@@ -1737,6 +1779,21 @@ local function BuildPageDisplay(parent, rootPanel)
     layout.y = layout.y - SLIDER_BLOCK
 
     layout:Gap(SECTION_GAP)
+    layout:Heading(L["Text style"])
+    layout:Checkbox(L["Abbreviate numbers"], L["Display large numbers as 214k or 1.2M."], "abbreviate")
+    parent.showCritLabelCheckbox = layout:Checkbox(
+        L["Show CRITICAL"],
+        L["Show the word CRITICAL in small caps next to critical hit numbers."],
+        "showCritLabel",
+        function()
+            if parent.motionPreview and parent.motionPreview:IsShown() then
+                local stage = parent.motionPreview.stage or parent.motionPreview
+                BD:ShowMotionPreview(stage, "crit")
+            end
+        end
+    )
+
+    layout:Gap(SECTION_GAP)
     parent.motionHeading = CreateHeading(parent, L["Motion (Modern)"], layout.x, layout.y, CONTENT_WIDTH)
     layout.y = layout.y - (16 + 6 + AFTER_HEADING)
     parent.motionBody = layout:Body(
@@ -1747,35 +1804,53 @@ local function BuildPageDisplay(parent, rootPanel)
         return BD.db.numberStyle ~= "classic"
     end
 
-    parent.motionDropdowns = {
-        CreateChoiceDropdown(
-            parent,
-            layout,
-            L["Normal hits"],
-            "animHit",
-            BD.ANIM_STYLES,
-            L["Motion used for normal damage numbers."],
-            isModern
-        ),
-        CreateChoiceDropdown(
-            parent,
-            layout,
-            L["Critical hits"],
-            "animCrit",
-            BD.ANIM_STYLES_CRIT,
-            L["Motion used for critical hits. Classic Slap uses the Classic grow-and-settle pow."],
-            isModern
-        ),
-        CreateChoiceDropdown(
-            parent,
-            layout,
-            L["Miss / Parry / Dodge"],
-            "animMiss",
-            BD.ANIM_STYLES,
-            L["Motion used for miss, parry, dodge, and similar outcomes."],
-            isModern
-        ),
-    }
+    local function PlayMotionPreview(dbKey)
+        if not parent.motionPreview or not parent.motionPreview:IsShown() then
+            return
+        end
+        local stage = parent.motionPreview.stage or parent.motionPreview
+        BD:ShowMotionPreview(stage, MotionPreviewHitKind(dbKey))
+    end
+
+    local function MakeMotionSelect(key)
+        return function(selectedKey)
+            PlayMotionPreview(selectedKey or key)
+        end
+    end
+
+    parent.motionDropdowns = {}
+    parent.motionDropdowns[1] = CreateChoiceDropdown(
+        parent,
+        layout,
+        L["Normal hits"],
+        "animHit",
+        BD.ANIM_STYLES,
+        L["Motion used for normal damage numbers."],
+        isModern,
+        MakeMotionSelect("animHit")
+    )
+    parent.motionDropdowns[2] = CreateChoiceDropdown(
+        parent,
+        layout,
+        L["Critical hits"],
+        "animCrit",
+        BD.ANIM_STYLES_CRIT,
+        L["Motion used for critical hits. Classic Slap uses the Classic grow-and-settle pow."],
+        isModern,
+        MakeMotionSelect("animCrit")
+    )
+    parent.motionDropdowns[3] = CreateChoiceDropdown(
+        parent,
+        layout,
+        L["Miss / Parry / Dodge"],
+        "animMiss",
+        BD.ANIM_STYLES,
+        L["Motion used for miss, parry, dodge, and similar outcomes."],
+        isModern,
+        MakeMotionSelect("animMiss")
+    )
+
+    parent.motionPreview = CreateMotionPreview(parent, parent.motionDropdowns[1], parent.motionDropdowns[3])
 
     parent:SetHeight(math.max(1, -layout.y + CONTENT_PAD))
     local scrollFrame = parent:GetParent()
@@ -2117,6 +2192,12 @@ local function BuildConfigFrame()
                 end
             end
         end
+        if display and display.motionPreview and display.motionPreview.RefreshVisibility then
+            display.motionPreview:RefreshVisibility()
+        end
+        if display and display.showCritLabelCheckbox and display.showCritLabelCheckbox.Refresh then
+            display.showCritLabelCheckbox:Refresh()
+        end
         if general.incomingOffsetXSlider and general.incomingOffsetYSlider then
             local incomingOn = BD.db.showIncoming and true or false
             for _, slider in ipairs({ general.incomingOffsetXSlider, general.incomingOffsetYSlider }) do
@@ -2172,6 +2253,7 @@ local function BuildConfigFrame()
 
     frame:SetScript("OnHide", function()
         UnhookNameplateWarningEvents()
+        BD:ReleaseMotionPreviews()
         if SOUNDKIT and SOUNDKIT.IG_MAINMENU_CLOSE then
             pcall(PlaySound, SOUNDKIT.IG_MAINMENU_CLOSE)
         end

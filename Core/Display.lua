@@ -3,26 +3,95 @@ local L = BD.L
 local Anim = BD.Anim
 
 local ICON_GAP = 4
+local CRIT_LABEL_GAP = 3
 
-local function ApplyIconLayout(frame, iconSize, position)
+local function AnchorCritLabel(frame)
+    if frame.critLabel and frame.critLabel:IsShown() then
+        frame.critLabel:SetPoint("BOTTOMLEFT", frame.text, "BOTTOMRIGHT", CRIT_LABEL_GAP, 0)
+    end
+end
+
+local function ApplyTextLayout(frame, fontSize, fontPath, fontFlags, preset, layoutOpts)
+    layoutOpts = layoutOpts or {}
+    local showIcon = layoutOpts.showIcon
+    local iconSize = layoutOpts.iconSize
+    local iconTexture = layoutOpts.iconTexture
+    local iconPosition = layoutOpts.iconPosition or "left"
+    local showCritLabel = layoutOpts.showCritLabel
+    local r = layoutOpts.r or 1
+    local g = layoutOpts.g or 1
+    local b = layoutOpts.b or 1
+
     frame.text:ClearAllPoints()
     frame.icon:ClearAllPoints()
-    frame.icon:SetSize(iconSize, iconSize)
+    if frame.critLabel then
+        frame.critLabel:ClearAllPoints()
+    end
 
-    local pos = position or "left"
+    local critLabelW = 0
+    if showCritLabel and frame.critLabel then
+        local critSize = math.max(8, math.floor(fontSize * 0.55 + 0.5))
+        frame.critLabel:SetFont(fontPath, critSize, fontFlags)
+        frame.critLabel:SetText(L["CRITICAL"])
+        frame.critLabel:SetTextColor(r, g, b, 1)
+        if preset.shadowOffset then
+            frame.critLabel:SetShadowOffset(preset.shadowOffset[1], preset.shadowOffset[2])
+            frame.critLabel:SetShadowColor(0, 0, 0, 1)
+        else
+            frame.critLabel:SetShadowOffset(0, 0)
+        end
+        frame.critLabel:Show()
+        critLabelW = (frame.critLabel:GetStringWidth() or 0) + CRIT_LABEL_GAP
+    elseif frame.critLabel then
+        frame.critLabel:SetText("")
+        frame.critLabel:Hide()
+    end
+
+    local resolvedIcon = showIcon and iconTexture
+    if resolvedIcon then
+        local size = iconSize or math.max(12, math.floor((fontSize * 1.1) + 0.5))
+        frame.icon:SetSize(size, size)
+        local ok = pcall(frame.icon.SetTexture, frame.icon, resolvedIcon)
+        if not ok then
+            resolvedIcon = nil
+        end
+    end
+
+    if not resolvedIcon then
+        frame.icon:SetTexture(nil)
+        frame.icon:Hide()
+        frame.text:SetPoint("CENTER", frame, "CENTER", -critLabelW * 0.5, 0)
+        AnchorCritLabel(frame)
+        return
+    end
+
+    frame.icon:SetVertexColor(1, 1, 1, 1)
+    frame.icon:Show()
+    local size = frame.icon:GetWidth() or iconSize
+
+    local pos = iconPosition
     if pos == "right" then
-        frame.text:SetPoint("CENTER", frame, "CENTER", -(iconSize + ICON_GAP) / 2, 0)
-        frame.icon:SetPoint("LEFT", frame.text, "RIGHT", ICON_GAP, 0)
+        local shift = (size + ICON_GAP + critLabelW) * 0.5
+        frame.text:SetPoint("CENTER", frame, "CENTER", -shift, 0)
+        AnchorCritLabel(frame)
+        if showCritLabel and frame.critLabel then
+            frame.icon:SetPoint("LEFT", frame.critLabel, "RIGHT", ICON_GAP, 0)
+        else
+            frame.icon:SetPoint("LEFT", frame.text, "RIGHT", ICON_GAP, 0)
+        end
     elseif pos == "top" then
-        frame.text:SetPoint("CENTER", frame, "CENTER", 0, -(iconSize + ICON_GAP) / 2)
+        frame.text:SetPoint("CENTER", frame, "CENTER", -critLabelW * 0.5, -(size + ICON_GAP) * 0.5)
+        AnchorCritLabel(frame)
         frame.icon:SetPoint("BOTTOM", frame.text, "TOP", 0, ICON_GAP)
     elseif pos == "bottom" then
-        frame.text:SetPoint("CENTER", frame, "CENTER", 0, (iconSize + ICON_GAP) / 2)
+        frame.text:SetPoint("CENTER", frame, "CENTER", -critLabelW * 0.5, (size + ICON_GAP) * 0.5)
+        AnchorCritLabel(frame)
         frame.icon:SetPoint("TOP", frame.text, "BOTTOM", 0, -ICON_GAP)
     else
-        -- left (default)
-        frame.text:SetPoint("CENTER", frame, "CENTER", (iconSize + ICON_GAP) / 2, 0)
+        local shift = (size + ICON_GAP - critLabelW) * 0.5
+        frame.text:SetPoint("CENTER", frame, "CENTER", shift, 0)
         frame.icon:SetPoint("RIGHT", frame.text, "LEFT", -ICON_GAP, 0)
+        AnchorCritLabel(frame)
     end
 end
 
@@ -62,7 +131,7 @@ local function ConfigureFrameCommon(self, frame, preset, isCrit, hitKind, isInco
     frame.critsHold = preset.critsHold and true or false
     frame.critRestScale = preset.critRestScale or 1.4
     frame.critPopStartScale = preset.critPopStartScale or 0.72
-    frame.critSlapScale = preset.critSlapScale or 1.42
+        frame.critSlapScale = preset.critSlapScale or 1.50
     frame.critSlapDuration = preset.critSlapDuration or 0
     frame.critSlapDrop = preset.critSlapDrop or 0
     frame.critPowStartScale = preset.critPowStartScale or 1
@@ -100,6 +169,115 @@ local function ConfigureFrameCommon(self, frame, preset, isCrit, hitKind, isInco
     end
 
     ApplyMotionSpawnParams(frame, motionStyle, frame.floatDistance)
+end
+
+local function PreviewSpawnY(motionStyle)
+    if motionStyle == "verticalDown" or motionStyle == "rainfall" then
+        return 18
+    end
+    if motionStyle == "fountain" or motionStyle == "platesct" or motionStyle == "classicSlap" then
+        return -14
+    end
+    return 0
+end
+
+local previewGeneration = 0
+local PREVIEW_STAGGER = 0.18
+
+local function SpawnMotionPreviewFrame(anchor, hitKind, sampleIndex)
+    local kind = hitKind or "hit"
+    local isCrit = kind == "crit"
+    local isMiss = kind == "miss"
+
+    local preset = BD:GetStylePreset()
+    local frame = BD.Pool.Acquire()
+    ConfigureFrameCommon(BD, frame, preset, isCrit, kind, false)
+
+    frame.isPreview = true
+    frame.anchor = anchor
+    frame.anchorRelPoint = "CENTER"
+    frame:SetParent(anchor)
+    frame:ClearAllPoints()
+
+    local spawnY = PreviewSpawnY(frame.motionStyle)
+    frame.startX, frame.startY = BD.Pool.PickClearSpawn(anchor, frame, 0, spawnY, isCrit)
+    frame:SetPoint("CENTER", anchor, "CENTER", frame.startX, frame.startY)
+
+    local fontSize = (BD.db.fontSize or BD.DEFAULTS.fontSize) * preset.fontScale
+    local fontPath = STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"
+    frame.text:SetFont(fontPath, fontSize, preset.fontFlags)
+    if preset.shadowOffset then
+        frame.text:SetShadowOffset(preset.shadowOffset[1], preset.shadowOffset[2])
+        frame.text:SetShadowColor(0, 0, 0, 1)
+    else
+        frame.text:SetShadowOffset(0, 0)
+    end
+
+    local r, g, b
+    if isMiss then
+        frame.text:SetText("DODGE")
+        r, g, b = 1, 0.85, 0.2
+    else
+        local hitSamples = { 12400, 18650, 842, 12400, 18650 }
+        local critSamples = { 214200, 1800000, 214200, 1800000, 214200 }
+        local samples = isCrit and critSamples or hitSamples
+        local amount = samples[sampleIndex or 1] or samples[1]
+        frame.text:SetText(BD.FormatAmount(amount, BD.db.abbreviate))
+        r, g, b = preset.defaultColor[1], preset.defaultColor[2], preset.defaultColor[3]
+    end
+
+    local showCritLabel = isCrit and BD.db.showCritLabel and true or false
+    ApplyTextLayout(frame, fontSize, fontPath, preset.fontFlags, preset, {
+        showCritLabel = showCritLabel,
+        r = r,
+        g = g,
+        b = b,
+    })
+
+    frame.text:SetTextColor(r, g, b, 1)
+    frame.baseAlpha = 1
+    frame:SetAlpha(1)
+    if frame.isCrit then
+        if frame.animMode == "classicPow" then
+            frame:SetScale(frame.critPowStartScale or 1)
+        else
+            frame:SetScale(frame.critPopStartScale or 0.72)
+        end
+    else
+        frame:SetScale(frame.popScale or 1)
+    end
+    frame:Show()
+end
+
+function BD:ShowMotionPreview(anchor, hitKind)
+    if not anchor or not anchor:IsShown() then
+        return
+    end
+    if self:IsClassicNumberStyle() then
+        return
+    end
+
+    previewGeneration = previewGeneration + 1
+    local generation = previewGeneration
+
+    BD.Pool.ReleasePreviewFrames(anchor)
+
+    for index = 1, 5 do
+        C_Timer.After((index - 1) * PREVIEW_STAGGER, function()
+            if generation ~= previewGeneration then
+                return
+            end
+            if not anchor or not anchor:IsShown() then
+                return
+            end
+            SpawnMotionPreviewFrame(anchor, hitKind, index)
+        end)
+    end
+end
+
+function BD:ReleaseMotionPreviews()
+    previewGeneration = previewGeneration + 1
+    BD.Pool.ReleasePreviewFrames()
 end
 
 function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isHeal, spellIcon, hitKind, spellId)
@@ -158,25 +336,9 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
     end
     frame.text:SetText(text)
 
-    frame.text:ClearAllPoints()
     local resolvedIcon = self:ResolveOutgoingSpellIcon(spellIcon, spellId)
-    local showIcon = resolvedIcon ~= nil
-    if showIcon then
-        local iconSize = math.max(12, math.floor((fontSize * 1.1) + 0.5))
-        local ok = pcall(frame.icon.SetTexture, frame.icon, resolvedIcon)
-        if ok then
-            ApplyIconLayout(frame, iconSize, self.db.iconPosition or "left")
-            frame.icon:SetVertexColor(1, 1, 1, 1)
-            frame.icon:Show()
-        else
-            showIcon = false
-        end
-    end
-    if not showIcon then
-        frame.text:SetPoint("CENTER", frame, "CENTER", 0, 0)
-        frame.icon:SetTexture(nil)
-        frame.icon:Hide()
-    end
+    local iconSize = math.max(12, math.floor((fontSize * 1.1) + 0.5))
+    local showCritLabel = frame.isCrit and self.db.showCritLabel and true or false
 
     if not isHeal then
         if self:ShouldUseSchoolColors() then
@@ -187,6 +349,18 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
             r, g, b = preset.defaultColor[1], preset.defaultColor[2], preset.defaultColor[3]
         end
     end
+
+    ApplyTextLayout(frame, fontSize, fontPath, preset.fontFlags, preset, {
+        showIcon = resolvedIcon ~= nil,
+        iconSize = iconSize,
+        iconTexture = resolvedIcon,
+        iconPosition = self.db.iconPosition or "left",
+        showCritLabel = showCritLabel,
+        r = r,
+        g = g,
+        b = b,
+    })
+
     frame.text:SetTextColor(r, g, b, 1)
 
     local thresholdCurve = self:GetThresholdCurve()
@@ -282,13 +456,21 @@ function BD:ShowIncoming(text, r, g, b, amountForThreshold, isCrit, hitKind)
         frame.text:SetShadowOffset(0, 0)
     end
     frame.text:SetText(text)
-    frame.text:ClearAllPoints()
-    frame.text:SetPoint("CENTER", frame, "CENTER", 0, 0)
-    frame.icon:SetTexture(nil)
-    frame.icon:Hide()
 
     local color = BD.INCOMING_COLOR
-    frame.text:SetTextColor(r or color[1], g or color[2], b or color[3], 1)
+    local textR = r or color[1]
+    local textG = g or color[2]
+    local textB = b or color[3]
+    local showCritLabel = frame.isCrit and self.db.showCritLabel and true or false
+
+    ApplyTextLayout(frame, fontSize, fontPath, preset.fontFlags, preset, {
+        showCritLabel = showCritLabel,
+        r = textR,
+        g = textG,
+        b = textB,
+    })
+
+    frame.text:SetTextColor(textR, textG, textB, 1)
 
     local thresholdCurve = self:GetThresholdCurve()
     if amountForThreshold and self.db.minDamage and self.db.minDamage > 0 and BD.IsSecret(amountForThreshold) and thresholdCurve then
