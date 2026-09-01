@@ -16,6 +16,8 @@ local DEFAULT_SPAWN_LANES = {
 
 local CRIT_LABEL_GAP = 3
 local CLASSIC_LAYOUT_PAD = 9
+-- Hits: fill center / right / left, then stack further rows upward.
+local CLASSIC_HIT_COLUMNS = 3
 local ROLLING_AVERAGE_WINDOW = 10
 local ROLLING_AVERAGE_MAX_AGE = 8.0
 
@@ -151,6 +153,7 @@ local function RelayoutClassicCluster(frames, isCritCluster)
 
     local centerHalfW, centerHalfH = GetVisualHalfExtents(center)
     local baseX = center.classicBaseX or 0
+    local baseY = center.classicBaseY or center.startY or 0
 
     for index, frame in ipairs(frames) do
         frame.classicHidden = false
@@ -158,6 +161,8 @@ local function RelayoutClassicCluster(frames, isCritCluster)
             frame.startX = baseX
             if isCritCluster then
                 frame.startY = frame.classicBaseY or center.startY
+            else
+                frame.startY = baseY
             end
         elseif isCritCluster then
             local selfHalfW, selfHalfH = GetVisualHalfExtents(frame)
@@ -178,9 +183,18 @@ local function RelayoutClassicCluster(frames, isCritCluster)
             end
         else
             local selfHalfW = select(1, GetVisualHalfExtents(frame))
-            local ring = math.ceil((index - 1) / 2)
-            local side = (index % 2 == 0) and 1 or -1
-            frame.startX = baseX + (side * ring * (centerHalfW + selfHalfW + CLASSIC_LAYOUT_PAD))
+            local slot = index - 1
+            local row = math.floor(slot / CLASSIC_HIT_COLUMNS)
+            local col = slot % CLASSIC_HIT_COLUMNS
+            local xOff = 0
+            if col == 1 then
+                xOff = centerHalfW + selfHalfW + CLASSIC_LAYOUT_PAD
+            elseif col == 2 then
+                xOff = -(centerHalfW + selfHalfW + CLASSIC_LAYOUT_PAD)
+            end
+            local yOff = row * (centerHalfH * 2 + CLASSIC_LAYOUT_PAD)
+            frame.startX = baseX + xOff
+            frame.startY = baseY + yOff
         end
     end
 end

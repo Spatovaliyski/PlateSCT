@@ -2090,6 +2090,8 @@ local function BuildConfigFrame()
                 end
             end
         end
+        -- Classic version has no allPlates checkbox; skip Midnight-only filters.
+        -- Still fall through so motion preview / incoming sliders refresh.
         if not general.allPlatesCheckbox then
             if general.petDamageCheckbox and not IsModernUI() then
                 general.petDamageCheckbox:SetEnabled(true)
@@ -2112,64 +2114,64 @@ local function BuildConfigFrame()
                     display.iconPositionSelector:SetEnabled(BD.db.showSpellIcon and true or false)
                 end
             end
-            return
-        end
-        local onlyMineOn = IsModernUI() and BD.db.onlyMyDamage and true or false
-        if onlyMineOn then
-            BD.db.allNameplates = false
-        end
-        local allowAllPlates = not onlyMineOn
-        general.allPlatesCheckbox:SetEnabled(allowAllPlates)
-        general.allPlatesCheckbox:SetChecked(BD.db.allNameplates and true or false)
-        general.allPlatesCheckbox:SetAlpha(allowAllPlates and 1 or 0.55)
-        if allowAllPlates then
-            general.allPlatesCheckbox.label:SetTextColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
         else
-            general.allPlatesCheckbox.label:SetTextColor(0.5, 0.5, 0.5)
-        end
-        if general.allPlatesBody then
+            local onlyMineOn = IsModernUI() and BD.db.onlyMyDamage and true or false
+            if onlyMineOn then
+                BD.db.allNameplates = false
+            end
+            local allowAllPlates = not onlyMineOn
+            general.allPlatesCheckbox:SetEnabled(allowAllPlates)
+            general.allPlatesCheckbox:SetChecked(BD.db.allNameplates and true or false)
+            general.allPlatesCheckbox:SetAlpha(allowAllPlates and 1 or 0.55)
             if allowAllPlates then
-                general.allPlatesBody:SetTextColor(0.70, 0.70, 0.72)
+                general.allPlatesCheckbox.label:SetTextColor(HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b)
             else
-                general.allPlatesBody:SetTextColor(0.45, 0.45, 0.46)
+                general.allPlatesCheckbox.label:SetTextColor(0.5, 0.5, 0.5)
             end
-        end
-        if general.petDamageCheckbox then
-            general.petDamageCheckbox:SetEnabled(onlyMineOn)
-            general.petDamageCheckbox:SetAlpha(onlyMineOn and 1 or 0.55)
-            if onlyMineOn then
-                general.petDamageCheckbox.label:SetTextColor(
-                    HIGHLIGHT_FONT_COLOR.r,
-                    HIGHLIGHT_FONT_COLOR.g,
-                    HIGHLIGHT_FONT_COLOR.b
-                )
-            else
-                general.petDamageCheckbox.label:SetTextColor(0.5, 0.5, 0.5)
+            if general.allPlatesBody then
+                if allowAllPlates then
+                    general.allPlatesBody:SetTextColor(0.70, 0.70, 0.72)
+                else
+                    general.allPlatesBody:SetTextColor(0.45, 0.45, 0.46)
+                end
             end
-        end
-        if display and display.spellIconCheckbox then
-            display.spellIconCheckbox:SetEnabled(onlyMineOn)
-            display.spellIconCheckbox:SetAlpha(onlyMineOn and 1 or 0.55)
-            if onlyMineOn then
-                display.spellIconCheckbox.label:SetTextColor(
-                    HIGHLIGHT_FONT_COLOR.r,
-                    HIGHLIGHT_FONT_COLOR.g,
-                    HIGHLIGHT_FONT_COLOR.b
-                )
-            else
-                display.spellIconCheckbox.label:SetTextColor(0.5, 0.5, 0.5)
+            if general.petDamageCheckbox then
+                general.petDamageCheckbox:SetEnabled(onlyMineOn)
+                general.petDamageCheckbox:SetAlpha(onlyMineOn and 1 or 0.55)
+                if onlyMineOn then
+                    general.petDamageCheckbox.label:SetTextColor(
+                        HIGHLIGHT_FONT_COLOR.r,
+                        HIGHLIGHT_FONT_COLOR.g,
+                        HIGHLIGHT_FONT_COLOR.b
+                    )
+                else
+                    general.petDamageCheckbox.label:SetTextColor(0.5, 0.5, 0.5)
+                end
             end
-        end
-        if display and display.spellIconBody then
-            if onlyMineOn then
-                display.spellIconBody:SetTextColor(0.70, 0.70, 0.72)
-            else
-                display.spellIconBody:SetTextColor(0.45, 0.45, 0.46)
+            if display and display.spellIconCheckbox then
+                display.spellIconCheckbox:SetEnabled(onlyMineOn)
+                display.spellIconCheckbox:SetAlpha(onlyMineOn and 1 or 0.55)
+                if onlyMineOn then
+                    display.spellIconCheckbox.label:SetTextColor(
+                        HIGHLIGHT_FONT_COLOR.r,
+                        HIGHLIGHT_FONT_COLOR.g,
+                        HIGHLIGHT_FONT_COLOR.b
+                    )
+                else
+                    display.spellIconCheckbox.label:SetTextColor(0.5, 0.5, 0.5)
+                end
             end
-        end
-        local showIconOn = onlyMineOn and BD.db.showSpellIcon
-        if display and display.iconPositionSelector then
-            display.iconPositionSelector:SetEnabled(showIconOn and true or false)
+            if display and display.spellIconBody then
+                if onlyMineOn then
+                    display.spellIconBody:SetTextColor(0.70, 0.70, 0.72)
+                else
+                    display.spellIconBody:SetTextColor(0.45, 0.45, 0.46)
+                end
+            end
+            local showIconOn = onlyMineOn and BD.db.showSpellIcon
+            if display and display.iconPositionSelector then
+                display.iconPositionSelector:SetEnabled(showIconOn and true or false)
+            end
         end
         if display and display.motionBody then
             local modern = BD.db.numberStyle ~= "classic"

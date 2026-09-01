@@ -2,9 +2,9 @@ local _, BD = ...
 
 -- Classic-only: CLEU ingestion for unrestricted clients (Era / TBC / Mists).
 -- Pet detection follows Classic combat-log conventions (LibThreatClassic / Recount):
---   - Live UnitGUID("pet") and Pet- GUID prefix
+--   - Live UnitGUID("pet") only (Pet- prefix is a type, not ownership — raid pets share it)
 --   - 0x1111 sourceFlags mask (Mine + Friendly + Player-controlled + Pet)
---   - Mine + Guardian, or Mine + Player-controlled NPC (some hunter pets)
+--   - Mine + Guardian, Mine + Pet- GUID, or Mine + Player-controlled NPC (some hunter pets)
 --   - SPELL_SUMMON destinations owned by the player
 
 local playerGUID
@@ -93,12 +93,13 @@ local function LivePetGUID()
     return nil
 end
 
+local function HasPetGUIDPrefix(guid)
+    return guid and guid:sub(1, 4) == "Pet-"
+end
+
 local function IsPetGUID(guid)
     if not guid then
         return false
-    end
-    if guid:sub(1, 4) == "Pet-" then
-        return true
     end
     local petGUID = LivePetGUID()
     return petGUID and guid == petGUID
@@ -146,6 +147,12 @@ local function IsPetSource(sourceGUID, sourceFlags)
 
     if bit.band(sourceFlags, AFFILIATION_MINE) == 0 then
         return false
+    end
+
+    -- Pet- GUID is a type check only. Ownership is AFFILIATION_MINE (raid pets are RAID/PARTY).
+    if HasPetGUIDPrefix(sourceGUID) then
+        RememberOwnedPetGUID(sourceGUID)
+        return true
     end
 
     if bit.band(sourceFlags, TYPE_GUARDIAN) ~= 0 then

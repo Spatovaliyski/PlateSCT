@@ -17,7 +17,7 @@ MODERN VERSION (Midnight, combat restrictions)
 
 CLASSIC VERSION (Era 11509 / TBC 20506 / Mists 50504 — no restrictions, one path)
   Allowed:  COMBAT_LOG_EVENT_UNFILTERED + CombatLogGetCurrentEventInfo;
-            source GUID / Pet- prefix / UnitGUID("pet") / 0x1111 sourceFlags;
+            source GUID / live UnitGUID("pet") / Pet- prefix only with Mine affiliation / 0x1111 sourceFlags;
             SPELL_SUMMON dest GUID cache; Mine+Guardian or Mine+Player NPC pets;
             GetSpellInfo/GetSpellTexture (and C_Spell if present).
   Forbidden: UNIT_COMBAT for numbers; issecretvalue/canaccessvalue/C_DamageMeter/C_CurveUtil;
