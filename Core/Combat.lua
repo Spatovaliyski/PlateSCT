@@ -1,15 +1,67 @@
 local _, BD = ...
 
+-- UNIT_COMBAT repeats the same wound on every alias (nameplateN, target, …).
+-- UnitIsUnit is often unusable on Modern, so aliases cannot be merged by token.
+-- Compare nameplate frames instead, and ignore non-nameplate tokens entirely.
+local lastPersonalPlate
+local lastPersonalTime = 0
+local lastPersonalAmount
+local lastPersonalCrit
+local PERSONAL_DUP_WINDOW = 0.05
+
+local function AmountsEqual(a, b)
+    if a == nil or b == nil then
+        return a == b
+    end
+    if BD.IsSecret(a) or BD.IsSecret(b) then
+        return false
+    end
+    local ok, same = pcall(function()
+        return a == b
+    end)
+    return ok and same
+end
+
+local function IsDuplicatePersonalHit(plate, amount, isCrit)
+    if not plate or plate ~= lastPersonalPlate then
+        return false
+    end
+    if (GetTime() - lastPersonalTime) > PERSONAL_DUP_WINDOW then
+        return false
+    end
+    if lastPersonalCrit ~= isCrit then
+        return false
+    end
+    if BD.IsSecret(amount) or BD.IsSecret(lastPersonalAmount) then
+        return true
+    end
+    return AmountsEqual(amount, lastPersonalAmount)
+end
+
+local function RememberPersonalHit(plate, amount, isCrit)
+    lastPersonalPlate = plate
+    lastPersonalTime = GetTime()
+    lastPersonalAmount = amount
+    lastPersonalCrit = isCrit
+end
+
 local function ShowPersonalDamage(unit, amount, isCrit, schoolMask)
-    local token = BD.GetNameplateTokenForUnit(unit) or unit
-    if not token or not BD.GetNamePlateFrame(token) then
+    if not BD.IsNameplateUnit(unit) then
+        return false
+    end
+    local plate = BD.GetNamePlateFrame(unit)
+    if not plate then
+        return false
+    end
+    if IsDuplicatePersonalHit(plate, amount, isCrit) then
+        BD:DebugPrint("personal skip, duplicate")
         return false
     end
     if not BD.PassesThreshold(amount, BD.db.minDamage) then
         return false
     end
 
-    local spellID, usedAuto = BD:MatchOutgoingHit(token, schoolMask)
+    local spellID, usedAuto = BD:MatchOutgoingHit(unit, schoolMask)
     if not spellID then
         BD:DebugPrint("personal skip, no outgoing match")
         return false
@@ -22,9 +74,10 @@ local function ShowPersonalDamage(unit, amount, isCrit, schoolMask)
         r, g, b = preset.defaultColor[1], preset.defaultColor[2], preset.defaultColor[3]
     end
     local hitKind = isCrit and "crit" or "hit"
-    BD:DebugPrint("personal", token, display, hitKind, usedAuto and "auto" or spellID)
+    BD:DebugPrint("personal", unit, display, hitKind, usedAuto and "auto" or spellID)
+    RememberPersonalHit(plate, amount, isCrit)
     -- Modern-only: spellId comes from attribution, not UNIT_COMBAT.
-    BD:ShowOnNameplate(token, display, r, g, b, amount, isCrit, false, nil, hitKind, spellID)
+    BD:ShowOnNameplate(unit, display, r, g, b, amount, isCrit, false, nil, hitKind, spellID)
     return true
 end
 
@@ -71,10 +124,12 @@ function BD:HandleUnitCombat(unit, action, flagText, amount, schoolMask)
         if action ~= "WOUND" then
             return
         end
-        if not BD.IsNameplateUnit(unit) and unit ~= "target" then
+        -- Nameplate token only. Do not accept "target": GetNamePlateForUnit
+        -- maps it to the same frame, and UnitIsUnit cannot prove the alias.
+        if not BD.IsNameplateUnit(unit) then
             return
         end
-        if not BD.GetNamePlateFrame(unit) and not BD.GetNamePlateFrame("target") then
+        if not BD.GetNamePlateFrame(unit) then
             return
         end
         ShowPersonalDamage(unit, amount, isCrit, schoolMask)
