@@ -26,6 +26,7 @@ L["General"] = "General"
 L["Display"] = "Display"
 L["Damage"] = "Damage"
 L["Tools"] = "Tools"
+L["Tools & Preview"] = "Tools & Preview"
 L["Choose whose damage and which nameplates to show."] = "Choose whose damage and which nameplates to show."
 L["Control how numbers look and how they animate."] = "Control how numbers look and how they animate."
 L["Hide small hits so the big numbers stay readable."] = "Hide small hits so the big numbers stay readable."
@@ -89,6 +90,10 @@ L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the
     "Modern scrolls up from the nameplate with a small crit pop. Classic keeps the grow-and-settle pow, newest hit takes center, and older numbers snap aside."
 L["Modern"] = "Modern"
 L["Classic"] = "Classic"
+L["Show live preview"] = "Show live preview"
+L["Show sample hits, crits, and misses beside this window."] =
+    "Show sample hits, crits, and misses beside this window."
+L["Hide live preview"] = "Hide live preview"
 L["Color by damage school"] = "Color by damage school"
 L["Tint numbers by school (fire orange, frost blue, and so on). Off keeps the default yellow."] =
     "Tint numbers by school (fire orange, frost blue, and so on). Off keeps the default yellow."
@@ -105,6 +110,14 @@ L["Bottom"] = "Bottom"
 L["Text style"] = "Text style"
 L["Abbreviate numbers"] = "Abbreviate numbers"
 L["Display large numbers as 214k or 1.2M."] = "Display large numbers as 214k or 1.2M."
+L["Display large numbers as 214k or 1.2M. Disables thousand separators."] =
+    "Display large numbers as 214k or 1.2M. Disables thousand separators."
+L["Thousand separators"] = "Thousand separators"
+L["Group digits by thousands."] = "Group digits by thousands."
+L["Unavailable while Abbreviate numbers is on."] = "Unavailable while Abbreviate numbers is on."
+L["Off"] = "Off"
+L["Comma (10,000)"] = "Comma (10,000)"
+L["Dot (10.000)"] = "Dot (10.000)"
 L["Animation"] = "Animation"
 L["Font size"] = "Font size"
 L["Scroll offset"] = "Scroll offset"
@@ -160,6 +173,7 @@ L["In raids and Mythic+ some amounts are secret, so the threshold hides those hi
 
 -- Tools
 L["Preview"] = "Preview"
+L["Updates live as you change options."] = "Updates live as you change options."
 L["Target an enemy, then spawn sample numbers on its nameplate."] =
     "Target an enemy, then spawn sample numbers on its nameplate."
 L["Test on Target"] = "Test on Target"

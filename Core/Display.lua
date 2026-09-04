@@ -182,10 +182,20 @@ local function PreviewSpawnY(motionStyle)
 end
 
 local previewGeneration = 0
-local PREVIEW_STAGGER = 0.18
+local PREVIEW_STAGGER = 0.45
+local PREVIEW_SAMPLES = {
+    { hitKind = "hit", amount = 12400, spellID = 6603, school = 1, fallbackIcon = "Interface\\Icons\\INV_Sword_04" },
+    { hitKind = "crit", amount = 214200, spellID = 133, school = 4, fallbackIcon = "Interface\\Icons\\Spell_Fire_FlameBolt" },
+    { hitKind = "hit", amount = 18650, spellID = 116, school = 16, fallbackIcon = "Interface\\Icons\\Spell_Frost_FrostBolt02" },
+    { hitKind = "crit", amount = 1800000, spellID = 686, school = 32, fallbackIcon = "Interface\\Icons\\Spell_Shadow_ShadowBolt" },
+    { hitKind = "miss", text = "MISS" },
+    { hitKind = "miss", text = "DODGE" },
+    { hitKind = "miss", text = "IMMUNE" },
+}
 
-local function SpawnMotionPreviewFrame(anchor, hitKind, sampleIndex)
-    local kind = hitKind or "hit"
+local function SpawnMotionPreviewFrame(anchor, sample)
+    sample = sample or PREVIEW_SAMPLES[1]
+    local kind = sample.hitKind or "hit"
     local isCrit = kind == "crit"
     local isMiss = kind == "miss"
 
@@ -214,20 +224,30 @@ local function SpawnMotionPreviewFrame(anchor, hitKind, sampleIndex)
     end
 
     local r, g, b
+    local resolvedIcon
     if isMiss then
-        frame.text:SetText("DODGE")
+        frame.text:SetText(sample.text or "MISS")
         r, g, b = 1, 0.85, 0.2
     else
-        local hitSamples = { 12400, 18650, 842, 12400, 18650 }
-        local critSamples = { 214200, 1800000, 214200, 1800000, 214200 }
-        local samples = isCrit and critSamples or hitSamples
-        local amount = samples[sampleIndex or 1] or samples[1]
-        frame.text:SetText(BD.FormatAmount(amount, BD.db.abbreviate))
-        r, g, b = preset.defaultColor[1], preset.defaultColor[2], preset.defaultColor[3]
+        frame.text:SetText(BD.FormatAmount(sample.amount, BD.db.abbreviate))
+        if BD:ShouldUseSchoolColors() then
+            r, g, b = BD.GetSchoolColor(sample.school)
+        else
+            r, g, b = preset.defaultColor[1], preset.defaultColor[2], preset.defaultColor[3]
+        end
+        resolvedIcon = BD:ResolveOutgoingSpellIcon(nil, sample.spellID)
+        if not resolvedIcon then
+            resolvedIcon = BD:ResolveOutgoingSpellIcon(sample.fallbackIcon, nil)
+        end
     end
 
+    local iconSize = math.max(12, math.floor((fontSize * 1.1) + 0.5))
     local showCritLabel = isCrit and BD.db.showCritLabel and true or false
     ApplyTextLayout(frame, fontSize, fontPath, preset.fontFlags, preset, {
+        showIcon = resolvedIcon ~= nil,
+        iconSize = iconSize,
+        iconTexture = resolvedIcon,
+        iconPosition = BD.db.iconPosition or "left",
         showCritLabel = showCritLabel,
         r = r,
         g = g,
@@ -249,11 +269,8 @@ local function SpawnMotionPreviewFrame(anchor, hitKind, sampleIndex)
     frame:Show()
 end
 
-function BD:ShowMotionPreview(anchor, hitKind)
+function BD:ShowMotionPreview(anchor)
     if not anchor or not anchor:IsShown() then
-        return
-    end
-    if self:IsClassicNumberStyle() then
         return
     end
 
@@ -262,7 +279,7 @@ function BD:ShowMotionPreview(anchor, hitKind)
 
     BD.Pool.ReleasePreviewFrames(anchor)
 
-    for index = 1, 5 do
+    for index, sample in ipairs(PREVIEW_SAMPLES) do
         C_Timer.After((index - 1) * PREVIEW_STAGGER, function()
             if generation ~= previewGeneration then
                 return
@@ -270,9 +287,43 @@ function BD:ShowMotionPreview(anchor, hitKind)
             if not anchor or not anchor:IsShown() then
                 return
             end
-            SpawnMotionPreviewFrame(anchor, hitKind, index)
+            SpawnMotionPreviewFrame(anchor, sample)
         end)
     end
+end
+
+local previewReplayPending = false
+
+function BD:RequestOptionsPreview()
+    local pane = BD.configFrame and BD.configFrame.previewPane
+    if not pane then
+        return
+    end
+    if not (self.db and self.db.showOptionsPreview) then
+        pane:Hide()
+        BD:ReleaseMotionPreviews()
+        return
+    end
+    pane:Show()
+    if previewReplayPending then
+        return
+    end
+    previewReplayPending = true
+    C_Timer.After(0.08, function()
+        previewReplayPending = false
+        if not BD.configFrame or not BD.configFrame.previewPane then
+            return
+        end
+        pane = BD.configFrame.previewPane
+        if not pane:IsShown() then
+            return
+        end
+        local stage = pane.stage or pane
+        if not stage:IsShown() then
+            return
+        end
+        BD:ShowMotionPreview(stage)
+    end)
 end
 
 function BD:ReleaseMotionPreviews()
@@ -298,8 +349,18 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
 
     frame.anchor = plate
     frame.anchorRelPoint = "TOP"
-    -- Parent UIParent, point at plate: plate hide must not hide numbers, and
-    -- GetCenter on a nameplate child is restricted on Classic.
+    -- Parent UIParent. Point at a WorldFrame host that follows this plate while
+    -- live; death/reuse orphans the host so it cannot jump to a neighbor.
+    -- anchorGuid only when plaintext (Classic). Modern secrets: see API.lua;
+    -- orphan on plate hide / NAME_PLATE_UNIT_REMOVED, never GUID compare.
+    do
+        local guid = UnitGUID(unit)
+        if guid and BD.CanAccessValue(guid) and not BD.IsSecret(guid) then
+            frame.anchorGuid = guid
+        else
+            frame.anchorGuid = nil
+        end
+    end
     frame:SetParent(UIParent)
     frame:SetIgnoreParentScale(true)
     pcall(function()
@@ -308,6 +369,7 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
     frame:SetFrameStrata("HIGH")
     frame:SetFrameLevel(100)
     frame.unitToken = unit
+    BD.Pool.AttachLingerHost(frame, plate)
 
     local baseY = preset.spawnBaseY or 8
     if frame.isCrit and frame.critsHold then
@@ -323,7 +385,8 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
         frame.startX, frame.startY = BD.Pool.PickClearSpawn(plate, frame, 0, baseY, frame.isCrit)
     end
     frame:ClearAllPoints()
-    frame:SetPoint("CENTER", plate, "TOP", frame.startX, frame.startY)
+    local lingerAt = frame.lingerHost or plate
+    frame:SetPoint("CENTER", lingerAt, frame.lingerHost and "CENTER" or "TOP", frame.startX, frame.startY)
 
     local fontSize = (self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale
     local fontPath = STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"
@@ -520,7 +583,9 @@ function BD:ShowTestNumbers()
         { amount = 214200, crit = true, spellID = 116, hitKind = "crit" },
         { amount = 842, crit = false, spellID = 585, hitKind = "hit" },
         { amount = 1800000, crit = true, spellID = 686, hitKind = "crit" },
+        { miss = true, text = "MISS", hitKind = "miss" },
         { miss = true, text = "DODGE", hitKind = "miss" },
+        { miss = true, text = "IMMUNE", hitKind = "miss" },
     }
     for index, sample in ipairs(samples) do
         C_Timer.After((index - 1) * 0.12, function()

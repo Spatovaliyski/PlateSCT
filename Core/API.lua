@@ -2,29 +2,86 @@ local _, BD = ...
 
 --[[
 PlateSCT API flavor lock — source of truth for Modern vs Classic version boundaries.
+Do not add a root README for this contract (release zips pack the folder).
 
-Terminology (chat + comments):
+=============================================================================
+ARCHITECTURE: one infra + two flavor APIs
+=============================================================================
+  INFRA (shared, flavor-agnostic where possible)
+    Pool, Animation, Display layout/fonts/icons, Options shell, locales,
+    Constants UI defaults. May call BD.IsSecret / ValuesEqual / CanAccessValue.
+    Must not: parse CLEU, register UNIT_COMBAT for numbers, assume plaintext
+    GUID/amount ownership, or call AssertModern/AssertClassic combat parsers.
+
+  MODERN FLAVOR — Core/Combat.lua, Attribution.lua, Probe.lua
+    Entry points: AssertModern(...). Owns UNIT_COMBAT, attribution, secrets.
+
+  CLASSIC FLAVOR — Core/CombatClassic.lua
+    Entry points: AssertClassic(...). Owns CLEU, GUID↔plate, pet flags, spellId.
+
+  Flavor may call infra (ShowOnNameplate, OrphanFramesForUnit, …).
+  Infra must not call flavor combat ingest.
+
+=============================================================================
+TERMINOLOGY (chat + comments)
+=============================================================================
   Classic version / Modern version = WoW client (Era/TBC/Mists vs Midnight).
   Classic style / Modern style     = numberStyle "classic" vs "retail" (any client).
   Never say "Classic" alone when client vs style could be mixed.
 
+=============================================================================
 MODERN VERSION (Midnight, combat restrictions)
-  Allowed:  UNIT_COMBAT for numbers; issecretvalue/canaccessvalue/C_CurveUtil threshold;
-            attribution heuristic + onlyMyDamage/allNameplates; C_DamageMeter probe;
-            C_Spell first, then legacy spell APIs.
-  Forbidden: COMBAT_LOG_EVENT_UNFILTERED for numbers; treating amount/source as plaintext;
-            assuming source GUID is yours; Classic version CLEU payload layout.
+=============================================================================
+  Allowed:
+    UNIT_COMBAT for numbers; issecretvalue/canaccessvalue via Util helpers only;
+    C_CurveUtil threshold (secret amounts → visual hide, not Lua skip-by-compare);
+    attribution heuristic + onlyMyDamage/allNameplates; C_DamageMeter probe;
+    C_Spell first, then legacy spell APIs;
+    plate orphan on hide / NAME_PLATE_UNIT_REMOVED (no GUID identity compare).
 
-CLASSIC VERSION (Era 11509 / TBC 20506 / Mists 50504 — no restrictions, one path)
-  Allowed:  COMBAT_LOG_EVENT_UNFILTERED + CombatLogGetCurrentEventInfo;
-            source GUID / live UnitGUID("pet") / Pet- prefix only with Mine affiliation / 0x1111 sourceFlags;
-            SPELL_SUMMON dest GUID cache; Mine+Guardian or Mine+Player NPC pets;
-            GetSpellInfo/GetSpellTexture (and C_Spell if present).
-  Forbidden: UNIT_COMBAT for numbers; issecretvalue/canaccessvalue/C_DamageMeter/C_CurveUtil;
-            attribution windows / threat-as-source; gating pet on onlyMyDamage;
-            MatchOutgoingHit or cast-tracking for spell icons (use CLEU spellId instead).
+  Forbidden:
+    COMBAT_LOG_EVENT_UNFILTERED for numbers;
+    treating amount / school / UnitGUID / source as plaintext;
+    raw == ~= < > <= >= concat tostring sort on unchecked combat values;
+    storing secret UnitGUID (or other secrets) on frames as compare identity;
+    assuming source GUID is yours; Classic CLEU payload layout;
+    Classic pet flag / SPELL_SUMMON ownership model.
 
-Call sites in flavor-owned files must use AssertModern / AssertClassic at entry points.
+=============================================================================
+CLASSIC VERSION (Era 11509 / TBC 20506 / Mists 50504 — no restrictions)
+=============================================================================
+  Allowed:
+    COMBAT_LOG_EVENT_UNFILTERED + CombatLogGetCurrentEventInfo;
+    source GUID / live UnitGUID("pet") / Pet- prefix only with Mine affiliation /
+      0x1111 sourceFlags; SPELL_SUMMON dest GUID cache;
+    Mine+Guardian or Mine+Player NPC pets;
+    GetSpellInfo/GetSpellTexture (and C_Spell if present);
+    plaintext GUID compare for plate reuse when CanAccessValue.
+
+  Forbidden:
+    UNIT_COMBAT for numbers; issecretvalue/canaccessvalue/C_DamageMeter/C_CurveUtil
+      for real Classic logic (helpers may no-op false);
+    attribution windows / threat-as-source; gating pet on onlyMyDamage;
+    MatchOutgoingHit or cast-tracking for spell icons (use CLEU spellId instead).
+
+=============================================================================
+SECRET VALUES — what belongs / does not
+=============================================================================
+  Belongs (Modern, via Util):
+    BD.IsSecret / ValuePresent / CanAccessValue / ValuesEqual / ValuesNotEqual;
+    pass secret amounts into Display / threshold curve Evaluate;
+    treat presence without reading plaintext.
+
+  Does not belong:
+    guid == x, amount < minDamage, school == n without CanAccessValue;
+    frame.anchorGuid = UnitGUID(unit) when secret (Modern: orphan via plate events);
+    using CLEU source GUID for "mine" on Modern;
+    putting Classic-only GUID compares in shared Pool without ValuesEqual;
+    Classic combat logic that requires issecretvalue to be meaningful.
+
+  If a value might be secret: use helpers, or do not compare / store for identity.
+
+Call sites in flavor-owned files must use AssertModern / AssertClassic at entry.
 ]]
 
 local API = {}

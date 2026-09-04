@@ -24,6 +24,7 @@ L["General"] = "Allgemein"
 L["Display"] = "Anzeige"
 L["Damage"] = "Schaden"
 L["Tools"] = "Werkzeuge"
+L["Tools & Preview"] = "Werkzeuge & Vorschau"
 L["Choose whose damage and which nameplates to show."] =
     "Wählt, wessen Schaden und welche Namensplaketten angezeigt werden."
 L["Control how numbers look and how they animate."] =
@@ -63,6 +64,10 @@ L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the
     "Modern scrollt von der Namensplakette nach oben mit einem kleinen Krit-Effekt. Classic behält das Wachsen-und-Setzen, nah an der Plakette."
 L["Modern"] = "Modern"
 L["Classic"] = "Classic"
+L["Show live preview"] = "Live-Vorschau anzeigen"
+L["Show sample hits, crits, and misses beside this window."] =
+    "Zeigt Beispieltreffer, Krits und Verfehlen neben diesem Fenster."
+L["Hide live preview"] = "Live-Vorschau ausblenden"
 L["Color by damage school"] = "Nach Schadensschule einfärben"
 L["Tint numbers by school (fire orange, frost blue, and so on). Off keeps the default yellow."] =
     "Färbt Zahlen nach Schule (Feuer orange, Frost blau usw.). Aus behält das Standardgelb."
@@ -74,6 +79,14 @@ L["Uses your last spell in Only my damage mode. Left of the number."] =
 L["Text style"] = "Textstil"
 L["Abbreviate numbers"] = "Zahlen abkürzen"
 L["Display large numbers as 214k or 1.2M."] = "Zeigt große Zahlen als 214k oder 1,2M."
+L["Display large numbers as 214k or 1.2M. Disables thousand separators."] =
+    "Zeigt große Zahlen als 214k oder 1,2M. Deaktiviert Tausendertrennzeichen."
+L["Thousand separators"] = "Tausendertrennzeichen"
+L["Group digits by thousands."] = "Gruppiert Ziffern in Tausendern."
+L["Unavailable while Abbreviate numbers is on."] = "Nicht verfügbar, solange „Zahlen abkürzen“ aktiv ist."
+L["Off"] = "Aus"
+L["Comma (10,000)"] = "Komma (10,000)"
+L["Dot (10.000)"] = "Punkt (10.000)"
 L["Animation"] = "Animation"
 L["Font size"] = "Schriftgröße"
 L["Scroll offset"] = "Scroll-Versatz"
@@ -95,6 +108,7 @@ L["In raids and Mythic+ some amounts are secret, so the threshold hides those hi
     "In Schlachtzügen und Mythisch+ sind manche Werte geheim, daher blendet die Schwelle diese Treffer optisch aus statt sie zu überspringen."
 
 L["Preview"] = "Vorschau"
+L["Updates live as you change options."] = "Aktualisiert sich live bei Optionsänderungen."
 L["Target an enemy, then spawn sample numbers on its nameplate."] =
     "Wählt einen Feind und erzeugt Beispielzahlen auf seiner Namensplakette."
 L["Test on Target"] = "Am Ziel testen"

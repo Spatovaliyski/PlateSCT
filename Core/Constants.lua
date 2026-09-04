@@ -4,6 +4,7 @@ BD.DEFAULTS = {
     enabled = true,
     minDamage = 0,
     abbreviate = false,
+    thousandSeparator = "none", -- "none" | "comma" | "dot"
     showSpellIcon = false,
     iconPosition = "left",
     fontSize = 14,
@@ -23,8 +24,9 @@ BD.DEFAULTS = {
     animCrit = "platesct",
     animMiss = "platesct",
     showCritLabel = false,
+    showOptionsPreview = true,
     locale = "auto",
-    layoutRevision = 9,
+    layoutRevision = 11,
     attributionAuto = true,
     attributionManual = "balanced",
     attributionOpenWorld = "loose",
@@ -57,6 +59,12 @@ BD.ICON_POSITIONS = {
     { id = "right", labelKey = "Right" },
     { id = "top", labelKey = "Top" },
     { id = "bottom", labelKey = "Bottom" },
+}
+
+BD.THOUSAND_SEPARATORS = {
+    { id = "none", labelKey = "Off", recommended = true },
+    { id = "comma", labelKey = "Comma (10,000)" },
+    { id = "dot", labelKey = "Dot (10.000)" },
 }
 
 BD.STYLE_PRESETS = {

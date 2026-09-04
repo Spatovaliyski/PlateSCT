@@ -24,6 +24,7 @@ L["General"] = "Général"
 L["Display"] = "Affichage"
 L["Damage"] = "Dégâts"
 L["Tools"] = "Outils"
+L["Tools & Preview"] = "Outils & Aperçu"
 L["Choose whose damage and which nameplates to show."] =
     "Choisissez les dégâts et les barres de nom à afficher."
 L["Control how numbers look and how they animate."] =
@@ -63,6 +64,10 @@ L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the
     "Moderne fait défiler vers le haut depuis la barre de nom avec un petit effet de critique. Classic conserve le grossissement puis le tassement, proche de la barre."
 L["Modern"] = "Moderne"
 L["Classic"] = "Classic"
+L["Show live preview"] = "Afficher l'aperçu en direct"
+L["Show sample hits, crits, and misses beside this window."] =
+    "Affiche des exemples de coups, critiques et échecs à côté de cette fenêtre."
+L["Hide live preview"] = "Masquer l'aperçu en direct"
 L["Color by damage school"] = "Couleur selon l'école de dégâts"
 L["Tint numbers by school (fire orange, frost blue, and so on). Off keeps the default yellow."] =
     "Teinte les nombres selon l'école (feu orange, givre bleu, etc.). Désactivé conserve le jaune par défaut."
@@ -74,6 +79,14 @@ L["Uses your last spell in Only my damage mode. Left of the number."] =
 L["Text style"] = "Style du texte"
 L["Abbreviate numbers"] = "Abréger les nombres"
 L["Display large numbers as 214k or 1.2M."] = "Affiche les grands nombres comme 214k ou 1,2M."
+L["Display large numbers as 214k or 1.2M. Disables thousand separators."] =
+    "Affiche les grands nombres comme 214k ou 1,2M. Désactive les séparateurs de milliers."
+L["Thousand separators"] = "Séparateurs de milliers"
+L["Group digits by thousands."] = "Groupe les chiffres par milliers."
+L["Unavailable while Abbreviate numbers is on."] = "Indisponible tant que « Abréger les nombres » est activé."
+L["Off"] = "Désactivé"
+L["Comma (10,000)"] = "Virgule (10,000)"
+L["Dot (10.000)"] = "Point (10.000)"
 L["Animation"] = "Animation"
 L["Font size"] = "Taille de police"
 L["Scroll offset"] = "Décalage du défilement"
@@ -95,6 +108,7 @@ L["In raids and Mythic+ some amounts are secret, so the threshold hides those hi
     "En raids et Mythique+, certains montants sont secrets, donc le seuil masque ces coups visuellement au lieu de les ignorer."
 
 L["Preview"] = "Aperçu"
+L["Updates live as you change options."] = "Se met à jour en direct quand vous changez les options."
 L["Target an enemy, then spawn sample numbers on its nameplate."] =
     "Ciblez un ennemi, puis générez des nombres d'exemple sur sa barre de nom."
 L["Test on Target"] = "Tester sur la cible"

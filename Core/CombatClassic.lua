@@ -198,9 +198,12 @@ local function UncacheNameplateToken(unit)
     if not unit then
         return
     end
-    local guid = UnitGUID(unit)
-    if guid then
-        guidToToken[guid] = nil
+    -- Clear by token: UnitGUID can already be gone on REMOVED, and nameplate
+    -- tokens are reused — a GUID-only clear leaves stale maps to neighbors.
+    for guid, token in pairs(guidToToken) do
+        if token == unit then
+            guidToToken[guid] = nil
+        end
     end
 end
 
@@ -209,8 +212,11 @@ local function GetNameplateTokenForGUID(guid)
         return nil
     end
     local cached = guidToToken[guid]
-    if cached and BD.GetNamePlateFrame(cached) then
-        return cached
+    if cached then
+        if BD.GetNamePlateFrame(cached) and UnitGUID(cached) == guid then
+            return cached
+        end
+        guidToToken[guid] = nil
     end
     if C_NamePlate and C_NamePlate.GetNamePlates then
         local ok, plates = pcall(C_NamePlate.GetNamePlates)
@@ -408,7 +414,7 @@ end
 function BD:OnClassicNamePlateRemoved(unit)
     BD.API.AssertClassic("CombatClassic.OnClassicNamePlateRemoved")
     UncacheNameplateToken(unit)
-    BD:DetachFramesForUnit(unit)
+    BD:OrphanFramesForUnit(unit)
 end
 
 function BD:OnClassicPlayerLogin()

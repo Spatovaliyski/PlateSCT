@@ -24,6 +24,7 @@ L["General"] = "Общие"
 L["Display"] = "Отображение"
 L["Damage"] = "Урон"
 L["Tools"] = "Инструменты"
+L["Tools & Preview"] = "Инструменты и просмотр"
 L["Choose whose damage and which nameplates to show."] =
     "Выберите чей урон и какие индикаторы здоровья показывать."
 L["Control how numbers look and how they animate."] =
@@ -63,6 +64,10 @@ L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the
     "Современный поднимается от индикатора с небольшим эффектом крита. Classic сохраняет рост и оседание рядом с индикатором."
 L["Modern"] = "Современный"
 L["Classic"] = "Classic"
+L["Show live preview"] = "Показывать живой просмотр"
+L["Show sample hits, crits, and misses beside this window."] =
+    "Показывает примеры ударов, критов и промахов рядом с этим окном."
+L["Hide live preview"] = "Скрыть живой просмотр"
 L["Color by damage school"] = "Цвет по школе урона"
 L["Tint numbers by school (fire orange, frost blue, and so on). Off keeps the default yellow."] =
     "Окрашивает числа по школе (огонь — оранжевый, лёд — синий и т. д.). Выкл. оставляет жёлтый по умолчанию."
@@ -74,6 +79,14 @@ L["Uses your last spell in Only my damage mode. Left of the number."] =
 L["Text style"] = "Стиль текста"
 L["Abbreviate numbers"] = "Сокращать числа"
 L["Display large numbers as 214k or 1.2M."] = "Показывает большие числа как 214k или 1.2M."
+L["Display large numbers as 214k or 1.2M. Disables thousand separators."] =
+    "Показывает большие числа как 214k или 1.2M. Отключает разделители тысяч."
+L["Thousand separators"] = "Разделители тысяч"
+L["Group digits by thousands."] = "Группирует цифры по тысячам."
+L["Unavailable while Abbreviate numbers is on."] = "Недоступно, пока включено «Сокращать числа»."
+L["Off"] = "Выкл."
+L["Comma (10,000)"] = "Запятая (10,000)"
+L["Dot (10.000)"] = "Точка (10.000)"
 L["Animation"] = "Анимация"
 L["Font size"] = "Размер шрифта"
 L["Scroll offset"] = "Смещение прокрутки"
@@ -95,6 +108,7 @@ L["In raids and Mythic+ some amounts are secret, so the threshold hides those hi
     "В рейдах и Эпохальном+ некоторые значения секретны, поэтому порог скрывает эти удары визуально, а не пропускает их."
 
 L["Preview"] = "Просмотр"
+L["Updates live as you change options."] = "Обновляется сразу при изменении настроек."
 L["Target an enemy, then spawn sample numbers on its nameplate."] =
     "Выберите врага и создайте примеры чисел на его индикаторе."
 L["Test on Target"] = "Тест на цели"

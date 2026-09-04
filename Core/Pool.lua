@@ -274,11 +274,13 @@ local function ComputeMotion(frame)
     return x, y, scale, Anim.ComputeAlpha(frame, progress)
 end
 
+local lingerHosts = {}
+
 local function IsUsableAnchor(region)
     if not region then
         return false
     end
-    if region == UIParent then
+    if region == UIParent or region == WorldFrame then
         return true
     end
     local ok, forbidden = pcall(function()
@@ -291,65 +293,136 @@ local function IsUsableAnchor(region)
 end
 
 local function SafeSetPoint(frame, point, relTo, relPoint, x, y)
-    if not relTo or (relTo ~= UIParent and not IsUsableAnchor(relTo)) then
-        relTo = UIParent
-        point = "CENTER"
-        relPoint = "CENTER"
+    if not relTo or not IsUsableAnchor(relTo) then
+        return false
     end
     return pcall(frame.SetPoint, frame, point, relTo, relPoint, x or 0, y or 0)
 end
 
-local function DetachFrameToScreen(frame)
-    if frame.detached or frame.incoming or frame.isPreview then
-        return frame.detached and true or false
-    end
-
-    local anchor = frame.anchor
+local function AnchorIsShown(anchor)
     if not anchor then
         return false
     end
-
-    local motionX, motionY = ComputeMotion(frame)
-
-    pcall(frame.SetParent, frame, UIParent)
-    pcall(frame.SetIgnoreParentScale, frame, true)
-    pcall(function()
-        frame:SetIgnoreParentAlpha(true)
+    local ok, shown = pcall(function()
+        return anchor:IsShown()
     end)
-    pcall(frame.SetFrameStrata, frame, "HIGH")
-    pcall(frame.Show, frame)
-    pcall(frame.ClearAllPoints, frame)
+    return ok and shown
+end
 
-    local point, relTo, relPoint, xOfs, yOfs
-    if IsUsableAnchor(anchor) then
-        point = "CENTER"
-        relTo = anchor
-        relPoint = frame.anchorRelPoint or "TOP"
-        xOfs, yOfs = motionX, motionY
-        if not SafeSetPoint(frame, point, relTo, relPoint, xOfs, yOfs) then
-            relTo = nil
-        end
+local function AcquireLingerHost()
+    local host = table.remove(lingerHosts)
+    if not host then
+        host = CreateFrame("Frame", nil, WorldFrame)
+        host:SetSize(8, 8)
     end
+    host:SetParent(WorldFrame)
+    host:Show()
+    return host
+end
 
-    if not relTo then
-        point = "CENTER"
-        relTo = UIParent
-        relPoint = "CENTER"
-        xOfs, yOfs = motionX, motionY
-        SafeSetPoint(frame, point, relTo, relPoint, xOfs, yOfs)
+local function ReleaseLingerHost(host)
+    if not host then
+        return
     end
+    host:Hide()
+    host:ClearAllPoints()
+    host:SetParent(WorldFrame)
+    table.insert(lingerHosts, host)
+end
 
-    frame.detachPoint = point
-    frame.detachRelTo = relTo
-    frame.detachRelPoint = relPoint
-    frame.detachScreenX = xOfs
-    frame.detachScreenY = yOfs
-    frame.detachMotionX = motionX
-    frame.detachMotionY = motionY
-    frame.detached = true
-    frame.unitToken = nil
-    frame.anchor = nil
+local function ReadWorldBottomLeft(region)
+    if not region then
+        return nil
+    end
+    local worldScale = WorldFrame:GetEffectiveScale()
+    if not worldScale or worldScale == 0 then
+        return nil
+    end
+    local ok, left, bottom = pcall(function()
+        return region:GetLeft(), region:GetBottom()
+    end)
+    if not ok or left == nil or bottom == nil then
+        return nil
+    end
+    local okScale, scale = pcall(region.GetEffectiveScale, region)
+    if not okScale or not scale or scale == 0 then
+        scale = worldScale
+    end
+    return left * scale / worldScale, bottom * scale / worldScale
+end
+
+local function SnapshotLingerHost(frame)
+    local host = frame.lingerHost
+    if not host then
+        return
+    end
+    local left, bottom = ReadWorldBottomLeft(host)
+    if left == nil then
+        left, bottom = ReadWorldBottomLeft(frame.anchor)
+    end
+    if left ~= nil then
+        frame.lingerWorldX = left
+        frame.lingerWorldY = bottom
+    end
+end
+
+-- Follow the plate while it is still that unit. Never keep a point on a
+-- nameplate widget after it is hidden or reused — those frames are recycled
+-- onto nearby mobs.
+local function BindLingerHostToPlate(frame, plate)
+    local host = frame.lingerHost
+    if not host or not plate then
+        return false
+    end
+    host:SetParent(WorldFrame)
+    host:ClearAllPoints()
+    local relPoint = frame.anchorRelPoint or "TOP"
+    if not SafeSetPoint(host, "CENTER", plate, relPoint, 0, 0) then
+        return false
+    end
+    SnapshotLingerHost(frame)
     return true
+end
+
+local function FreezeLingerHost(frame)
+    if frame.lingerFrozen then
+        return true
+    end
+    local host = frame.lingerHost
+    if not host then
+        return false
+    end
+    SnapshotLingerHost(frame)
+    local x, y = frame.lingerWorldX, frame.lingerWorldY
+    if x == nil or y == nil then
+        return false
+    end
+    host:SetParent(WorldFrame)
+    host:ClearAllPoints()
+    if not SafeSetPoint(host, "BOTTOMLEFT", WorldFrame, "BOTTOMLEFT", x, y) then
+        return false
+    end
+    frame.lingerFrozen = true
+    frame.anchor = nil
+    frame.unitToken = nil
+    return true
+end
+
+local function AnchorGuidChanged(frame)
+    -- Classic-only reuse signal. Modern UnitGUID is often secret — ValuesNotEqual
+    -- returns false; orphan via plate hide / NAME_PLATE_UNIT_REMOVED instead.
+    if not frame.anchorGuid or not frame.unitToken then
+        return false
+    end
+    return BD.ValuesNotEqual(UnitGUID(frame.unitToken), frame.anchorGuid)
+end
+
+local function AttachLingerHost(frame, plate)
+    if not frame.lingerHost then
+        frame.lingerHost = AcquireLingerHost()
+    end
+    frame.lingerFrozen = nil
+    BindLingerHostToPlate(frame, plate)
 end
 
 local function ReleaseFrame(frame)
@@ -378,14 +451,14 @@ local function ReleaseFrame(frame)
     frame.classicBaseY = nil
     frame.amountScale = nil
     frame.classicHidden = nil
-    frame.detached = nil
-    frame.detachMotionX = nil
-    frame.detachMotionY = nil
-    frame.detachScreenX = nil
-    frame.detachScreenY = nil
-    frame.detachPoint = nil
-    frame.detachRelTo = nil
-    frame.detachRelPoint = nil
+    frame.lingerFrozen = nil
+    frame.lingerWorldX = nil
+    frame.lingerWorldY = nil
+    frame.anchorGuid = nil
+    if frame.lingerHost then
+        ReleaseLingerHost(frame.lingerHost)
+        frame.lingerHost = nil
+    end
     frame:ClearAllPoints()
     frame:SetParent(UIParent)
     frame:SetIgnoreParentScale(false)
@@ -429,24 +502,18 @@ local function FrameOnUpdate(frame, elapsed)
         return
     end
 
-    if not frame.detached then
-        if not frame.anchor then
+    if frame.isPreview then
+        if not frame.anchor or not AnchorIsShown(frame.anchor) then
             ReleaseFrame(frame)
             return
         end
-
-        local ok, shown = pcall(function()
-            return frame.anchor:IsShown()
-        end)
-        if not ok or not shown then
-            if frame.isPreview then
-                ReleaseFrame(frame)
-                return
-            end
-            if not DetachFrameToScreen(frame) then
-                ReleaseFrame(frame)
-                return
-            end
+    elseif not frame.incoming and not frame.lingerFrozen then
+        -- Death / hide / reuse: stop pointing at the nameplate widget so the
+        -- number cannot ride onto a neighbor. Anim keeps running on the host.
+        if AnchorGuidChanged(frame) or not frame.anchor or not AnchorIsShown(frame.anchor) then
+            FreezeLingerHost(frame)
+        else
+            BindLingerHostToPlate(frame, frame.anchor)
         end
     end
 
@@ -456,34 +523,11 @@ local function FrameOnUpdate(frame, elapsed)
     if frame.classicHidden then
         alpha = 0
     end
-    if frame.detached then
-        local dx = x - (frame.detachMotionX or 0)
-        local dy = y - (frame.detachMotionY or 0)
-        local relTo = frame.detachRelTo or UIParent
-        if relTo ~= UIParent and not IsUsableAnchor(relTo) then
-            relTo = UIParent
-            frame.detachRelTo = UIParent
-            frame.detachPoint = "CENTER"
-            frame.detachRelPoint = "CENTER"
-        end
+    local motionAnchor = frame.lingerHost or frame.anchor
+    if motionAnchor then
+        local relPoint = frame.lingerHost and "CENTER" or (frame.anchorRelPoint or "TOP")
         frame:ClearAllPoints()
-        SafeSetPoint(
-            frame,
-            frame.detachPoint or "CENTER",
-            relTo,
-            frame.detachRelPoint or "CENTER",
-            (frame.detachScreenX or 0) + dx,
-            (frame.detachScreenY or 0) + dy
-        )
-    else
-        local relPoint = frame.anchorRelPoint or "TOP"
-        frame:ClearAllPoints()
-        if not SafeSetPoint(frame, "CENTER", frame.anchor, relPoint, x, y) then
-            if not DetachFrameToScreen(frame) then
-                ReleaseFrame(frame)
-                return
-            end
-        end
+        SafeSetPoint(frame, "CENTER", motionAnchor, relPoint, x, y)
     end
     frame:SetScale(scale)
     frame:SetAlpha(alpha)
@@ -547,19 +591,20 @@ BD.Pool = {
     PickClearSpawn = PickClearSpawn,
     RelayoutClassic = RelayoutClassicAnchor,
     ReleasePreviewFrames = ReleasePreviewFrames,
+    AttachLingerHost = AttachLingerHost,
 }
 
-function BD:DetachFramesForUnit(unit)
+function BD:OrphanFramesForUnit(unit)
     for frame in pairs(active) do
-        if frame.unitToken == unit and not frame.detached then
-            DetachFrameToScreen(frame)
+        if frame.unitToken == unit and not frame.incoming and not frame.isPreview then
+            FreezeLingerHost(frame)
         end
     end
 end
 
 function BD:ReleaseFramesForUnit(unit)
     for frame in pairs(active) do
-        if frame.unitToken == unit then
+        if frame.unitToken == unit and not frame.incoming then
             ReleaseFrame(frame)
         end
     end

@@ -82,6 +82,21 @@ local function ApplyLayoutMigrations()
         BD.db.abbreviate = false
         BD.db.layoutRevision = 9
     end
+    if (BD.db.layoutRevision or 1) < 10 then
+        if BD.db.thousandSeparators then
+            BD.db.thousandSeparator = "comma"
+        elseif BD.db.thousandSeparator == nil then
+            BD.db.thousandSeparator = BD.DEFAULTS.thousandSeparator
+        end
+        BD.db.thousandSeparators = nil
+        BD.db.layoutRevision = 10
+    end
+    if (BD.db.layoutRevision or 1) < 11 then
+        if BD.db.showOptionsPreview == nil then
+            BD.db.showOptionsPreview = BD.DEFAULTS.showOptionsPreview
+        end
+        BD.db.layoutRevision = 11
+    end
     if BD.API.IsModern() and BD.db.onlyMyDamage then
         BD.db.allNameplates = false
     end
@@ -191,7 +206,7 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         if BD.API.IsClassic() and BD.OnClassicNamePlateRemoved then
             BD:OnClassicNamePlateRemoved(unit)
         else
-            BD:DetachFramesForUnit(unit)
+            BD:OrphanFramesForUnit(unit)
         end
     end
 end)

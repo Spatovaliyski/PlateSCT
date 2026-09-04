@@ -10,16 +10,7 @@ local lastPersonalCrit
 local PERSONAL_DUP_WINDOW = 0.05
 
 local function AmountsEqual(a, b)
-    if a == nil or b == nil then
-        return a == b
-    end
-    if BD.IsSecret(a) or BD.IsSecret(b) then
-        return false
-    end
-    local ok, same = pcall(function()
-        return a == b
-    end)
-    return ok and same
+    return BD.ValuesEqual(a, b)
 end
 
 local function IsDuplicatePersonalHit(plate, amount, isCrit)

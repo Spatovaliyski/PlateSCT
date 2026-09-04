@@ -32,7 +32,8 @@ function BD.CopyDefaults(source, defaults)
 end
 
 function BD.IsSecret(value)
-    -- Classic clients have no combat restrictions; this stays false there.
+    -- Classic version: no combat restrictions; stays false when API absent.
+    -- See Core/API.lua SECRET VALUES contract.
     if issecretvalue then
         local ok, result = pcall(issecretvalue, value)
         return ok and result
@@ -59,6 +60,47 @@ function BD.CanAccessValue(value)
         return ok and accessible and true or false
     end
     return true
+end
+
+-- Safe equality for values that may be secret on Modern.
+-- Returns false if either side is secret or inaccessible (do not branch on "maybe").
+-- Both nil → true. Use instead of raw == / ~= on combat GUIDs, amounts, schools.
+function BD.ValuesEqual(a, b)
+    if a == nil and b == nil then
+        return true
+    end
+    if a == nil or b == nil then
+        return false
+    end
+    if BD.IsSecret(a) or BD.IsSecret(b) then
+        return false
+    end
+    if not BD.CanAccessValue(a) or not BD.CanAccessValue(b) then
+        return false
+    end
+    local ok, same = pcall(function()
+        return a == b
+    end)
+    return ok and same and true or false
+end
+
+function BD.ValuesNotEqual(a, b)
+    if a == nil and b == nil then
+        return false
+    end
+    if a == nil or b == nil then
+        return true
+    end
+    if BD.IsSecret(a) or BD.IsSecret(b) then
+        return false
+    end
+    if not BD.CanAccessValue(a) or not BD.CanAccessValue(b) then
+        return false
+    end
+    local ok, different = pcall(function()
+        return a ~= b
+    end)
+    return ok and different and true or false
 end
 
 local function SetBlizzardFCTEnabled(enabled)
@@ -123,12 +165,50 @@ function BD.PassesThreshold(amount, minDamage)
     return ok and passes
 end
 
+local THOUSAND_SEPARATOR_CHARS = {
+    comma = ",",
+    dot = ".",
+}
+
+local function BreakUpAmount(amount, sep)
+    -- Secret / inaccessible amounts stay raw so FontString can still show them.
+    if not BD.CanAccessValue(amount) then
+        return amount
+    end
+
+    local ok, text = pcall(tostring, amount)
+    if not ok or type(text) ~= "string" then
+        return amount
+    end
+
+    local int = text:match("(%-?%d+)")
+    if not int then
+        return amount
+    end
+
+    local sign = ""
+    if int:sub(1, 1) == "-" then
+        sign = "-"
+        int = int:sub(2)
+    end
+
+    local grouped = int:reverse():gsub("(%d%d%d)", "%1" .. sep):reverse()
+    if grouped:sub(1, #sep) == sep then
+        grouped = grouped:sub(#sep + 1)
+    end
+    return sign .. grouped
+end
+
 function BD.FormatAmount(amount, abbreviate)
     if abbreviate and AbbreviateNumbers then
         local ok, result = pcall(AbbreviateNumbers, amount)
         if ok and result ~= nil then
             return result
         end
+    end
+    local sep = THOUSAND_SEPARATOR_CHARS[BD.db and BD.db.thousandSeparator]
+    if sep then
+        return BreakUpAmount(amount, sep)
     end
     return amount
 end

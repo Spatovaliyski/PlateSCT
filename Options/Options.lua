@@ -39,7 +39,7 @@ StaticPopupDialogs["PLATESCT_RESET_CONFIRM"] = {
     preferredIndex = 3,
 }
 
-local PAGE_NAMES = { "General", "Display", "Damage", "Tools" }
+local PAGE_NAMES = { "General", "Display", "Damage", "Tools & Preview" }
 
 local function GetPageName(index)
     return L[PAGE_NAMES[index]]
@@ -542,7 +542,7 @@ local function SliderValueMatchesRecommended(value, recommendedValue, step)
     return value == recommendedValue
 end
 
-local function CreateSlider(parent, label, x, y, key, minValue, maxValue, step, formatter, width, recommendedValue)
+local function CreateSlider(parent, label, x, y, key, minValue, maxValue, step, formatter, width, recommendedValue, onChanged)
     width = width or SLIDER_WIDTH
 
     local caption = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
@@ -582,6 +582,9 @@ local function CreateSlider(parent, label, x, y, key, minValue, maxValue, step, 
         BD.db[key] = value
         slider.valueText:SetText(formatter(value))
         UpdateRecommendedTag(value)
+        if onChanged then
+            onChanged(value)
+        end
     end
 
     slider:SetScript("OnValueChanged", function(_, value)
@@ -739,12 +742,14 @@ local function CreateStyleSelector(parent, layout, rootPanel)
         BD.db.numberStyle = "retail"
         SyncRadios()
         rootPanel:Refresh()
+        BD:RequestOptionsPreview()
     end)
 
     classic:SetScript("OnClick", function()
         BD.db.numberStyle = "classic"
         SyncRadios()
         rootPanel:Refresh()
+        BD:RequestOptionsPreview()
     end)
 
     retail.Refresh = SyncRadios
@@ -1022,45 +1027,83 @@ local function CreateStrictnessDropdown(parent, layout, label, dbKey, tooltip, i
     return button
 end
 
-local MOTION_PREVIEW_X = 256
+local PREVIEW_PANE_WIDTH = 240
+local PREVIEW_PANE_GAP = 8
 
-local function MotionPreviewHitKind(dbKey)
-    if dbKey == "animCrit" then
-        return "crit"
-    end
-    if dbKey == "animMiss" then
-        return "miss"
-    end
-    return "hit"
-end
-
-local function CreateMotionPreview(parent, firstDropdown, lastDropdown)
-    local pane = CreateFrame("Frame", nil, parent, "BackdropTemplate")
-    pane:SetPoint("TOPLEFT", firstDropdown.caption, "TOPLEFT", MOTION_PREVIEW_X, 4)
-    pane:SetPoint("BOTTOMRIGHT", lastDropdown, "BOTTOMRIGHT", MOTION_PREVIEW_X, 0)
-    ApplyBackdrop(pane, 0.06, 0.06, 0.07, 0.55, 0.38, 0.38, 0.40, 0.75)
+local function CreateAttachedPreviewPane(configFrame)
+    local pane = CreateFrame("Frame", "PlateSCTPreviewFrame", configFrame, "BackdropTemplate")
+    pane:SetPoint("TOPLEFT", configFrame, "TOPRIGHT", PREVIEW_PANE_GAP, 0)
+    pane:SetPoint("BOTTOMLEFT", configFrame, "BOTTOMRIGHT", PREVIEW_PANE_GAP, 0)
+    pane:SetWidth(PREVIEW_PANE_WIDTH)
+    pane:EnableMouse(true)
+    ApplyBackdrop(pane, 0.07, 0.07, 0.08, 0.97, 0.38, 0.38, 0.40, 0.95)
     pcall(function()
         pane:SetClipsChildren(true)
     end)
 
-    local caption = pane:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
-    caption:SetPoint("TOPLEFT", 10, -8)
-    caption:SetText(L["Preview"])
+    local titleBar = CreateFrame("Frame", nil, pane)
+    titleBar:SetPoint("TOPLEFT", 1, -1)
+    titleBar:SetPoint("TOPRIGHT", -1, -1)
+    titleBar:SetHeight(TITLE_HEIGHT)
+
+    local titleBg = titleBar:CreateTexture(nil, "BACKGROUND")
+    titleBg:SetAllPoints()
+    titleBg:SetColorTexture(1, 1, 1, 0.035)
+
+    local title = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("LEFT", 16, 0)
+    title:SetText(L["Preview"])
+
+    local hide = CreateFrame("Button", nil, pane)
+    hide:SetSize(24, 24)
+    hide:SetPoint("TOPRIGHT", -8, -10)
+    hide:SetFrameLevel(pane:GetFrameLevel() + 20)
+    local hideLabel = hide:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    hideLabel:SetPoint("CENTER", 1, 0)
+    hideLabel:SetText("×")
+    hideLabel:SetTextColor(0.85, 0.85, 0.85)
+    local hideHi = hide:CreateTexture(nil, "HIGHLIGHT")
+    hideHi:SetAllPoints()
+    hideHi:SetColorTexture(1, 1, 1, 0.12)
+    AttachTooltip(hide, L["Hide live preview"])
+    hide:SetScript("OnClick", function()
+        BD.db.showOptionsPreview = false
+        if configFrame.Refresh then
+            configFrame:Refresh()
+        else
+            BD:RequestOptionsPreview()
+        end
+    end)
+
+    local titleRule = pane:CreateTexture(nil, "ARTWORK")
+    titleRule:SetColorTexture(1, 1, 1, 0.08)
+    titleRule:SetHeight(1)
+    titleRule:SetPoint("TOPLEFT", 1, -(TITLE_HEIGHT + 1))
+    titleRule:SetPoint("TOPRIGHT", -1, -(TITLE_HEIGHT + 1))
+
+    local help = pane:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    help:SetPoint("TOPLEFT", 14, -(TITLE_HEIGHT + 12))
+    help:SetPoint("TOPRIGHT", -36, -(TITLE_HEIGHT + 12))
+    help:SetJustifyH("LEFT")
+    help:SetWordWrap(true)
+    help:SetText(L["Updates live as you change options."])
 
     local stage = CreateFrame("Frame", nil, pane)
-    stage:SetPoint("TOPLEFT", 8, -24)
-    stage:SetPoint("BOTTOMRIGHT", -8, 8)
+    stage:SetPoint("TOPLEFT", 10, -(TITLE_HEIGHT + 36))
+    stage:SetPoint("BOTTOMRIGHT", -10, 12)
+    pcall(function()
+        stage:SetClipsChildren(true)
+    end)
     pane.stage = stage
 
-    function pane:RefreshVisibility()
-        local modern = BD.db.numberStyle ~= "classic"
-        self:SetShown(modern)
-        if not modern then
-            BD:ReleaseMotionPreviews()
-        end
+    local stageBg = stage:CreateTexture(nil, "BACKGROUND")
+    stageBg:SetAllPoints()
+    stageBg:SetColorTexture(0.04, 0.04, 0.05, 0.55)
+
+    function pane:Replay()
+        BD:RequestOptionsPreview()
     end
 
-    pane:RefreshVisibility()
     return pane
 end
 
@@ -1316,6 +1359,7 @@ local function CreateIconPositionSelector(parent, layout)
         radio:SetScript("OnClick", function()
             BD.db.iconPosition = opt.id
             SyncRadios()
+            BD:RequestOptionsPreview()
         end)
         radio.Refresh = SyncRadios
         AddControl(radio)
@@ -1743,7 +1787,10 @@ local function BuildPageDisplay(parent, rootPanel)
     layout:Checkbox(
         L["Color by damage school"],
         L["Tint numbers by school (fire orange, frost blue, and so on). Off keeps the default yellow."],
-        "useSchoolColors"
+        "useSchoolColors",
+        function()
+            BD:RequestOptionsPreview()
+        end
     )
     local spellIcon = layout:Checkbox(
         L["Show spell icon"],
@@ -1766,30 +1813,55 @@ local function BuildPageDisplay(parent, rootPanel)
     layout:Gap(SECTION_GAP)
     layout:Heading(L["Animation"])
     local sliderY = layout.y
+    local function ReplayPreview()
+        BD:RequestOptionsPreview()
+    end
     CreateSlider(parent, L["Font size"], layout.x, sliderY, "fontSize", 10, 24, 1, function(value)
         return tostring(value)
-    end, SLIDER_WIDTH, BD.DEFAULTS.fontSize)
+    end, SLIDER_WIDTH, BD.DEFAULTS.fontSize, ReplayPreview)
     CreateSlider(parent, L["Scroll offset"], layout.x + SLIDER_WIDTH + SLIDER_GAP, sliderY, "floatDistance", 10, 40, 5, function(value)
         return string.format(L["%d px"], value)
-    end, SLIDER_WIDTH, BD.DEFAULTS.floatDistance)
+    end, SLIDER_WIDTH, BD.DEFAULTS.floatDistance, ReplayPreview)
     layout.y = sliderY - SLIDER_BLOCK
     CreateSlider(parent, L["Display duration"], layout.x, layout.y, "duration", 0.5, 2.0, 0.1, function(value)
         return string.format(L["%.1fs"], value)
-    end, SLIDER_WIDTH, BD.DEFAULTS.duration)
+    end, SLIDER_WIDTH, BD.DEFAULTS.duration, ReplayPreview)
     layout.y = layout.y - SLIDER_BLOCK
 
     layout:Gap(SECTION_GAP)
     layout:Heading(L["Text style"])
-    layout:Checkbox(L["Abbreviate numbers"], L["Display large numbers as 214k or 1.2M."], "abbreviate")
+    parent.abbreviateCheckbox = layout:Checkbox(
+        L["Abbreviate numbers"],
+        L["Display large numbers as 214k or 1.2M. Disables thousand separators."],
+        "abbreviate",
+        function()
+            rootPanel:UpdateDependentStates()
+            BD:RequestOptionsPreview()
+        end
+    )
+    parent.thousandSeparatorDropdown = CreateChoiceDropdown(
+        parent,
+        layout,
+        L["Thousand separators"],
+        "thousandSeparator",
+        BD.THOUSAND_SEPARATORS,
+        L["Group digits by thousands."],
+        function()
+            return not BD.db.abbreviate
+        end,
+        function()
+            BD:RequestOptionsPreview()
+        end
+    )
+    parent.thousandSeparatorBody = layout:Body(
+        L["Unavailable while Abbreviate numbers is on."]
+    )
     parent.showCritLabelCheckbox = layout:Checkbox(
         L["Show CRITICAL"],
         L["Show the word CRITICAL in small caps next to critical hit numbers."],
         "showCritLabel",
         function()
-            if parent.motionPreview and parent.motionPreview:IsShown() then
-                local stage = parent.motionPreview.stage or parent.motionPreview
-                BD:ShowMotionPreview(stage, "crit")
-            end
+            BD:RequestOptionsPreview()
         end
     )
 
@@ -1804,18 +1876,8 @@ local function BuildPageDisplay(parent, rootPanel)
         return BD.db.numberStyle ~= "classic"
     end
 
-    local function PlayMotionPreview(dbKey)
-        if not parent.motionPreview or not parent.motionPreview:IsShown() then
-            return
-        end
-        local stage = parent.motionPreview.stage or parent.motionPreview
-        BD:ShowMotionPreview(stage, MotionPreviewHitKind(dbKey))
-    end
-
-    local function MakeMotionSelect(key)
-        return function(selectedKey)
-            PlayMotionPreview(selectedKey or key)
-        end
+    local function PlayMotionPreview()
+        BD:RequestOptionsPreview()
     end
 
     parent.motionDropdowns = {}
@@ -1827,7 +1889,7 @@ local function BuildPageDisplay(parent, rootPanel)
         BD.ANIM_STYLES,
         L["Motion used for normal damage numbers."],
         isModern,
-        MakeMotionSelect("animHit")
+        PlayMotionPreview
     )
     parent.motionDropdowns[2] = CreateChoiceDropdown(
         parent,
@@ -1837,7 +1899,7 @@ local function BuildPageDisplay(parent, rootPanel)
         BD.ANIM_STYLES_CRIT,
         L["Motion used for critical hits. Classic Slap uses the Classic grow-and-settle pow."],
         isModern,
-        MakeMotionSelect("animCrit")
+        PlayMotionPreview
     )
     parent.motionDropdowns[3] = CreateChoiceDropdown(
         parent,
@@ -1847,10 +1909,8 @@ local function BuildPageDisplay(parent, rootPanel)
         BD.ANIM_STYLES,
         L["Motion used for miss, parry, dodge, and similar outcomes."],
         isModern,
-        MakeMotionSelect("animMiss")
+        PlayMotionPreview
     )
-
-    parent.motionPreview = CreateMotionPreview(parent, parent.motionDropdowns[1], parent.motionDropdowns[3])
 
     parent:SetHeight(math.max(1, -layout.y + CONTENT_PAD))
     local scrollFrame = parent:GetParent()
@@ -1874,6 +1934,21 @@ local function BuildPageTools(parent)
 
     layout:Gap(SECTION_GAP)
     layout:Heading(L["Preview"])
+    layout:Checkbox(
+        L["Show live preview"],
+        L["Show sample hits, crits, and misses beside this window."],
+        "showOptionsPreview",
+        function()
+            if parent.GetRootPanel then
+                local root = parent:GetRootPanel()
+                if root and root.UpdateDependentStates then
+                    root:UpdateDependentStates()
+                    return
+                end
+            end
+            BD:RequestOptionsPreview()
+        end
+    )
     layout:Body(L["Target an enemy, then spawn sample numbers on its nameplate."])
     layout:Button(L["Test on Target"], 160, L["Show sample damage numbers on your target."], function()
         BD:ShowTestNumbers()
@@ -1963,6 +2038,8 @@ local function BuildConfigFrame()
     end)
 
     ApplyBackdrop(frame, 0.07, 0.07, 0.08, 0.97, 0.38, 0.38, 0.40, 0.95)
+
+    frame.previewPane = CreateAttachedPreviewPane(frame)
 
     local titleBar = CreateFrame("Frame", nil, frame)
     titleBar:SetPoint("TOPLEFT", 1, -1)
@@ -2173,6 +2250,25 @@ local function BuildConfigFrame()
                 display.iconPositionSelector:SetEnabled(showIconOn and true or false)
             end
         end
+        if display and display.thousandSeparatorDropdown then
+            local drop = display.thousandSeparatorDropdown
+            local separatorsOn = not BD.db.abbreviate
+            if drop.Refresh then
+                drop:Refresh()
+            end
+            if not separatorsOn and choiceMenu and choiceMenu:IsShown() and choiceMenu.owner == drop then
+                HideChoiceMenu()
+            end
+            if display.thousandSeparatorBody then
+                if separatorsOn then
+                    display.thousandSeparatorBody:SetText(L["Group digits by thousands."])
+                    display.thousandSeparatorBody:SetTextColor(0.70, 0.70, 0.72)
+                else
+                    display.thousandSeparatorBody:SetText(L["Unavailable while Abbreviate numbers is on."])
+                    display.thousandSeparatorBody:SetTextColor(0.55, 0.55, 0.56)
+                end
+            end
+        end
         if display and display.motionBody then
             local modern = BD.db.numberStyle ~= "classic"
             if modern then
@@ -2194,11 +2290,11 @@ local function BuildConfigFrame()
                 end
             end
         end
-        if display and display.motionPreview and display.motionPreview.RefreshVisibility then
-            display.motionPreview:RefreshVisibility()
-        end
         if display and display.showCritLabelCheckbox and display.showCritLabelCheckbox.Refresh then
             display.showCritLabelCheckbox:Refresh()
+        end
+        if self.previewPane then
+            BD:RequestOptionsPreview()
         end
         if general.incomingOffsetXSlider and general.incomingOffsetYSlider then
             local incomingOn = BD.db.showIncoming and true or false
@@ -2251,6 +2347,7 @@ local function BuildConfigFrame()
         HookNameplateWarningEvents()
         self:Refresh()
         SelectPage(selectedPage or 1)
+        BD:RequestOptionsPreview()
     end)
 
     frame:SetScript("OnHide", function()
