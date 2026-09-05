@@ -28,14 +28,20 @@ BD.DEFAULTS = {
     showMinimapButton = true,
     minimapAngle = 200,
     locale = "auto",
-    layoutRevision = 11,
+    layoutRevision = 13,
     attributionAuto = true,
     attributionManual = "balanced",
     attributionOpenWorld = "loose",
     attributionDungeon = "balanced",
-    attributionRaid = "strict",
+    attributionRaid = "veryStrict",
     attributionBattleground = "strict",
     attributionArena = "balanced",
+    critSoundEnabled = false,
+    critSoundThreshold = 250,
+    critSoundChannel = "Dialog",
+    hugeCritSoundEnabled = false,
+    hugeCritSoundThreshold = 3000,
+    hugeCritSoundChannel = "Dialog",
 }
 
 BD.INCOMING_COLOR = { 1.0, 0.32, 0.28 }
@@ -64,9 +70,16 @@ BD.ICON_POSITIONS = {
 }
 
 BD.THOUSAND_SEPARATORS = {
-    { id = "none", labelKey = "Off", recommended = true },
+    { id = "none", labelKey = "Off" },
     { id = "comma", labelKey = "Comma (10,000)" },
     { id = "dot", labelKey = "Dot (10.000)" },
+}
+
+BD.SOUND_CHANNELS = {
+    { id = "Dialog", labelKey = "Dialog" },
+    { id = "SFX", labelKey = "SFX" },
+    { id = "Ambience", labelKey = "Ambience" },
+    { id = "Music", labelKey = "Music" },
 }
 
 BD.STYLE_PRESETS = {
@@ -241,6 +254,16 @@ BD.STRICTNESS = {
         autoFallbackGap = 1.2,
         useThreatGate = true,
     },
+    veryStrict = {
+        instantWindow = 0.18,
+        castWindow = 0.15,
+        hitsLeft = 1,
+        linger = 0,
+        destRequired = true,
+        autoFallback = false,
+        autoFallbackGap = 1.2,
+        useThreatGate = true,
+    },
 }
 
 BD.SCENARIO_DB_KEYS = {
@@ -263,6 +286,7 @@ BD.STRICTNESS_ORDER = {
     "loose",
     "balanced",
     "strict",
+    "veryStrict",
 }
 
 if BD.API and BD.API.ApplyFlavorDefaults then

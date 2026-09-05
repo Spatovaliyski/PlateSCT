@@ -49,7 +49,7 @@ local function GetPageSubtitle(index)
     local keys = {
         "Choose whose damage and which nameplates to show.",
         "Control how numbers look and how they animate.",
-        "Hide small hits so the big numbers stay readable.",
+        "Hide small hits and play sounds on big crits.",
         "Preview numbers and maintain your setup.",
     }
     return L[keys[index]]
@@ -715,6 +715,44 @@ local function CreateThresholdInput(parent, layout)
     return box
 end
 
+local function CreateSoundThresholdInput(parent, layout, dbKey, tooltip)
+    local box = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+    box:SetSize(148, 24)
+    box:SetPoint("TOPLEFT", layout.x + 6, layout.y)
+    box:SetAutoFocus(false)
+    box:SetMaxLetters(12)
+    box:SetNumeric(false)
+    AttachTooltip(box, tooltip or L["Supports k/m suffixes, e.g. 20k or 2m."])
+
+    local function Commit(self)
+        local value = math.max(0, ConvertToNumber(self:GetText()))
+        BD.db[dbKey] = value
+        self:SetText(ConvertFromNumber(value))
+    end
+
+    box:SetScript("OnEnterPressed", function(self)
+        Commit(self)
+        self:ClearFocus()
+    end)
+
+    box:SetScript("OnEscapePressed", function(self)
+        self:SetText(ConvertFromNumber(BD.db[dbKey] or 0))
+        self:ClearFocus()
+    end)
+
+    box:SetScript("OnEditFocusLost", function(self)
+        Commit(self)
+    end)
+
+    box.Refresh = function(self)
+        self:SetText(ConvertFromNumber(BD.db[dbKey] or 0))
+    end
+
+    AddControl(box)
+    layout.y = layout.y - 40
+    return box
+end
+
 local function CreateStyleSelector(parent, layout, rootPanel)
     layout:Heading(L["Number style"])
     layout:Body(L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the grow-and-settle pow, packed close to the plate."])
@@ -816,6 +854,7 @@ local STRICTNESS_LABEL_KEYS = {
     loose = "Loose",
     balanced = "Balanced",
     strict = "Strict",
+    veryStrict = "Very Strict",
 }
 
 local function ScenarioLabel(id)
@@ -1753,8 +1792,8 @@ local function BuildPageGeneral(parent, rootPanel)
             {
                 key = "attributionRaid",
                 label = L["Raid"],
-                tip = L["Strict: short windows, fewer foreign hits."],
-                recommended = "strict",
+                tip = L["Very Strict: shortest windows, destination required, one hit per cast."],
+                recommended = "veryStrict",
             },
             {
                 key = "attributionBattleground",
@@ -1935,6 +1974,93 @@ end
 local function BuildPageDamage(parent)
     local layout = NewLayout(parent, CONTENT_PAD, AddPageHeader(parent, GetPageName(3), GetPageSubtitle(3)), CONTENT_WIDTH)
     CreateThresholdInput(parent, layout)
+
+    layout:Gap(SECTION_GAP)
+    layout:Heading(L["Sound effects"])
+    layout:Body(L["Outgoing critical hits play a sound when damage is above the threshold you type. Huge crit takes priority over the normal crit sound."])
+
+    layout:Gap(SECTION_GAP)
+    layout:Heading(L["Crit sound"])
+    layout:Checkbox(
+        L["Enable crit sound"],
+        L["Play a sound when an outgoing critical hit is above the damage threshold."],
+        "critSoundEnabled",
+        function()
+            if parent.GetRootPanel then
+                local root = parent:GetRootPanel()
+                if root and root.UpdateDependentStates then
+                    root:UpdateDependentStates()
+                end
+            end
+        end
+    )
+    layout:Body(L["Damage threshold to play sound. Type 5k or 50k."])
+    parent.critSoundThresholdBox = CreateSoundThresholdInput(
+        parent,
+        layout,
+        "critSoundThreshold",
+        L["Supports k/m suffixes, e.g. 20k or 2m. The critical strike damage must be higher than this value."]
+    )
+    parent.critSoundChannelDropdown = CreateChoiceDropdown(
+        parent,
+        layout,
+        L["Channel"],
+        "critSoundChannel",
+        BD.SOUND_CHANNELS,
+        L["Which game sound channel plays this effect."],
+        function()
+            return BD.db.critSoundEnabled and true or false
+        end
+    )
+    layout:Button(L["Play"], 100, L["Preview this sound effect."], function()
+        BD:PlayCritSoundPreview("crit")
+    end)
+
+    layout:Gap(SECTION_GAP)
+    layout:Heading(L["Huge crit sound"])
+    layout:Checkbox(
+        L["Enable huge crit sound"],
+        L["Play a louder sound when an outgoing critical hit is above the huge damage threshold."],
+        "hugeCritSoundEnabled",
+        function()
+            if parent.GetRootPanel then
+                local root = parent:GetRootPanel()
+                if root and root.UpdateDependentStates then
+                    root:UpdateDependentStates()
+                end
+            end
+        end
+    )
+    layout:Body(L["Damage threshold to play sound. Type 5k or 50k."])
+    parent.hugeCritSoundThresholdBox = CreateSoundThresholdInput(
+        parent,
+        layout,
+        "hugeCritSoundThreshold",
+        L["Supports k/m suffixes, e.g. 20k or 2m. The critical strike damage must be higher than this value."]
+    )
+    parent.hugeCritSoundChannelDropdown = CreateChoiceDropdown(
+        parent,
+        layout,
+        L["Channel"],
+        "hugeCritSoundChannel",
+        BD.SOUND_CHANNELS,
+        L["Which game sound channel plays this effect."],
+        function()
+            return BD.db.hugeCritSoundEnabled and true or false
+        end
+    )
+    layout:Button(L["Play"], 100, L["Preview this sound effect."], function()
+        BD:PlayCritSoundPreview("huge")
+    end)
+
+    parent:SetHeight(math.max(1, -layout.y + CONTENT_PAD))
+    local scrollFrame = parent:GetParent()
+    if scrollFrame and scrollFrame.UpdateScrollChildRect then
+        scrollFrame:UpdateScrollChildRect()
+    end
+    if parent.UpdateScrollBar then
+        C_Timer.After(0, parent.UpdateScrollBar)
+    end
 end
 
 local function BuildPageTools(parent)
@@ -2136,7 +2262,7 @@ local function BuildConfigFrame()
         page.GetRootPanel = function()
             return frame
         end
-        if index == 1 or index == 2 then
+        if index == 1 or index == 2 or index == 3 then
             page.scrollFrame, page.scrollChild = CreateCustomScrollPage(page)
             page.scrollChild.GetRootPanel = page.GetRootPanel
         end
@@ -2152,14 +2278,39 @@ local function BuildConfigFrame()
 
     BuildPageGeneral(pages[1].scrollChild or pages[1], frame)
     BuildPageDisplay(pages[2].scrollChild or pages[2], frame)
-    BuildPageDamage(pages[3])
+    BuildPageDamage(pages[3].scrollChild or pages[3])
     BuildPageTools(pages[4])
 
     function frame:UpdateDependentStates()
         local general = pages[1].scrollChild or pages[1]
         local display = pages[2].scrollChild or pages[2]
+        local damage = pages[3].scrollChild or pages[3]
         if not general then
             return
+        end
+        if damage then
+            local critOn = BD.db.critSoundEnabled and true or false
+            local hugeOn = BD.db.hugeCritSoundEnabled and true or false
+            if damage.critSoundThresholdBox then
+                damage.critSoundThresholdBox:SetEnabled(critOn)
+                damage.critSoundThresholdBox:SetAlpha(critOn and 1 or 0.55)
+            end
+            if damage.critSoundChannelDropdown and damage.critSoundChannelDropdown.Refresh then
+                damage.critSoundChannelDropdown:Refresh()
+                if not critOn and choiceMenu and choiceMenu:IsShown() and choiceMenu.owner == damage.critSoundChannelDropdown then
+                    HideChoiceMenu()
+                end
+            end
+            if damage.hugeCritSoundThresholdBox then
+                damage.hugeCritSoundThresholdBox:SetEnabled(hugeOn)
+                damage.hugeCritSoundThresholdBox:SetAlpha(hugeOn and 1 or 0.55)
+            end
+            if damage.hugeCritSoundChannelDropdown and damage.hugeCritSoundChannelDropdown.Refresh then
+                damage.hugeCritSoundChannelDropdown:Refresh()
+                if not hugeOn and choiceMenu and choiceMenu:IsShown() and choiceMenu.owner == damage.hugeCritSoundChannelDropdown then
+                    HideChoiceMenu()
+                end
+            end
         end
         if general.nameplateWarning then
             general.nameplateWarning:Refresh()
@@ -2369,7 +2520,11 @@ local function BuildConfigFrame()
     end)
 
     frame.pages = pages
-    SelectPage(BD.optionsSelectedPage or 1)
+    local startPage = BD.optionsSelectedPage or 1
+    if startPage < 1 or startPage > #pages then
+        startPage = 1
+    end
+    SelectPage(startPage)
     return frame
 end
 

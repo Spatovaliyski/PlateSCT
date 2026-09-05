@@ -482,6 +482,10 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
     frame:Show()
     -- Layout exists now. Snapshot before death can hide the plate this frame.
     BD.Pool.SnapshotLingerHost(frame, true)
+
+    if not isHeal and kind ~= "miss" then
+        self:PlayOutgoingCritSound(amountForThreshold, frame.isCrit)
+    end
 end
 
 function BD:ShowIncoming(text, r, g, b, amountForThreshold, isCrit, hitKind)

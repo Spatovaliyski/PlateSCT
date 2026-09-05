@@ -165,6 +165,58 @@ function BD.PassesThreshold(amount, minDamage)
     return ok and passes
 end
 
+function BD.AmountExceeds(amount, threshold)
+    if threshold == nil or type(threshold) ~= "number" or threshold < 0 then
+        return false
+    end
+    if not BD.CanAccessValue(amount) then
+        return false
+    end
+    local ok, exceeds = pcall(function()
+        return amount > threshold
+    end)
+    return ok and exceeds
+end
+
+local CRIT_SOUND_PATH = "Interface\\AddOns\\PlateSCT\\Media\\Sounds\\Critical.ogg"
+local HUGE_CRIT_SOUND_PATH = "Interface\\AddOns\\PlateSCT\\Media\\Sounds\\HugeCritical.ogg"
+
+local function ResolveSoundChannel(channel)
+    if type(channel) == "string" and channel ~= "" then
+        return channel
+    end
+    return "Dialog"
+end
+
+function BD:PlayOutgoingCritSound(amount, isCrit)
+    if not isCrit then
+        return
+    end
+    if not self.db then
+        return
+    end
+
+    if self.db.hugeCritSoundEnabled and BD.AmountExceeds(amount, self.db.hugeCritSoundThreshold) then
+        pcall(PlaySoundFile, HUGE_CRIT_SOUND_PATH, ResolveSoundChannel(self.db.hugeCritSoundChannel))
+        return
+    end
+
+    if self.db.critSoundEnabled and BD.AmountExceeds(amount, self.db.critSoundThreshold) then
+        pcall(PlaySoundFile, CRIT_SOUND_PATH, ResolveSoundChannel(self.db.critSoundChannel))
+    end
+end
+
+function BD:PlayCritSoundPreview(kind)
+    local path = (kind == "huge") and HUGE_CRIT_SOUND_PATH or CRIT_SOUND_PATH
+    local channel
+    if kind == "huge" then
+        channel = self.db and self.db.hugeCritSoundChannel
+    else
+        channel = self.db and self.db.critSoundChannel
+    end
+    pcall(PlaySoundFile, path, ResolveSoundChannel(channel))
+end
+
 local THOUSAND_SEPARATOR_CHARS = {
     comma = ",",
     dot = ".",

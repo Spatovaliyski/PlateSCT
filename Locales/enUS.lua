@@ -30,7 +30,33 @@ L["Tools & Preview"] = "Tools & Preview"
 L["Choose whose damage and which nameplates to show."] = "Choose whose damage and which nameplates to show."
 L["Control how numbers look and how they animate."] = "Control how numbers look and how they animate."
 L["Hide small hits so the big numbers stay readable."] = "Hide small hits so the big numbers stay readable."
+L["Hide small hits and play sounds on big crits."] = "Hide small hits and play sounds on big crits."
 L["Preview numbers and maintain your setup."] = "Preview numbers and maintain your setup."
+
+-- Sound Effects
+L["Sound effects"] = "Sound effects"
+L["Outgoing critical hits play a sound when damage is above the threshold you type. Huge crit takes priority over the normal crit sound."] =
+    "Outgoing critical hits play a sound when damage is above the threshold you type. Huge crit takes priority over the normal crit sound."
+L["Crit sound"] = "Crit sound"
+L["Enable crit sound"] = "Enable crit sound"
+L["Play a sound when an outgoing critical hit is above the damage threshold."] =
+    "Play a sound when an outgoing critical hit is above the damage threshold."
+L["Huge crit sound"] = "Huge crit sound"
+L["Enable huge crit sound"] = "Enable huge crit sound"
+L["Play a louder sound when an outgoing critical hit is above the huge damage threshold."] =
+    "Play a louder sound when an outgoing critical hit is above the huge damage threshold."
+L["Damage threshold to play sound. Type 5k or 50k."] = "Damage threshold to play sound. Type 5k or 50k."
+L["Supports k/m suffixes, e.g. 20k or 2m."] = "Supports k/m suffixes, e.g. 20k or 2m."
+L["Supports k/m suffixes, e.g. 20k or 2m. The critical strike damage must be higher than this value."] =
+    "Supports k/m suffixes, e.g. 20k or 2m. The critical strike damage must be higher than this value."
+L["Play"] = "Play"
+L["Preview this sound effect."] = "Preview this sound effect."
+L["Channel"] = "Channel"
+L["Which game sound channel plays this effect."] = "Which game sound channel plays this effect."
+L["Dialog"] = "Dialog"
+L["SFX"] = "SFX"
+L["Ambience"] = "Ambience"
+L["Music"] = "Music"
 
 -- General
 L["Combat text"] = "Combat text"
@@ -82,9 +108,12 @@ L["Arena"] = "Arena"
 L["Loose"] = "Loose"
 L["Balanced"] = "Balanced"
 L["Strict"] = "Strict"
+L["Very Strict"] = "Very Strict"
 L["Loose: longer windows, more numbers."] = "Loose: longer windows, more numbers."
 L["Balanced: medium windows and cleave hits."] = "Balanced: medium windows and cleave hits."
 L["Strict: short windows, fewer foreign hits."] = "Strict: short windows, fewer foreign hits."
+L["Very Strict: shortest windows, destination required, one hit per cast."] =
+    "Very Strict: shortest windows, destination required, one hit per cast."
 L["Active: %s (%s)"] = "Active: %s (%s)"
 L["Recommended"] = "Recommended"
 

@@ -100,6 +100,16 @@ local function ApplyLayoutMigrations()
         end
         BD.db.layoutRevision = 11
     end
+    if (BD.db.layoutRevision or 1) < 12 then
+        BD.db.layoutRevision = 12
+    end
+    if (BD.db.layoutRevision or 1) < 13 then
+        -- Previous Raid recommended default was Strict; move to Very Strict.
+        if BD.db.attributionRaid == nil or BD.db.attributionRaid == "strict" then
+            BD.db.attributionRaid = BD.DEFAULTS.attributionRaid
+        end
+        BD.db.layoutRevision = 13
+    end
     if BD.API.IsModern() and BD.db.onlyMyDamage then
         BD.db.allNameplates = false
     end
