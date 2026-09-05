@@ -25,6 +25,9 @@ function BD:ResetToDefaults()
     elseif self.optionsPanel and self.optionsPanel.Refresh then
         self.optionsPanel:Refresh()
     end
+    if self.RefreshMinimapButton then
+        self:RefreshMinimapButton()
+    end
 end
 
 local function ApplyLayoutMigrations()

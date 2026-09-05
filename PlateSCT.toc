@@ -11,6 +11,10 @@
 ## Author: Limitedby
 ## Version: 1.1.0
 ## SavedVariables: PlateSCTDB
+## IconTexture: Interface\AddOns\PlateSCT\Media\icon
+## AddonCompartmentFunc: PlateSCT_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: PlateSCT_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: PlateSCT_OnAddonCompartmentLeave
 
 Core/Init.lua
 Core/API.lua
@@ -33,3 +37,4 @@ Core/CombatClassic.lua
 Core/Probe.lua
 Core/Events.lua
 Options/Options.lua
+Core/Minimap.lua

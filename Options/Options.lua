@@ -1582,6 +1582,16 @@ local function BuildPageGeneral(parent, rootPanel)
             end
         end
     )
+    layout:Checkbox(
+        L["Show minimap button"],
+        L["Show the PlateSCT icon on the minimap. Click it to open settings."],
+        "showMinimapButton",
+        function()
+            if BD.RefreshMinimapButton then
+                BD:RefreshMinimapButton()
+            end
+        end
+    )
 
     layout:Gap(SECTION_GAP)
     parent.nameplateWarning = CreateNameplateWarningBox(parent, CONTENT_WIDTH)

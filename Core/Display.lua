@@ -209,8 +209,23 @@ local function SpawnMotionPreviewFrame(anchor, sample)
     frame:SetParent(anchor)
     frame:ClearAllPoints()
 
+    -- PreviewSpawnY is the near-plate slot. Classic combat puts crits there
+    -- and hits higher (spawnBaseY 36 vs spawnCritY 8); keep that split.
     local spawnY = PreviewSpawnY(frame.motionStyle)
-    frame.startX, frame.startY = BD.Pool.PickClearSpawn(anchor, frame, 0, spawnY, isCrit)
+    if BD:IsClassicNumberStyle() then
+        if not (frame.isCrit and frame.critsHold) then
+            local hitY = preset.spawnBaseY or 36
+            local critY = frame.spawnCritY or preset.spawnCritY or 8
+            spawnY = spawnY + (hitY - critY)
+        end
+        frame.usesClassicShove = true
+        frame.classicBaseX = 0
+        frame.classicBaseY = spawnY
+        frame.startX = 0
+        frame.startY = spawnY
+    else
+        frame.startX, frame.startY = BD.Pool.PickClearSpawn(anchor, frame, 0, spawnY, isCrit)
+    end
     frame:SetPoint("CENTER", anchor, "CENTER", frame.startX, frame.startY)
 
     local fontSize = (BD.db.fontSize or BD.DEFAULTS.fontSize) * preset.fontScale
@@ -256,6 +271,9 @@ local function SpawnMotionPreviewFrame(anchor, sample)
 
     frame.text:SetTextColor(r, g, b, 1)
     frame.baseAlpha = 1
+    if frame.usesClassicShove then
+        frame.amountScale = BD.ComputeClassicAmountScale(sample.amount)
+    end
     frame:SetAlpha(1)
     if frame.isCrit then
         if frame.animMode == "classicPow" then
@@ -265,6 +283,9 @@ local function SpawnMotionPreviewFrame(anchor, sample)
         end
     else
         frame:SetScale(frame.popScale or 1)
+    end
+    if frame.usesClassicShove then
+        BD.Pool.RelayoutClassic(anchor)
     end
     frame:Show()
 end

@@ -41,6 +41,10 @@ L["Show floating damage numbers on nameplates."] =
 L["Hide Blizzard floating combat text"] = "Скрыть всплывающий боевой текст Blizzard"
 L["Turns off default in-world damage numbers."] =
     "Отключает стандартные числа урона в мире."
+L["Show minimap button"] = "Показать кнопку у миникарты"
+L["Show the PlateSCT icon on the minimap. Click it to open settings."] =
+    "Показывает значок PlateSCT на миникарте. Нажмите, чтобы открыть настройки."
+L["Click to open settings."] = "Нажмите, чтобы открыть настройки."
 L["Enemy nameplates are turned off. PlateSCT needs them to show numbers.\nPress V (default) or enable them under Interface → Game → Names."] =
     "Индикаторы врагов выключены. PlateSCT нужны они, чтобы показывать числа.\nНажмите V (по умолчанию) или включите их в Интерфейс → Игра → Имена."
 L["Who to show"] = "Что показывать"

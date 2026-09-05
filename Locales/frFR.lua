@@ -41,6 +41,10 @@ L["Show floating damage numbers on nameplates."] =
 L["Hide Blizzard floating combat text"] = "Masquer le texte de combat flottant de Blizzard"
 L["Turns off default in-world damage numbers."] =
     "Désactive les nombres de dégâts par défaut dans le monde."
+L["Show minimap button"] = "Afficher le bouton de la minicarte"
+L["Show the PlateSCT icon on the minimap. Click it to open settings."] =
+    "Affiche l'icône PlateSCT sur la minicarte. Cliquez pour ouvrir les réglages."
+L["Click to open settings."] = "Cliquez pour ouvrir les réglages."
 L["Enemy nameplates are turned off. PlateSCT needs them to show numbers.\nPress V (default) or enable them under Interface → Game → Names."] =
     "Les barres de nom ennemies sont désactivées. PlateSCT en a besoin pour afficher les nombres.\nAppuyez sur V (par défaut) ou activez-les dans Interface → Jeu → Noms."
 L["Who to show"] = "Qui afficher"
