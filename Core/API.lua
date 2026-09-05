@@ -37,7 +37,8 @@ MODERN VERSION (Midnight, combat restrictions)
     C_CurveUtil threshold (secret amounts → visual hide, not Lua skip-by-compare);
     attribution heuristic + onlyMyDamage/allNameplates; C_DamageMeter probe;
     C_Spell first, then legacy spell APIs;
-    plate orphan on hide / NAME_PLATE_UNIT_REMOVED (no GUID identity compare).
+    plate orphan on hide / NAME_PLATE_UNIT_REMOVED (no GUID identity compare);
+    relative linger follow; freeze from last world pin (not plate GetLeft).
 
   Forbidden:
     COMBAT_LOG_EVENT_UNFILTERED for numbers;
@@ -56,7 +57,8 @@ CLASSIC VERSION (Era 11509 / TBC 20506 / Mists 50504 — no restrictions)
       0x1111 sourceFlags; SPELL_SUMMON dest GUID cache;
     Mine+Guardian or Mine+Player NPC pets;
     GetSpellInfo/GetSpellTexture (and C_Spell if present);
-    plaintext GUID compare for plate reuse when CanAccessValue.
+    plaintext GUID compare for plate reuse when CanAccessValue;
+    relative linger follow + freeze at last world pin (plate widgets recycle).
 
   Forbidden:
     UNIT_COMBAT for numbers; issecretvalue/canaccessvalue/C_DamageMeter/C_CurveUtil

@@ -330,12 +330,24 @@ local function ReleaseLingerHost(host)
     table.insert(lingerHosts, host)
 end
 
+local function GetWorldScaleFactor(region)
+    local worldScale = WorldFrame:GetEffectiveScale()
+    if not worldScale or worldScale == 0 then
+        return nil
+    end
+    local okScale, scale = pcall(region.GetEffectiveScale, region)
+    if not okScale or not scale or scale == 0 then
+        scale = worldScale
+    end
+    return scale / worldScale
+end
+
 local function ReadWorldBottomLeft(region)
     if not region then
         return nil
     end
-    local worldScale = WorldFrame:GetEffectiveScale()
-    if not worldScale or worldScale == 0 then
+    local factor = GetWorldScaleFactor(region)
+    if not factor then
         return nil
     end
     local ok, left, bottom = pcall(function()
@@ -344,31 +356,88 @@ local function ReadWorldBottomLeft(region)
     if not ok or left == nil or bottom == nil then
         return nil
     end
-    local okScale, scale = pcall(region.GetEffectiveScale, region)
-    if not okScale or not scale or scale == 0 then
-        scale = worldScale
-    end
-    return left * scale / worldScale, bottom * scale / worldScale
+    return left * factor, bottom * factor
 end
 
-local function SnapshotLingerHost(frame)
-    local host = frame.lingerHost
-    if not host then
-        return
+local function ReadWorldCenter(region)
+    if not region then
+        return nil
     end
-    local left, bottom = ReadWorldBottomLeft(host)
+    local factor = GetWorldScaleFactor(region)
+    if not factor then
+        return nil
+    end
+    local ok, x, y = pcall(region.GetCenter, region)
+    if ok and x ~= nil and y ~= nil then
+        return x * factor, y * factor
+    end
+    local left, bottom = ReadWorldBottomLeft(region)
     if left == nil then
-        left, bottom = ReadWorldBottomLeft(frame.anchor)
+        return nil
     end
-    if left ~= nil then
-        frame.lingerWorldX = left
-        frame.lingerWorldY = bottom
+    local okW, width = pcall(region.GetWidth, region)
+    local okH, height = pcall(region.GetHeight, region)
+    local w = ((okW and width) or 0) * factor
+    local h = ((okH and height) or 0) * factor
+    return left + w * 0.5, bottom + h * 0.5
+end
+
+local function StoreLingerWorldCenter(frame, x, y)
+    if x ~= nil and y ~= nil then
+        frame.lingerWorldX = x
+        frame.lingerWorldY = y
     end
 end
 
--- Follow the plate while it is still that unit. Never keep a point on a
--- nameplate widget after it is hidden or reused — those frames are recycled
--- onto nearby mobs.
+-- Read our frames first. Nameplate GetCenter is often nil on Classic *children*,
+-- but the plate widget itself can still report a center while shown.
+-- After reuse that center is the neighbor — allowPlate only while GUID matches.
+local function SnapshotLingerHost(frame, allowPlate)
+    local host = frame.lingerHost
+    if host then
+        local cx, cy = ReadWorldCenter(host)
+        if cx ~= nil then
+            StoreLingerWorldCenter(frame, cx, cy)
+            return true
+        end
+    end
+    local nx, ny = ReadWorldCenter(frame)
+    if nx ~= nil then
+        local mx, my = ComputeMotion(frame)
+        local factor = GetWorldScaleFactor(frame) or 1
+        StoreLingerWorldCenter(frame, nx - mx * factor, ny - my * factor)
+        if frame.lingerWorldX ~= nil then
+            return true
+        end
+    end
+    if allowPlate and frame.anchor then
+        local cx, cy = ReadWorldCenter(frame.anchor)
+        if cx ~= nil then
+            local factor = GetWorldScaleFactor(frame.anchor)
+            local okH, height = pcall(frame.anchor.GetHeight, frame.anchor)
+            if factor and okH and height then
+                cy = cy + height * factor * 0.5
+            end
+            StoreLingerWorldCenter(frame, cx, cy)
+            return true
+        end
+    end
+    return false
+end
+
+local function PinLingerHostWorld(frame)
+    local host = frame.lingerHost
+    local x, y = frame.lingerWorldX, frame.lingerWorldY
+    if not host or x == nil or y == nil then
+        return false
+    end
+    host:SetParent(WorldFrame)
+    host:ClearAllPoints()
+    return SafeSetPoint(host, "CENTER", WorldFrame, "BOTTOMLEFT", x, y) and true or false
+end
+
+-- Follow while live via relative point (layout works even when GetLeft does not).
+-- Recycle is handled by freeze, not by pinning to the plate's Lua coords.
 local function BindLingerHostToPlate(frame, plate)
     local host = frame.lingerHost
     if not host or not plate then
@@ -380,7 +449,6 @@ local function BindLingerHostToPlate(frame, plate)
     if not SafeSetPoint(host, "CENTER", plate, relPoint, 0, 0) then
         return false
     end
-    SnapshotLingerHost(frame)
     return true
 end
 
@@ -388,33 +456,51 @@ local function FreezeLingerHost(frame)
     if frame.lingerFrozen then
         return true
     end
-    local host = frame.lingerHost
-    if not host then
-        return false
+    -- Do not read the plate. Recycle may already have moved it.
+    if frame.lingerWorldX == nil or frame.lingerWorldY == nil then
+        SnapshotLingerHost(frame, false)
     end
-    SnapshotLingerHost(frame)
-    local x, y = frame.lingerWorldX, frame.lingerWorldY
-    if x == nil or y == nil then
-        return false
+    -- Only strip the relative point when we can pin in world space.
+    -- ClearAllPoints with no pin is what made death linger vanish.
+    if PinLingerHostWorld(frame) then
+        frame.anchor = nil
+        frame.unitToken = nil
+        frame.lingerFrozen = true
+        return true
     end
-    host:SetParent(WorldFrame)
-    host:ClearAllPoints()
-    if not SafeSetPoint(host, "BOTTOMLEFT", WorldFrame, "BOTTOMLEFT", x, y) then
-        return false
-    end
-    frame.lingerFrozen = true
+    -- No pin yet: keep the relative point so the number stays drawn.
+    -- Drop plate identity so Classic shove cannot cluster onto a neighbor.
     frame.anchor = nil
     frame.unitToken = nil
+    frame.lingerFrozen = true
     return true
+end
+
+local function GetPlateUnitToken(plate)
+    if not plate then
+        return nil
+    end
+    local ok, token = pcall(function()
+        return plate.namePlateUnitToken
+    end)
+    if ok and type(token) == "string" then
+        return token
+    end
+    return nil
 end
 
 local function AnchorGuidChanged(frame)
     -- Classic-only reuse signal. Modern UnitGUID is often secret — ValuesNotEqual
     -- returns false; orphan via plate hide / NAME_PLATE_UNIT_REMOVED instead.
-    if not frame.anchorGuid or not frame.unitToken then
+    -- Compare the plate widget's current token; stored nameplateN can lag reuse.
+    if not frame.anchorGuid then
         return false
     end
-    return BD.ValuesNotEqual(UnitGUID(frame.unitToken), frame.anchorGuid)
+    local token = GetPlateUnitToken(frame.anchor) or frame.unitToken
+    if not token then
+        return false
+    end
+    return BD.ValuesNotEqual(UnitGUID(token), frame.anchorGuid)
 end
 
 local function AttachLingerHost(frame, plate)
@@ -508,11 +594,13 @@ local function FrameOnUpdate(frame, elapsed)
             return
         end
     elseif not frame.incoming and not frame.lingerFrozen then
-        -- Death / hide / reuse: stop pointing at the nameplate widget so the
-        -- number cannot ride onto a neighbor. Anim keeps running on the host.
+        -- Death / hide / reuse: freeze at last world pin so the number cannot
+        -- ride a recycled plate. GUID check before rebind.
         if AnchorGuidChanged(frame) or not frame.anchor or not AnchorIsShown(frame.anchor) then
             FreezeLingerHost(frame)
         else
+            -- Previous bind is still laid out — snapshot before we ClearAllPoints.
+            SnapshotLingerHost(frame, true)
             BindLingerHostToPlate(frame, frame.anchor)
         end
     end
@@ -531,6 +619,10 @@ local function FrameOnUpdate(frame, elapsed)
     end
     frame:SetScale(scale)
     frame:SetAlpha(alpha)
+
+    if not frame.incoming and not frame.isPreview and not frame.lingerFrozen then
+        SnapshotLingerHost(frame, true)
+    end
 end
 
 local function CreatePooledFrame()
@@ -592,12 +684,19 @@ BD.Pool = {
     RelayoutClassic = RelayoutClassicAnchor,
     ReleasePreviewFrames = ReleasePreviewFrames,
     AttachLingerHost = AttachLingerHost,
+    SnapshotLingerHost = SnapshotLingerHost,
 }
 
 function BD:OrphanFramesForUnit(unit)
     for frame in pairs(active) do
-        if frame.unitToken == unit and not frame.incoming and not frame.isPreview then
-            FreezeLingerHost(frame)
+        if not frame.incoming and not frame.isPreview and not frame.lingerFrozen then
+            local matches = frame.unitToken == unit
+            if not matches then
+                matches = GetPlateUnitToken(frame.anchor) == unit
+            end
+            if matches then
+                FreezeLingerHost(frame)
+            end
         end
     end
 end

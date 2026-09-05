@@ -349,10 +349,9 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
 
     frame.anchor = plate
     frame.anchorRelPoint = "TOP"
-    -- Parent UIParent. Point at a WorldFrame host that follows this plate while
-    -- live; death/reuse orphans the host so it cannot jump to a neighbor.
-    -- anchorGuid only when plaintext (Classic). Modern secrets: see API.lua;
-    -- orphan on plate hide / NAME_PLATE_UNIT_REMOVED, never GUID compare.
+    -- Parent UIParent. Host follows the plate while live. Death/reuse freezes
+    -- at last world pin (do not read the plate). anchorGuid only when plaintext;
+    -- Modern secrets: orphan on hide / NAME_PLATE_UNIT_REMOVED (see API.lua).
     do
         local guid = UnitGUID(unit)
         if guid and BD.CanAccessValue(guid) and not BD.IsSecret(guid) then
@@ -460,6 +459,8 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
         BD.Pool.RelayoutClassic(plate)
     end
     frame:Show()
+    -- Layout exists now. Snapshot before death can hide the plate this frame.
+    BD.Pool.SnapshotLingerHost(frame, true)
 end
 
 function BD:ShowIncoming(text, r, g, b, amountForThreshold, isCrit, hitKind)
