@@ -116,6 +116,20 @@ L["Very Strict: shortest windows, destination required, one hit per cast."] =
     "Very Strict: shortest windows, destination required, one hit per cast."
 L["Active: %s (%s)"] = "Active: %s (%s)"
 L["Recommended"] = "Recommended"
+L["Damage schools"] = "Damage schools"
+L["Damage Schools"] = "Damage Schools"
+L["Filter by damage school"] = "Filter by damage school"
+L["Show damage from schools checked below. Same-school hits from other players can still appear. Secret or unreadable schools are always shown."] =
+    "Show damage from schools checked below. Same-school hits from other players can still appear. Secret or unreadable schools are always shown."
+L["Use Recommended (%s)"] = "Use Recommended (%s)"
+L["Use the schools your class typically deals."] = "Use the schools your class typically deals."
+L["Physical"] = "Physical"
+L["Holy"] = "Holy"
+L["Fire"] = "Fire"
+L["Nature"] = "Nature"
+L["Frost"] = "Frost"
+L["Shadow"] = "Shadow"
+L["Arcane"] = "Arcane"
 
 -- Display
 L["Number style"] = "Number style"

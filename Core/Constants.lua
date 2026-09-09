@@ -42,6 +42,15 @@ BD.DEFAULTS = {
     hugeCritSoundEnabled = false,
     hugeCritSoundThreshold = 3000,
     hugeCritSoundChannel = "Dialog",
+    schoolFilterEnabled = false,
+    schoolFilterRecommended = true,
+    schoolFilterPhysical = true,
+    schoolFilterHoly = true,
+    schoolFilterFire = true,
+    schoolFilterNature = true,
+    schoolFilterFrost = true,
+    schoolFilterShadow = true,
+    schoolFilterArcane = true,
 }
 
 BD.INCOMING_COLOR = { 1.0, 0.32, 0.28 }
@@ -215,6 +224,38 @@ BD.DAMAGE_SCHOOL_COLORS = {
     [16] = { 0.50, 1.0, 1.0 },
     [32] = { 0.50, 0.50, 1.0 },
     [64] = { 1.0, 0.50, 1.0 },
+}
+
+-- Physical=1, Holy=2, Fire=4, Nature=8, Frost=16, Shadow=32, Arcane=64
+BD.DAMAGE_SCHOOLS = {
+    { id = "physical", bit = 1, dbKey = "schoolFilterPhysical", labelKey = "Physical" },
+    { id = "holy", bit = 2, dbKey = "schoolFilterHoly", labelKey = "Holy" },
+    { id = "fire", bit = 4, dbKey = "schoolFilterFire", labelKey = "Fire" },
+    { id = "nature", bit = 8, dbKey = "schoolFilterNature", labelKey = "Nature" },
+    { id = "frost", bit = 16, dbKey = "schoolFilterFrost", labelKey = "Frost" },
+    { id = "shadow", bit = 32, dbKey = "schoolFilterShadow", labelKey = "Shadow" },
+    { id = "arcane", bit = 64, dbKey = "schoolFilterArcane", labelKey = "Arcane" },
+}
+
+BD.SCHOOL_MASK_ALL = 127
+BD.SCHOOL_MASK_FIRE = 4
+BD.SCHOOL_MASK_SHADOW = 32
+
+-- Class-union Recommended masks (UnitClass file name). Unknown → all seven.
+BD.CLASS_SCHOOL_MASKS = {
+    DEATHKNIGHT = 1 + 16 + 32, -- Physical, Frost, Shadow
+    DEMONHUNTER = 1 + 4 + 32, -- Physical, Fire, Shadow
+    DRUID = 1 + 8 + 64, -- Physical, Nature, Arcane
+    EVOKER = 4 + 8 + 64, -- Fire, Nature, Arcane
+    HUNTER = 1 + 4 + 8 + 32 + 64, -- Physical, Fire, Nature, Shadow, Arcane
+    MAGE = 4 + 16 + 64, -- Fire, Frost, Arcane
+    MONK = 1 + 4 + 8, -- Physical, Fire, Nature
+    PALADIN = 1 + 2 + 4, -- Physical, Holy, Fire
+    PRIEST = 2 + 32, -- Holy, Shadow
+    ROGUE = 1 + 8 + 32, -- Physical, Nature, Shadow
+    SHAMAN = 1 + 4 + 8 + 16, -- Physical, Fire, Nature, Frost
+    WARLOCK = 1 + 4 + 32, -- Physical, Fire, Shadow
+    WARRIOR = 1 + 4 + 8, -- Physical, Fire, Nature
 }
 
 BD.AUTO_ATTACK_SPELL_ID = 6603

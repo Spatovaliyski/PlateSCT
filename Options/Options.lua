@@ -1821,6 +1821,84 @@ local function BuildPageGeneral(parent, rootPanel)
                 spec.recommended
             )
         end
+
+        layout:Gap(SECTION_GAP)
+        layout:Heading(L["Damage schools"])
+        parent.schoolFilterBody = layout:Body(
+            L["Show damage from schools checked below. Same-school hits from other players can still appear. Secret or unreadable schools are always shown."]
+        )
+
+        parent.schoolFilterEnabledCheckbox = layout:Checkbox(
+            L["Filter by damage school"],
+            L["Show damage from schools checked below. Same-school hits from other players can still appear. Secret or unreadable schools are always shown."],
+            "schoolFilterEnabled",
+            function(checked)
+                if checked and BD.db.schoolFilterRecommended then
+                    BD:ApplySchoolFilterRecommended()
+                end
+                rootPanel:UpdateDependentStates()
+            end
+        )
+
+        parent.schoolFilterRecommendedCheckbox = layout:Checkbox(
+            BD:GetRecommendedSchoolFilterLabel(),
+            L["Use the schools your class typically deals."],
+            "schoolFilterRecommended",
+            function(checked)
+                if checked then
+                    BD:ApplySchoolFilterRecommended()
+                end
+                rootPanel:UpdateDependentStates()
+            end
+        )
+        do
+            local recommended = parent.schoolFilterRecommendedCheckbox
+            local baseRefresh = recommended.Refresh
+            recommended.Refresh = function(self)
+                baseRefresh(self)
+                self.label:SetText(BD:GetRecommendedSchoolFilterLabel())
+                local hitPad = math.min((self.label:GetStringWidth() or 120) + 16, CONTENT_WIDTH - 40)
+                self:SetHitRectInsets(0, -hitPad, 0, 0)
+            end
+        end
+
+        layout:Gap(10)
+        local schoolGroupLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        schoolGroupLabel:SetPoint("TOPLEFT", layout.x, layout.y)
+        schoolGroupLabel:SetWidth(CONTENT_WIDTH)
+        schoolGroupLabel:SetJustifyH("LEFT")
+        schoolGroupLabel:SetText(L["Damage Schools"])
+        layout.y = layout.y - 22
+
+        parent.schoolFilterCheckboxes = {}
+        local schoolColWidth = math.floor((CONTENT_WIDTH - 24) / 2)
+        local schoolStartY = layout.y
+        local leftCount = 4
+        for index, school in ipairs(BD.DAMAGE_SCHOOLS) do
+            local col = index <= leftCount and 0 or 1
+            local row = index <= leftCount and (index - 1) or (index - 1 - leftCount)
+            local x = layout.x + col * (schoolColWidth + 24)
+            local y = schoolStartY - row * ROW_GAP
+            local cb = CreateCheckbox(
+                parent,
+                L[school.labelKey],
+                L[school.labelKey],
+                x,
+                y,
+                school.dbKey,
+                function()
+                    if BD:SchoolFilterMatchesClass() then
+                        BD.db.schoolFilterRecommended = true
+                    else
+                        BD.db.schoolFilterRecommended = false
+                    end
+                    rootPanel:UpdateDependentStates()
+                end
+            )
+            parent.schoolFilterCheckboxes[#parent.schoolFilterCheckboxes + 1] = cb
+        end
+        local schoolRows = math.max(leftCount, #BD.DAMAGE_SCHOOLS - leftCount)
+        layout.y = schoolStartY - schoolRows * ROW_GAP
     end
 
     if parent.UpdateScrollBar then
@@ -2325,6 +2403,43 @@ local function BuildConfigFrame()
             for _, dropdown in ipairs(general.profileDropdowns) do
                 if dropdown.Refresh then
                     dropdown:Refresh()
+                end
+            end
+        end
+        if general.schoolFilterEnabledCheckbox then
+            local schoolFilterOn = BD.db.schoolFilterEnabled and true or false
+            local function SetSchoolFilterControlEnabled(control, enabled)
+                if not control then
+                    return
+                end
+                control:SetEnabled(enabled)
+                control:SetAlpha(enabled and 1 or 0.55)
+                if control.Refresh then
+                    control:Refresh()
+                end
+                if control.label then
+                    if enabled then
+                        control.label:SetTextColor(
+                            HIGHLIGHT_FONT_COLOR.r,
+                            HIGHLIGHT_FONT_COLOR.g,
+                            HIGHLIGHT_FONT_COLOR.b
+                        )
+                    else
+                        control.label:SetTextColor(0.5, 0.5, 0.5)
+                    end
+                end
+            end
+            SetSchoolFilterControlEnabled(general.schoolFilterRecommendedCheckbox, schoolFilterOn)
+            if general.schoolFilterCheckboxes then
+                for _, cb in ipairs(general.schoolFilterCheckboxes) do
+                    SetSchoolFilterControlEnabled(cb, schoolFilterOn)
+                end
+            end
+            if general.schoolFilterBody then
+                if schoolFilterOn then
+                    general.schoolFilterBody:SetTextColor(0.70, 0.70, 0.72)
+                else
+                    general.schoolFilterBody:SetTextColor(0.45, 0.45, 0.46)
                 end
             end
         end

@@ -159,6 +159,9 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         if BD.API.IsModern() and BD.RefreshScenario then
             BD:RefreshScenario()
         end
+        if BD.API.IsModern() and BD.db.schoolFilterEnabled and BD.db.schoolFilterRecommended then
+            BD:ApplySchoolFilterRecommended()
+        end
         if BD.API.IsClassic() and BD.OnClassicPlayerLogin then
             BD:OnClassicPlayerLogin()
         end

@@ -51,6 +51,10 @@ local function ShowPersonalDamage(unit, amount, isCrit, schoolMask)
     if not BD.PassesThreshold(amount, BD.db.minDamage) then
         return false
     end
+    if not BD:PassesSchoolFilter(schoolMask) then
+        BD:DebugPrint("personal skip, school filter")
+        return false
+    end
 
     local spellID, usedAuto = BD:MatchOutgoingHit(unit, schoolMask)
     if not spellID then
@@ -138,6 +142,9 @@ function BD:HandleUnitCombat(unit, action, flagText, amount, schoolMask)
             return
         end
         if not BD.PassesThreshold(amount, self.db.minDamage) then
+            return
+        end
+        if not self:PassesSchoolFilter(schoolMask) then
             return
         end
         local display = BD.FormatAmount(amount, self.db.abbreviate)

@@ -384,6 +384,120 @@ function BD.GetSchoolColor(schoolMask)
     return 1.0, 0.93, 0.0
 end
 
+local function CountSchoolBits(mask)
+    local count = 0
+    local remaining = mask
+    while remaining > 0 do
+        if bit.band(remaining, 1) ~= 0 then
+            count = count + 1
+        end
+        remaining = bit.rshift(remaining, 1)
+    end
+    return count
+end
+
+function BD:GetClassSchoolMask()
+    local _, classFile = UnitClass("player")
+    if classFile and BD.CLASS_SCHOOL_MASKS[classFile] then
+        return BD.CLASS_SCHOOL_MASKS[classFile]
+    end
+    return BD.SCHOOL_MASK_ALL
+end
+
+function BD:GetClassSchoolNames()
+    local L = BD.L
+    local classMask = self:GetClassSchoolMask()
+    local names = {}
+    local schools = BD.DAMAGE_SCHOOLS
+    for index = 1, #schools do
+        local school = schools[index]
+        if bit.band(classMask, school.bit) ~= 0 then
+            names[#names + 1] = L[school.labelKey]
+        end
+    end
+    return names
+end
+
+function BD:GetRecommendedSchoolFilterLabel()
+    local L = BD.L
+    local names = self:GetClassSchoolNames()
+    return string.format(L["Use Recommended (%s)"], table.concat(names, ", "))
+end
+
+function BD:GetSchoolFilterMask()
+    local mask = 0
+    local schools = BD.DAMAGE_SCHOOLS
+    if not schools or not self.db then
+        return mask
+    end
+    for index = 1, #schools do
+        local school = schools[index]
+        if self.db[school.dbKey] then
+            mask = bit.bor(mask, school.bit)
+        end
+    end
+    return mask
+end
+
+function BD:SchoolFilterMatchesClass()
+    return self:GetSchoolFilterMask() == self:GetClassSchoolMask()
+end
+
+function BD:ApplySchoolFilterRecommended()
+    if not self.db then
+        return
+    end
+    local classMask = self:GetClassSchoolMask()
+    local schools = BD.DAMAGE_SCHOOLS
+    for index = 1, #schools do
+        local school = schools[index]
+        self.db[school.dbKey] = bit.band(classMask, school.bit) ~= 0
+    end
+    self.db.schoolFilterRecommended = true
+end
+
+--- Modern school filter. Fail-open when disabled, missing, or secret/inaccessible.
+--- 1–2 school bits: overlap with allowed. 3+ bits (Chaos): Fire or Shadow in allowed.
+function BD:PassesSchoolFilter(schoolMask)
+    if not self.db or not self.db.schoolFilterEnabled then
+        return true
+    end
+    if not BD.ValuePresent(schoolMask) then
+        return true
+    end
+    if BD.IsSecret(schoolMask) and not BD.CanAccessValue(schoolMask) then
+        return true
+    end
+    if not BD.CanAccessValue(schoolMask) then
+        return true
+    end
+
+    local ok, hitMask = pcall(function()
+        return bit.band(schoolMask, BD.SCHOOL_MASK_ALL)
+    end)
+    if not ok or type(hitMask) ~= "number" then
+        return true
+    end
+    if hitMask == 0 then
+        return true
+    end
+
+    local allowed = self:GetSchoolFilterMask()
+    local bitCount = CountSchoolBits(hitMask)
+    if bitCount >= 3 then
+        local chaosOk, hasChaosSchool = pcall(function()
+            return bit.band(allowed, BD.SCHOOL_MASK_FIRE) ~= 0
+                or bit.band(allowed, BD.SCHOOL_MASK_SHADOW) ~= 0
+        end)
+        return chaosOk and hasChaosSchool and true or false
+    end
+
+    local overlapOk, overlaps = pcall(function()
+        return bit.band(hitMask, allowed) ~= 0
+    end)
+    return overlapOk and overlaps and true or false
+end
+
 function BD:ShouldUseSchoolColors()
     if self.db.useSchoolColors ~= nil then
         return self.db.useSchoolColors and true or false
