@@ -1,6 +1,6 @@
 local _, BD = ...
 
--- Classic-only: CLEU ingestion for unrestricted clients (Era / TBC / Mists).
+-- Classic API only: CLEU ingestion for unrestricted clients (Era / TBC / Wrath / MoP).
 -- Pet detection follows Classic combat-log conventions (LibThreatClassic / Recount):
 --   - Live UnitGUID("pet") only (Pet- prefix is a type, not ownership — raid pets share it)
 --   - 0x1111 sourceFlags mask (Mine + Friendly + Player-controlled + Pet)

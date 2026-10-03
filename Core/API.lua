@@ -23,14 +23,32 @@ ARCHITECTURE: one infra + two flavor APIs
   Infra must not call flavor combat ingest.
 
 =============================================================================
-TERMINOLOGY (chat + comments)
+TWO WOW APIs
 =============================================================================
-  Classic version / Modern version = WoW client (Era/TBC/Mists vs Midnight).
-  Classic style / Modern style     = numberStyle "classic" vs "retail" (any client).
-  Never say "Classic" alone when client vs style could be mixed.
+  Modern API — Midnight / Forever
+    Midnight: WOW_PROJECT_MAINLINE (1), interface >= 120000 (TOC 120100).
+    Forever:  interface 16001 (1.60.x band 16000–16999). Project is
+              WOW_PROJECT_CAMELOT (18) or, on some builds, MAINLINE (1).
+    Same flavor: combat restrictions, UNIT_COMBAT, secret values.
+
+  Classic API — Era / TBC / Wrath / MoP
+    Era:   WOW_PROJECT_CLASSIC (2), TOC 11509, interface 11000–11999.
+    TBC:   WOW_PROJECT_BURNING_CRUSADE_CLASSIC (5), TOC 20506, 20000–29999.
+    Wrath: WOW_PROJECT_WRATH_CLASSIC (11), interface 30000–39999.
+    MoP:   WOW_PROJECT_MISTS_CLASSIC (19), TOC 50504, interface 50000–59999.
+    Same flavor: unrestricted CLEU, plaintext GUID and amount.
 
 =============================================================================
-MODERN VERSION (Midnight, combat restrictions)
+TERMINOLOGY (chat + comments)
+=============================================================================
+  Classic version / Modern version = which WoW API the client runs.
+    Modern version = Midnight or Forever (Modern API). API.IsModern().
+    Classic version = Era, TBC, Wrath, or MoP (Classic API). API.IsClassic().
+  Classic style / Modern style = numberStyle "classic" vs "retail" (any client).
+  Never say "Classic" or "Modern" alone when client vs style could be mixed.
+
+=============================================================================
+MODERN API (Midnight / Forever — combat restrictions)
 =============================================================================
   Allowed:
     UNIT_COMBAT for numbers; issecretvalue/canaccessvalue via Util helpers only;
@@ -49,7 +67,7 @@ MODERN VERSION (Midnight, combat restrictions)
     Classic pet flag / SPELL_SUMMON ownership model.
 
 =============================================================================
-CLASSIC VERSION (Era 11509 / TBC 20506 / Mists 50504 — no restrictions)
+CLASSIC API (Era / TBC / Wrath / MoP — no restrictions)
 =============================================================================
   Allowed:
     COMBAT_LOG_EVENT_UNFILTERED + CombatLogGetCurrentEventInfo;
@@ -108,17 +126,29 @@ local function DetectFlavor()
     interfaceVersion = GetInterfaceVersion()
 
     local modernProject = WOW_PROJECT_MAINLINE or 1
+    local foreverProject = WOW_PROJECT_CAMELOT or 18
     local eraProject = WOW_PROJECT_CLASSIC or 2
     local tbcProject = WOW_PROJECT_BURNING_CRUSADE_CLASSIC or 5
+    local wrathProject = WOW_PROJECT_WRATH_CLASSIC or 11
     local mistsProject = WOW_PROJECT_MISTS_CLASSIC or 19
 
+    -- Forever build 16001 (1.60.x). Same Modern API as Midnight.
+    -- Project is CAMELOT (18), or MAINLINE (1) on builds that still report 1.
+    local foreverInterface = interfaceVersion >= 16000 and interfaceVersion < 17000
+    if projectId == foreverProject or foreverInterface then
+        return FLAVOR_MODERN
+    end
     if projectId == modernProject and interfaceVersion >= 120000 then
         return FLAVOR_MODERN
     end
+
     if projectId == eraProject and interfaceVersion >= 11000 and interfaceVersion < 12000 then
         return FLAVOR_CLASSIC
     end
     if projectId == tbcProject and interfaceVersion >= 20000 and interfaceVersion < 30000 then
+        return FLAVOR_CLASSIC
+    end
+    if projectId == wrathProject and interfaceVersion >= 30000 and interfaceVersion < 40000 then
         return FLAVOR_CLASSIC
     end
     if projectId == mistsProject and interfaceVersion >= 50000 and interfaceVersion < 60000 then

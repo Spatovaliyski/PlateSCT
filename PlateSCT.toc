@@ -1,15 +1,15 @@
-## Interface: 120100, 50504, 20506, 11509
+## Interface: 120100, 16001, 50504, 20506, 11509
 ## Title: PlateSCT
-## Notes: Nameplate damage numbers with threshold filtering and abbreviation. Midnight and Classic clients supported.
-## Notes-frFR: Nombres de dégâts sur les barres de nom avec seuil et abréviations. Midnight et Classic pris en charge.
-## Notes-deDE: Schadenszahlen auf Namensplaketten mit Schwellenwert und Abkürzungen. Midnight und Classic unterstützt.
-## Notes-esES: Números de daño en placas de nombre con umbral y abreviaturas. Compatible con Midnight y Classic.
-## Notes-esMX: Números de daño en placas de nombre con umbral y abreviaturas. Compatible con Midnight y Classic.
-## Notes-ruRU: Числа урона на индикаторах с порогом и сокращениями. Поддержка Midnight и Classic.
-## Notes-itIT: Numeri di danno sulle barre del nome con soglia e abbreviazioni. Supporta Midnight e Classic.
-## Notes-ptBR: Números de dano em placas de nome com limite e abreviações. Suporta Midnight e Classic.
+## Notes: Nameplate damage numbers with threshold filtering and abbreviation. Midnight, Forever, and Classic clients supported.
+## Notes-frFR: Nombres de dégâts sur les barres de nom avec seuil et abréviations. Midnight, Forever et Classic pris en charge.
+## Notes-deDE: Schadenszahlen auf Namensplaketten mit Schwellenwert und Abkürzungen. Midnight, Forever und Classic unterstützt.
+## Notes-esES: Números de daño en placas de nombre con umbral y abreviaturas. Compatible con Midnight, Forever y Classic.
+## Notes-esMX: Números de daño en placas de nombre con umbral y abreviaturas. Compatible con Midnight, Forever y Classic.
+## Notes-ruRU: Числа урона на индикаторах с порогом и сокращениями. Поддержка Midnight, Forever и Classic.
+## Notes-itIT: Numeri di danno sulle barre del nome con soglia e abbreviazioni. Supporta Midnight, Forever e Classic.
+## Notes-ptBR: Números de dano em placas de nome com limite e abreviações. Suporta Midnight, Forever e Classic.
 ## Author: Limitedby
-## Version: 1.1.2
+## Version: 1.1.3
 ## SavedVariables: PlateSCTDB
 ## IconTexture: Interface\AddOns\PlateSCT\Media\icon
 ## AddonCompartmentFunc: PlateSCT_OnAddonCompartmentClick
