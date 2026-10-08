@@ -22,6 +22,16 @@ local SLIDER_BLOCK = 68
 local NAV_HEIGHT = 36
 local NAV_GAP = 8
 
+-- Blocks options page mousewheel while a choice dropdown is open.
+local pageScrollLocked = false
+local CHOICE_MENU_MAX_HEIGHT = 400
+local CHOICE_ENTRY_HEIGHT = 26
+local CHOICE_MENU_PAD = 12
+
+local function SetPageScrollLocked(locked)
+    pageScrollLocked = locked and true or false
+end
+
 local function IsModernUI()
     return BD.API and BD.API.IsModern()
 end
@@ -39,7 +49,7 @@ StaticPopupDialogs["PLATESCT_RESET_CONFIRM"] = {
     preferredIndex = 3,
 }
 
-local PAGE_NAMES = { "General", "Display", "Damage", "Tools & Preview" }
+local PAGE_NAMES = { "General", "Display", "Damage", "Tools & Preview", "What's new?" }
 
 local function GetPageName(index)
     return L[PAGE_NAMES[index]]
@@ -51,6 +61,7 @@ local function GetPageSubtitle(index)
         "Control how numbers look and how they animate.",
         "Hide small hits and play sounds on big crits.",
         "Preview numbers and maintain your setup.",
+        "Recent changes in PlateSCT.",
     }
     return L[keys[index]]
 end
@@ -415,6 +426,9 @@ local function CreateCustomScrollPage(parent)
     end
 
     local function OnMouseWheel(_, delta)
+        if pageScrollLocked then
+            return
+        end
         SetScroll(scrollFrame:GetVerticalScroll() - (delta * 48))
     end
 
@@ -592,6 +606,9 @@ local function CreateSlider(parent, label, x, y, key, minValue, maxValue, step, 
     end)
 
     slider:SetScript("OnMouseWheel", function(self, delta)
+        if pageScrollLocked then
+            return
+        end
         local value = (BD.db[key] or minValue) + (step * delta)
         value = math.min(maxValue, math.max(minValue, value))
         self:SetValue(value)
@@ -818,6 +835,7 @@ local function HideChoiceMenu()
     if choiceMenu then
         choiceMenu:Hide()
     end
+    SetPageScrollLocked(false)
 end
 
 local function CloseOptionsPanel()
@@ -1173,8 +1191,18 @@ local function CreateChoiceDropdown(parent, layout, label, dbKey, options, toolt
     button.options = options
     button.isEnabled = isEnabled
 
+    local function OptionText(opt)
+        if opt.label then
+            return opt.label
+        end
+        if opt.labelKey then
+            return L[opt.labelKey]
+        end
+        return opt.id
+    end
+
     local function OptionLabel(opt)
-        local text = L[opt.labelKey] or opt.id
+        local text = OptionText(opt)
         if opt.recommended then
             return text .. " " .. RECOMMENDED_COLOR .. "(" .. L["Recommended"] .. ")|r"
         end
@@ -1183,9 +1211,10 @@ local function CreateChoiceDropdown(parent, layout, label, dbKey, options, toolt
 
     local function SelectedLabel()
         local current = BD.db[dbKey]
-        for _, opt in ipairs(options) do
+        local opts = button.options or options
+        for _, opt in ipairs(opts) do
             if opt.id == current then
-                local text = L[opt.labelKey] or opt.id
+                local text = OptionText(opt)
                 if opt.recommended then
                     return text .. " (" .. L["Recommended"] .. ")"
                 end
@@ -1212,8 +1241,12 @@ local function CreateChoiceDropdown(parent, layout, label, dbKey, options, toolt
         button.label:SetText(SelectedLabel())
     end
 
+    button.options = options
     SyncLabel()
     button.Refresh = function(self)
+        if self.dbKey == "fontFace" and BD.GetFontFaceOptions then
+            self.options = BD.GetFontFaceOptions()
+        end
         SyncLabel()
         local enabled = true
         if self.isEnabled then
@@ -1255,13 +1288,44 @@ local function CreateChoiceDropdown(parent, layout, label, dbKey, options, toolt
         menu:SetToplevel(true)
         menu:SetClampedToScreen(true)
         menu:EnableMouse(true)
+        menu:EnableMouseWheel(true)
         menu:Hide()
         ApplyBackdrop(menu, 0.08, 0.08, 0.09, 0.98, 0.38, 0.38, 0.40, 0.95)
         choiceMenu = menu
         tinsert(UISpecialFrames, "PlateSCTChoiceMenu")
         menu.entries = {}
 
+        local scroll = CreateFrame("ScrollFrame", nil, menu)
+        scroll:SetPoint("TOPLEFT", 2, -2)
+        scroll:SetPoint("BOTTOMRIGHT", -2, 2)
+        scroll:EnableMouse(true)
+        scroll:EnableMouseWheel(true)
+
+        local child = CreateFrame("Frame", nil, scroll)
+        child:SetWidth(200)
+        child:SetHeight(1)
+        child:EnableMouse(true)
+        child:EnableMouseWheel(true)
+        scroll:SetScrollChild(child)
+
+        menu.scrollFrame = scroll
+        menu.scrollChild = child
+
+        local function ScrollChoiceMenu(_, delta)
+            local maxScroll = math.max(0, (child:GetHeight() or 0) - (scroll:GetHeight() or 0))
+            if maxScroll <= 0 then
+                return
+            end
+            local current = scroll:GetVerticalScroll() or 0
+            scroll:SetVerticalScroll(math.min(maxScroll, math.max(0, current - (delta * CHOICE_ENTRY_HEIGHT))))
+        end
+
+        menu:SetScript("OnMouseWheel", ScrollChoiceMenu)
+        scroll:SetScript("OnMouseWheel", ScrollChoiceMenu)
+        child:SetScript("OnMouseWheel", ScrollChoiceMenu)
+
         menu:SetScript("OnHide", function(self)
+            SetPageScrollLocked(false)
             if self.owner and self.owner.SetOpenVisual then
                 self.owner:SetOpenVisual(false)
             end
@@ -1285,8 +1349,10 @@ local function CreateChoiceDropdown(parent, layout, label, dbKey, options, toolt
         HideLocaleMenu()
         HideAttributionMenu()
         local menu = choiceMenu
+        local scrollChild = menu.scrollChild
         menu.owner = button
         SetOpenVisual(true)
+        SetPageScrollLocked(true)
 
         for _, entry in ipairs(menu.entries) do
             entry:Hide()
@@ -1294,11 +1360,17 @@ local function CreateChoiceDropdown(parent, layout, label, dbKey, options, toolt
 
         local width = 200
         local y = -6
-        for index, opt in ipairs(options) do
+        local menuOptions = button.options or options
+        if button.dbKey == "fontFace" and BD.GetFontFaceOptions then
+            menuOptions = BD.GetFontFaceOptions()
+            button.options = menuOptions
+        end
+        for index, opt in ipairs(menuOptions) do
             local entry = menu.entries[index]
             if not entry then
-                entry = CreateFrame("Button", nil, menu)
-                entry:SetHeight(26)
+                entry = CreateFrame("Button", nil, scrollChild)
+                entry:SetHeight(CHOICE_ENTRY_HEIGHT)
+                entry:EnableMouseWheel(true)
                 entry.label = entry:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
                 entry.label:SetPoint("LEFT", 8, 0)
                 entry.label:SetJustifyH("LEFT")
@@ -1311,6 +1383,16 @@ local function CreateChoiceDropdown(parent, layout, label, dbKey, options, toolt
                 end)
                 entry:SetScript("OnLeave", function(self)
                     self.hover:Hide()
+                end)
+                entry:SetScript("OnMouseWheel", function(_, delta)
+                    local scroll = menu.scrollFrame
+                    local child = menu.scrollChild
+                    local maxScroll = math.max(0, (child:GetHeight() or 0) - (scroll:GetHeight() or 0))
+                    if maxScroll <= 0 then
+                        return
+                    end
+                    local current = scroll:GetVerticalScroll() or 0
+                    scroll:SetVerticalScroll(math.min(maxScroll, math.max(0, current - (delta * CHOICE_ENTRY_HEIGHT))))
                 end)
                 menu.entries[index] = entry
             end
@@ -1337,10 +1419,15 @@ local function CreateChoiceDropdown(parent, layout, label, dbKey, options, toolt
             end)
             entry:Show()
             width = math.max(width, (entry.label:GetStringWidth() or 0) + 36)
-            y = y - 26
+            y = y - CHOICE_ENTRY_HEIGHT
         end
 
-        menu:SetSize(width, (#options * 26) + 12)
+        local contentHeight = math.max(CHOICE_ENTRY_HEIGHT, (#menuOptions * CHOICE_ENTRY_HEIGHT) + CHOICE_MENU_PAD)
+        local viewHeight = math.min(CHOICE_MENU_MAX_HEIGHT, contentHeight)
+        scrollChild:SetWidth(width)
+        scrollChild:SetHeight(contentHeight)
+        menu.scrollFrame:SetVerticalScroll(0)
+        menu:SetSize(width, viewHeight)
         menu:ClearAllPoints()
         menu:SetPoint("TOPLEFT", button, "BOTTOMLEFT", 0, -4)
         menu:Show()
@@ -1685,6 +1772,17 @@ local function BuildPageGeneral(parent, rootPanel)
     parent.petDamageCheckbox = petDamage
 
     layout:Gap(SECTION_GAP)
+    layout:Heading(L["Healing"])
+    layout:Checkbox(
+        L["Show healing"],
+        L["Show your outgoing heals on the recipient's nameplate. Friendly nameplates must be enabled in the game."],
+        "showHealing"
+    )
+    layout:Note(
+        L["Uses the same size, motion, duration, icons, and threshold as damage. Skips heals on you."]
+    )
+
+    layout:Gap(SECTION_GAP)
     layout:Heading(L["Incoming"])
     layout:Checkbox(
         L["Show incoming hits"],
@@ -1943,20 +2041,38 @@ local function BuildPageDisplay(parent, rootPanel)
     local function ReplayPreview()
         BD:RequestOptionsPreview()
     end
-    CreateSlider(parent, L["Font size"], layout.x, sliderY, "fontSize", 10, 24, 1, function(value)
+    CreateSlider(parent, L["Font size"], layout.x, sliderY, "fontSize", 10, 48, 1, function(value)
         return tostring(value)
     end, SLIDER_WIDTH, BD.DEFAULTS.fontSize, ReplayPreview)
-    CreateSlider(parent, L["Scroll offset"], layout.x + SLIDER_WIDTH + SLIDER_GAP, sliderY, "floatDistance", 10, 40, 5, function(value)
+    CreateSlider(parent, L["Scroll offset"], layout.x + SLIDER_WIDTH + SLIDER_GAP, sliderY, "floatDistance", 10, 120, 5, function(value)
         return string.format(L["%d px"], value)
     end, SLIDER_WIDTH, BD.DEFAULTS.floatDistance, ReplayPreview)
     layout.y = sliderY - SLIDER_BLOCK
-    CreateSlider(parent, L["Display duration"], layout.x, layout.y, "duration", 0.5, 2.0, 0.1, function(value)
+    local durationY = layout.y
+    CreateSlider(parent, L["Display duration"], layout.x, durationY, "duration", 0.5, 4.0, 0.1, function(value)
         return string.format(L["%.1fs"], value)
     end, SLIDER_WIDTH, BD.DEFAULTS.duration, ReplayPreview)
-    layout.y = layout.y - SLIDER_BLOCK
+    CreateSlider(parent, L["Scroll speed"], layout.x + SLIDER_WIDTH + SLIDER_GAP, durationY, "scrollSpeed", 0.5, 3.0, 0.1, function(value)
+        return string.format(L["%.1fx"], value)
+    end, SLIDER_WIDTH, BD.DEFAULTS.scrollSpeed, ReplayPreview)
+    layout.y = durationY - SLIDER_BLOCK
 
     layout:Gap(SECTION_GAP)
     layout:Heading(L["Text style"])
+    parent.fontFaceDropdown = CreateChoiceDropdown(
+        parent,
+        layout,
+        L["Font"],
+        "fontFace",
+        BD.GetFontFaceOptions(),
+        L["Game fonts, plus SharedMedia fonts when that library is loaded by another addon."],
+        nil,
+        function()
+            BD:RequestOptionsPreview()
+        end
+    )
+    layout:Gap(NOTE_TOP_GAP)
+    layout:Body(L["Only fonts inside the WoW folder can load. SharedMedia fonts appear when another addon provides them."])
     parent.abbreviateCheckbox = layout:Checkbox(
         L["Abbreviate numbers"],
         L["Display large numbers as 214k or 1.2M. Disables thousand separators."],
@@ -2130,6 +2246,51 @@ local function BuildPageDamage(parent)
     layout:Button(L["Play"], 100, L["Preview this sound effect."], function()
         BD:PlayCritSoundPreview("huge")
     end)
+
+    parent:SetHeight(math.max(1, -layout.y + CONTENT_PAD))
+    local scrollFrame = parent:GetParent()
+    if scrollFrame and scrollFrame.UpdateScrollChildRect then
+        scrollFrame:UpdateScrollChildRect()
+    end
+    if parent.UpdateScrollBar then
+        C_Timer.After(0, parent.UpdateScrollBar)
+    end
+end
+
+local function BuildPageWhatsNew(parent)
+    local layout = NewLayout(parent, CONTENT_PAD, AddPageHeader(parent, GetPageName(5), GetPageSubtitle(5)), CONTENT_WIDTH)
+    local bulletInset = 14
+
+    local function ChangelogLabel(text)
+        local label = layout.parent:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        label:SetPoint("TOPLEFT", layout.x, layout.y)
+        label:SetText(text)
+        label:SetTextColor(1, 0.82, 0.45)
+        layout.y = layout.y - 22
+        return label
+    end
+
+    local function ChangelogBullet(text)
+        local desc = CreateBody(layout.parent, "•  " .. text, layout.x + bulletInset, layout.y, layout.width - bulletInset)
+        local height = desc:GetStringHeight()
+        if not height or height < 14 then
+            height = 16
+        end
+        layout.y = layout.y - (height + 8)
+        return desc
+    end
+
+    layout:Heading(L["Version 1.1.4"])
+
+    ChangelogLabel(L["NEW"])
+    ChangelogBullet(L["Outgoing healing on the recipient's nameplate. Enable Show healing under General (off by default). Friendly nameplates must be on in the game."])
+    ChangelogBullet(L["Scroll speed slider - numbers travel faster; fade still follows Display duration."])
+    ChangelogBullet(L["Font picker - game fonts, plus SharedMedia fonts when another addon provides them."])
+
+    layout:Gap(14)
+    ChangelogLabel(L["IMPROVED"])
+    ChangelogBullet(L["Font size up to 48, Scroll offset up to 120 px, Display duration up to 4 seconds."])
+    ChangelogBullet(L["Larger fonts spread out more in Modern number style so hits overlap less."])
 
     parent:SetHeight(math.max(1, -layout.y + CONTENT_PAD))
     local scrollFrame = parent:GetParent()
@@ -2340,7 +2501,7 @@ local function BuildConfigFrame()
         page.GetRootPanel = function()
             return frame
         end
-        if index == 1 or index == 2 or index == 3 then
+        if index == 1 or index == 2 or index == 3 or index == 5 then
             page.scrollFrame, page.scrollChild = CreateCustomScrollPage(page)
             page.scrollChild.GetRootPanel = page.GetRootPanel
         end
@@ -2358,6 +2519,7 @@ local function BuildConfigFrame()
     BuildPageDisplay(pages[2].scrollChild or pages[2], frame)
     BuildPageDamage(pages[3].scrollChild or pages[3])
     BuildPageTools(pages[4])
+    BuildPageWhatsNew(pages[5].scrollChild or pages[5])
 
     function frame:UpdateDependentStates()
         local general = pages[1].scrollChild or pages[1]
@@ -2565,6 +2727,9 @@ local function BuildConfigFrame()
                     dropdown:Refresh()
                 end
             end
+        end
+        if display and display.fontFaceDropdown and display.fontFaceDropdown.Refresh then
+            display.fontFaceDropdown:Refresh()
         end
         if display and display.showCritLabelCheckbox and display.showCritLabelCheckbox.Refresh then
             display.showCritLabelCheckbox:Refresh()

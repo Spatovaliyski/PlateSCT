@@ -33,6 +33,11 @@ local SPELL_SUBEVENTS = {
     RANGE_MISSED = true,
 }
 
+local HEAL_SUBEVENTS = {
+    SPELL_HEAL = true,
+    SPELL_PERIODIC_HEAL = true,
+}
+
 local MISS_DISPLAY = {
     ABSORB = "ABSORB",
     BLOCK = "BLOCK",
@@ -269,8 +274,12 @@ local function IconForOutgoing(sourceGUID, spellId)
     return spellId, nil
 end
 
-local function ShowOutgoingOnPlate(unit, text, amount, isCrit, school, spellId, hitKind, spellIcon)
-    if not BD:ShouldShowOutgoingHit(unit) then
+local function ShowOutgoingOnPlate(unit, text, amount, isCrit, school, spellId, hitKind, spellIcon, isHeal)
+    if isHeal then
+        if not BD:ShouldShowOutgoingHeal(unit) then
+            return
+        end
+    elseif not BD:ShouldShowOutgoingHit(unit) then
         return
     end
     if hitKind ~= "miss" and not BD.PassesThreshold(amount, BD.db.minDamage) then
@@ -279,12 +288,49 @@ local function ShowOutgoingOnPlate(unit, text, amount, isCrit, school, spellId, 
 
     local preset = BD:GetStylePreset()
     local r, g, b = BD.GetSchoolColor(school)
-    if not BD:ShouldUseSchoolColors() then
+    if isHeal then
+        if not BD:ShouldUseSchoolColors() then
+            local heal = BD.HEAL_COLOR
+            r, g, b = heal[1], heal[2], heal[3]
+        end
+    elseif not BD:ShouldUseSchoolColors() then
         r, g, b = preset.defaultColor[1], preset.defaultColor[2], preset.defaultColor[3]
     end
 
     -- Classic: spellId from CLEU; pet melee uses the pet icon, not auto-attack.
-    BD:ShowOnNameplate(unit, text, r, g, b, amount, isCrit, false, spellIcon, hitKind, spellId)
+    BD:ShowOnNameplate(unit, text, r, g, b, amount, isCrit, isHeal and true or false, spellIcon, hitKind, spellId)
+end
+
+local function HandleHeal(sourceGUID, sourceFlags, destGUID, spellId, spellSchool, amount, critical)
+    if not BD.db.showHealing then
+        return
+    end
+    if not IsAllowedSource(sourceGUID, sourceFlags) then
+        return
+    end
+    if IsPlayerGUID(destGUID) then
+        return
+    end
+
+    local unit = GetNameplateTokenForGUID(destGUID)
+    if not unit then
+        return
+    end
+
+    local display = BD.FormatAmount(amount, BD.db.abbreviate)
+    local outSpellId, outIcon = IconForOutgoing(sourceGUID, spellId)
+    local isCrit = critical and true or false
+    ShowOutgoingOnPlate(
+        unit,
+        display,
+        amount,
+        isCrit,
+        spellSchool,
+        outSpellId,
+        isCrit and "crit" or "hit",
+        outIcon,
+        true
+    )
 end
 
 local function HandleSummon(sourceGUID, destGUID)
@@ -403,6 +449,12 @@ function BD:HandleClassicCombatLog()
             arg23,
             arg24
         )
+        return
+    end
+
+    -- SPELL_HEAL / SPELL_PERIODIC_HEAL: amount, overhealing, absorbed, critical
+    if HEAL_SUBEVENTS[subEvent] then
+        HandleHeal(sourceGUID, sourceFlags, destGUID, arg12, arg14, arg15, arg18)
     end
 end
 

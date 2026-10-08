@@ -76,6 +76,45 @@ local function ShowPersonalDamage(unit, amount, isCrit, schoolMask)
     return true
 end
 
+local function ShowPersonalHeal(unit, amount, isCrit, schoolMask)
+    if not BD.IsNameplateUnit(unit) then
+        return false
+    end
+    if BD.UnitsMatch(unit, "player") then
+        return false
+    end
+    local plate = BD.GetNamePlateFrame(unit)
+    if not plate then
+        return false
+    end
+    if IsDuplicatePersonalHit(plate, amount, isCrit) then
+        BD:DebugPrint("personal heal skip, duplicate")
+        return false
+    end
+    if not BD.PassesThreshold(amount, BD.db.minDamage) then
+        return false
+    end
+    if not BD:PassesSchoolFilter(schoolMask) then
+        BD:DebugPrint("personal heal skip, school filter")
+        return false
+    end
+
+    local spellID, usedAuto = BD:MatchOutgoingHit(unit, schoolMask)
+    -- Heals must match a cast; auto-attack fallback is damage-only.
+    if not spellID or usedAuto then
+        BD:DebugPrint("personal heal skip, no outgoing match")
+        return false
+    end
+
+    local display = BD.FormatAmount(amount, BD.db.abbreviate)
+    local r, g, b = BD.GetSchoolColor(schoolMask)
+    local hitKind = isCrit and "crit" or "hit"
+    BD:DebugPrint("personal heal", unit, display, hitKind, spellID)
+    RememberPersonalHit(plate, amount, isCrit)
+    BD:ShowOnNameplate(unit, display, r, g, b, amount, isCrit, true, nil, hitKind, spellID)
+    return true
+end
+
 local function HandleIncoming(self, action, flagText, amount)
     if not self.db.showIncoming then
         return
@@ -116,6 +155,19 @@ function BD:HandleUnitCombat(unit, action, flagText, amount, schoolMask)
 
     local isCrit = (flagText == "CRITICAL")
     if self.db.onlyMyDamage then
+        if action == "HEAL" then
+            if not self.db.showHealing then
+                return
+            end
+            if not BD.IsNameplateUnit(unit) then
+                return
+            end
+            if not BD.GetNamePlateFrame(unit) then
+                return
+            end
+            ShowPersonalHeal(unit, amount, isCrit, schoolMask)
+            return
+        end
         if action ~= "WOUND" then
             return
         end
@@ -151,6 +203,26 @@ function BD:HandleUnitCombat(unit, action, flagText, amount, schoolMask)
         local r, g, b = BD.GetSchoolColor(schoolMask)
         local hitKind = isCrit and "crit" or "hit"
         self:ShowOnNameplate(unit, display, r, g, b, amount, isCrit, false, nil, hitKind)
+        return
+    end
+
+    if action == "HEAL" then
+        if not self.db.showHealing then
+            return
+        end
+        if not self:ShouldShowOutgoingHeal(unit) then
+            return
+        end
+        if not BD.PassesThreshold(amount, self.db.minDamage) then
+            return
+        end
+        if not self:PassesSchoolFilter(schoolMask) then
+            return
+        end
+        local display = BD.FormatAmount(amount, self.db.abbreviate)
+        local r, g, b = BD.GetSchoolColor(schoolMask)
+        local hitKind = isCrit and "crit" or "hit"
+        self:ShowOnNameplate(unit, display, r, g, b, amount, isCrit, true, nil, hitKind)
         return
     end
 

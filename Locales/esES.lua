@@ -25,6 +25,7 @@ L["Display"] = "Visualización"
 L["Damage"] = "Daño"
 L["Tools"] = "Herramientas"
 L["Tools & Preview"] = "Herramientas y vista previa"
+L["What's new?"] = "Novedades"
 L["Choose whose damage and which nameplates to show."] =
     "Elige qué daño y qué placas de nombre mostrar."
 L["Control how numbers look and how they animate."] =
@@ -33,6 +34,20 @@ L["Hide small hits so the big numbers stay readable."] =
     "Oculta los golpes pequeños para que los números grandes sigan legibles."
 L["Preview numbers and maintain your setup."] =
     "Previsualiza números y mantén tu configuración."
+L["Recent changes in PlateSCT."] = "Cambios recientes en PlateSCT."
+L["Version 1.1.4"] = "Versión 1.1.4"
+L["NEW"] = "NUEVO"
+L["IMPROVED"] = "MEJORADO"
+L["Outgoing healing on the recipient's nameplate. Enable Show healing under General (off by default). Friendly nameplates must be on in the game."] =
+    "Sanación saliente en la placa del receptor. Activa Mostrar sanación en General (desactivado por defecto). Placas amistosas activadas en el juego."
+L["Scroll speed slider - numbers travel faster; fade still follows Display duration."] =
+    "Velocidad de desplazamiento - los números se mueven más rápido; el desvanecido sigue la duración."
+L["Font picker - game fonts, plus SharedMedia fonts when another addon provides them."] =
+    "Selector de fuente - fuentes del juego, más SharedMedia cuando otro addon las proporciona."
+L["Font size up to 48, Scroll offset up to 120 px, Display duration up to 4 seconds."] =
+    "Tamaño de fuente hasta 48, desplazamiento hasta 120 px, duración hasta 4 segundos."
+L["Larger fonts spread out more in Modern number style so hits overlap less."] =
+    "Las fuentes grandes se separan más en estilo Moderno, menos solapamiento."
 
 L["Combat text"] = "Texto de combate"
 L["Enable PlateSCT"] = "Activar PlateSCT"
@@ -62,6 +77,12 @@ L["Available when Only my damage is off. Use this to see numbers on every enemy 
 L["Include pet damage"] = "Incluir daño de mascota"
 L["In Only my damage mode, also treat a recent pet cast as your hit."] =
     "En el modo «Solo mi daño», también trata un hechizo reciente de la mascota como tu golpe."
+L["Healing"] = "Sanación"
+L["Show healing"] = "Mostrar sanación"
+L["Show your outgoing heals on the recipient's nameplate. Friendly nameplates must be enabled in the game."] =
+    "Muestra tus sanaciones salientes en la placa de nombre del receptor. Las placas amistosas deben estar activadas en el juego."
+L["Uses the same size, motion, duration, icons, and threshold as damage. Skips heals on you."] =
+    "Usa el mismo tamaño, movimiento, duración, iconos y umbral que el daño. Omite sanaciones sobre ti."
 
 L["Number style"] = "Estilo de números"
 L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the grow-and-settle pow, packed close to the plate."] =
@@ -92,12 +113,24 @@ L["Off"] = "Desactivado"
 L["Comma (10,000)"] = "Coma (10,000)"
 L["Dot (10.000)"] = "Punto (10.000)"
 L["Animation"] = "Animación"
+L["Font"] = "Fuente"
 L["Font size"] = "Tamaño de fuente"
 L["Scroll offset"] = "Desplazamiento vertical"
+L["Scroll speed"] = "Velocidad de desplazamiento"
 L["Display duration"] = "Duración de visualización"
+L["Game default"] = "Predeterminada del juego"
+L["Friz Quadrata"] = "Friz Quadrata"
+L["Arial Narrow"] = "Arial Narrow"
+L["Skurri"] = "Skurri"
+L["Morpheus"] = "Morpheus"
+L["Game fonts, plus SharedMedia fonts when that library is loaded by another addon."] =
+    "Fuentes del juego, más fuentes SharedMedia cuando esa biblioteca la carga otro addon."
+L["Only fonts inside the WoW folder can load. SharedMedia fonts appear when another addon provides them."] =
+    "Solo pueden cargarse fuentes dentro de la carpeta de WoW. Las fuentes SharedMedia aparecen cuando otro addon las proporciona."
 L["Recommended"] = "Recomendado"
 L["%d px"] = "%d px"
 L["%.1fs"] = "%.1fs"
+L["%.1fx"] = "%.1fx"
 L["Show CRITICAL"] = "Mostrar CRÍTICO"
 L["Show the word CRITICAL in small caps next to critical hit numbers."] =
     "Muestra la palabra CRÍTICO en mayúsculas pequeñas junto a los golpes críticos."

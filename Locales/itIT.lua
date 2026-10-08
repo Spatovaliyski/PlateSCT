@@ -25,6 +25,7 @@ L["Display"] = "Visualizzazione"
 L["Damage"] = "Danni"
 L["Tools"] = "Strumenti"
 L["Tools & Preview"] = "Strumenti e anteprima"
+L["What's new?"] = "Novità"
 L["Choose whose damage and which nameplates to show."] =
     "Scegli quali danni e quali barre del nome mostrare."
 L["Control how numbers look and how they animate."] =
@@ -33,6 +34,20 @@ L["Hide small hits so the big numbers stay readable."] =
     "Nascondi i colpi piccoli così i numeri grandi restano leggibili."
 L["Preview numbers and maintain your setup."] =
     "Anteprima dei numeri e gestione della configurazione."
+L["Recent changes in PlateSCT."] = "Modifiche recenti in PlateSCT."
+L["Version 1.1.4"] = "Versione 1.1.4"
+L["NEW"] = "NUOVO"
+L["IMPROVED"] = "MIGLIORATO"
+L["Outgoing healing on the recipient's nameplate. Enable Show healing under General (off by default). Friendly nameplates must be on in the game."] =
+    "Cure in uscita sulla barra del destinatario. Attiva Mostra cure in Generale (disattivato di default). Barre amichevoli attive nel gioco."
+L["Scroll speed slider - numbers travel faster; fade still follows Display duration."] =
+    "Velocità scorrimento - i numeri si muovono più in fretta; lo sfumato segue ancora la durata."
+L["Font picker - game fonts, plus SharedMedia fonts when another addon provides them."] =
+    "Selezione carattere - caratteri di gioco e SharedMedia se un altro addon li fornisce."
+L["Font size up to 48, Scroll offset up to 120 px, Display duration up to 4 seconds."] =
+    "Dimensione carattere fino a 48, scostamento fino a 120 px, durata fino a 4 secondi."
+L["Larger fonts spread out more in Modern number style so hits overlap less."] =
+    "Caratteri più grandi più distanziati nello stile Moderno, meno sovrapposizioni."
 
 L["Combat text"] = "Testo di combattimento"
 L["Enable PlateSCT"] = "Abilita PlateSCT"
@@ -62,6 +77,12 @@ L["Available when Only my damage is off. Use this to see numbers on every enemy 
 L["Include pet damage"] = "Includi danni del famiglio"
 L["In Only my damage mode, also treat a recent pet cast as your hit."] =
     "Nella modalità «Solo i miei danni», tratta anche un lancio recente del famiglio come tuo colpo."
+L["Healing"] = "Cure"
+L["Show healing"] = "Mostra cure"
+L["Show your outgoing heals on the recipient's nameplate. Friendly nameplates must be enabled in the game."] =
+    "Mostra le tue cure in uscita sulla barra del nome del destinatario. Le barre amichevoli devono essere attivate nel gioco."
+L["Uses the same size, motion, duration, icons, and threshold as damage. Skips heals on you."] =
+    "Usa le stesse dimensioni, movimento, durata, icone e soglia del danno. Ignora le cure su di te."
 
 L["Number style"] = "Stile dei numeri"
 L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the grow-and-settle pow, packed close to the plate."] =
@@ -92,12 +113,24 @@ L["Off"] = "Disattivato"
 L["Comma (10,000)"] = "Virgola (10,000)"
 L["Dot (10.000)"] = "Punto (10.000)"
 L["Animation"] = "Animazione"
+L["Font"] = "Carattere"
 L["Font size"] = "Dimensione carattere"
 L["Scroll offset"] = "Scostamento scorrimento"
+L["Scroll speed"] = "Velocità scorrimento"
 L["Display duration"] = "Durata visualizzazione"
+L["Game default"] = "Predefinito del gioco"
+L["Friz Quadrata"] = "Friz Quadrata"
+L["Arial Narrow"] = "Arial Narrow"
+L["Skurri"] = "Skurri"
+L["Morpheus"] = "Morpheus"
+L["Game fonts, plus SharedMedia fonts when that library is loaded by another addon."] =
+    "Caratteri del gioco, più i caratteri SharedMedia quando quella libreria è caricata da un altro addon."
+L["Only fonts inside the WoW folder can load. SharedMedia fonts appear when another addon provides them."] =
+    "Si possono caricare solo i caratteri nella cartella di WoW. I caratteri SharedMedia compaiono quando un altro addon li fornisce."
 L["Recommended"] = "Consigliato"
 L["%d px"] = "%d px"
 L["%.1fs"] = "%.1fs"
+L["%.1fx"] = "%.1fx"
 L["Show CRITICAL"] = "Mostra CRITICO"
 L["Show the word CRITICAL in small caps next to critical hit numbers."] =
     "Mostra la parola CRITICO in maiuscoletto accanto ai colpi critici."

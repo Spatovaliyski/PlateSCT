@@ -15,18 +15,36 @@ local DEFAULT_SPAWN_LANES = {
 }
 
 local CRIT_LABEL_GAP = 3
-local CLASSIC_LAYOUT_PAD = 9
--- Hits: fill center / right / left, then stack further rows upward.
+local CLASSIC_LAYOUT_PAD = 10
+-- Crits: fill center / right / left / up / down around newest.
+-- Normal classic hits use PickClearSpawn instead (AOE packs must spread).
 local CLASSIC_HIT_COLUMNS = 3
 local ROLLING_AVERAGE_WINDOW = 10
 local ROLLING_AVERAGE_MAX_AGE = 8.0
+-- Keep AOE spread near the plate; deconflict must not fling numbers off-screen.
+local CLASSIC_AOE_MIN_DIST = 26
+local CLASSIC_AOE_MIN_DIST_CRIT = 30
+local CLASSIC_DECONFLICT_NEED = 30
+local CLASSIC_MAX_DRIFT = 40
 
 local damageSamples = {}
 local rollingDamageAverage = 0
 local lastClassicRelayoutTime = -1
+-- Rotating spiral so simultaneous AOE hits never share one screen slot.
+local classicFanIndex = 0
+local CLASSIC_GOLDEN_ANGLE = 2.39996322972865332
 
+-- Only crits use the classic grow-and-settle shove grid. Normal hits keep
+-- their clear-spawn offsets so multi-target AOE does not pile in one stack.
 local function IsClassicShoveFrame(frame)
-    return frame.usesClassicShove and frame.animMode == "classicPow"
+    return frame.usesClassicShove
+        and frame.animMode == "classicPow"
+        and frame.isCrit
+        and frame.critsHold
+end
+
+local function IsClassicStyleFrame(frame)
+    return frame.usesClassicShove and frame.animMode == "classicPow" and not frame.incoming
 end
 
 local function PushDamageSample(amount)
@@ -204,6 +222,155 @@ local function RelayoutClassicAnchor(anchor)
     RelayoutClassicCluster(CollectClassicCluster(anchor, false), false)
 end
 
+local function ApplyClassicFramePoint(frame)
+    local motionAnchor = frame.lingerHost or frame.anchor
+    if not motionAnchor then
+        return
+    end
+    local relPoint = frame.lingerHost and "CENTER" or (frame.anchorRelPoint or "TOP")
+    frame:ClearAllPoints()
+    pcall(frame.SetPoint, frame, "CENTER", motionAnchor, relPoint, frame.startX or 0, frame.startY or 0)
+end
+
+-- Never call GetCenter raw: measuring through a restricted nameplate errors/taints.
+local function SafeFrameCenter(frame)
+    if not frame then
+        return nil, nil
+    end
+    local ok, x, y = pcall(frame.GetCenter, frame)
+    if ok and x ~= nil and y ~= nil then
+        return x, y
+    end
+    return nil, nil
+end
+
+local function ClampClassicDrift(frame)
+    local bx = frame.classicBaseX or 0
+    local by = frame.classicBaseY or 0
+    local sx = frame.startX or 0
+    local sy = frame.startY or 0
+    local dx = sx - bx
+    local dy = sy - by
+    local distSq = dx * dx + dy * dy
+    local maxD = CLASSIC_MAX_DRIFT
+    if distSq > maxD * maxD and distSq > 0 then
+        local dist = math.sqrt(distSq)
+        frame.startX = bx + dx / dist * maxD
+        frame.startY = by + dy / dist * maxD
+    end
+end
+
+-- Soft push for overlapping Classic number-style hits only. Caps drift so
+-- numbers stay near their plate. Modern number style never enters this path.
+local function DeconflictClassicScreen()
+    local list = {}
+    for frame in pairs(active) do
+        if IsClassicStyleFrame(frame) and not frame.classicHidden and not frame.isPreview then
+            list[#list + 1] = frame
+        end
+    end
+    if #list < 2 then
+        return
+    end
+
+    for i = 1, #list do
+        ApplyClassicFramePoint(list[i])
+    end
+
+    -- Prefer screen centers when every frame can be measured. If any plate
+    -- chain is restricted, fall back to relative startX/startY only.
+    local posX, posY = {}, {}
+    local useScreen = true
+    for i = 1, #list do
+        local x, y = SafeFrameCenter(list[i])
+        if not x then
+            useScreen = false
+            break
+        end
+        posX[i] = x
+        posY[i] = y
+    end
+    if not useScreen then
+        for i = 1, #list do
+            posX[i] = list[i].startX or 0
+            posY[i] = list[i].startY or 0
+        end
+    end
+
+    local need = CLASSIC_DECONFLICT_NEED
+    for _ = 1, 2 do
+        local moved = false
+        for i = 1, #list do
+            local a = list[i]
+            local ax, ay = posX[i], posY[i]
+            for j = i + 1, #list do
+                local b = list[j]
+                local bx, by = posX[j], posY[j]
+                local dx = ax - bx
+                local dy = ay - by
+                local distSq = dx * dx + dy * dy
+                if distSq < 1 then
+                    local angle = (a.classicFanIndex or i) * CLASSIC_GOLDEN_ANGLE
+                    local push = need * 0.4
+                    local px = math.cos(angle) * push
+                    local py = math.sin(angle) * push
+                    a.startX = (a.startX or 0) + px
+                    a.startY = (a.startY or 0) + py
+                    b.startX = (b.startX or 0) - px
+                    b.startY = (b.startY or 0) - py
+                    ClampClassicDrift(a)
+                    ClampClassicDrift(b)
+                    if useScreen then
+                        posX[i] = ax + px
+                        posY[i] = ay + py
+                        posX[j] = bx - px
+                        posY[j] = by - py
+                    else
+                        posX[i] = a.startX or 0
+                        posY[i] = a.startY or 0
+                        posX[j] = b.startX or 0
+                        posY[j] = b.startY or 0
+                    end
+                    ax, ay = posX[i], posY[i]
+                    moved = true
+                elseif distSq < need * need then
+                    local dist = math.sqrt(distSq)
+                    local push = (need - dist) * 0.35
+                    local nx = dx / dist
+                    local ny = dy / dist
+                    a.startX = (a.startX or 0) + nx * push
+                    a.startY = (a.startY or 0) + ny * push
+                    b.startX = (b.startX or 0) - nx * push
+                    b.startY = (b.startY or 0) - ny * push
+                    ClampClassicDrift(a)
+                    ClampClassicDrift(b)
+                    if useScreen then
+                        posX[i] = ax + nx * push
+                        posY[i] = ay + ny * push
+                        posX[j] = bx - nx * push
+                        posY[j] = by - ny * push
+                    else
+                        posX[i] = a.startX or 0
+                        posY[i] = a.startY or 0
+                        posX[j] = b.startX or 0
+                        posY[j] = b.startY or 0
+                    end
+                    ax, ay = posX[i], posY[i]
+                    moved = true
+                end
+            end
+        end
+        if not moved then
+            break
+        end
+    end
+
+    for i = 1, #list do
+        ClampClassicDrift(list[i])
+        ApplyClassicFramePoint(list[i])
+    end
+end
+
 local function MaybeRelayoutClassic()
     local now = GetTime()
     if now == lastClassicRelayoutTime then
@@ -212,13 +379,20 @@ local function MaybeRelayoutClassic()
     lastClassicRelayoutTime = now
 
     local anchors = {}
+    local hasClassic = false
     for frame in pairs(active) do
-        if IsClassicShoveFrame(frame) and frame.anchor then
-            anchors[frame.anchor] = true
+        if IsClassicStyleFrame(frame) then
+            hasClassic = true
+            if IsClassicShoveFrame(frame) and frame.anchor then
+                anchors[frame.anchor] = true
+            end
         end
     end
     for anchor in pairs(anchors) do
         RelayoutClassicAnchor(anchor)
+    end
+    if hasClassic then
+        DeconflictClassicScreen()
     end
 end
 
@@ -227,6 +401,13 @@ local function ComputeMotion(frame)
     if frame.duration and frame.duration > 0 then
         progress = math.min(frame.elapsed / frame.duration, 1)
     end
+
+    -- Scroll speed advances travel sooner; fade still follows full display duration.
+    local scrollSpeed = frame.scrollSpeed or 1
+    if scrollSpeed < 0.01 then
+        scrollSpeed = 0.01
+    end
+    local motionProgress = math.min(1, progress * scrollSpeed)
 
     local scale, introDuration = ComputeIntroScale(frame)
     scale = scale * (frame.amountScale or 1)
@@ -238,10 +419,10 @@ local function ComputeMotion(frame)
         extraY = (1 - Anim.EaseOutCubic(frame.elapsed / introDuration)) * (frame.critSlapDrop or 0)
     end
 
-    local floatProgress = progress
+    local floatProgress = motionProgress
     if frame.isCrit and introDuration > 0 and frame.duration and frame.duration > introDuration and frame.critsHold and not useExtraPath then
         local introRatio = introDuration / frame.duration
-        floatProgress = math.max(0, (progress - introRatio) / (1 - introRatio))
+        floatProgress = math.max(0, (motionProgress - introRatio) / (1 - introRatio))
     end
 
     local floatDistance = frame.floatDistance or 0
@@ -252,11 +433,11 @@ local function ComputeMotion(frame)
     if useExtraPath then
         local dx, dy = 0, 0
         if motionStyle == "fountain" then
-            dx, dy = Anim.ComputeFountain(progress, frame.arcX, frame.arcTop, frame.arcBottom)
+            dx, dy = Anim.ComputeFountain(motionProgress, frame.arcX, frame.arcTop, frame.arcBottom)
         elseif motionStyle == "rainfall" then
-            dx, dy = Anim.ComputeRainfall(progress, frame.rainDistance, frame.rainX, frame.rainStartY)
+            dx, dy = Anim.ComputeRainfall(motionProgress, frame.rainDistance, frame.rainX, frame.rainStartY)
         elseif motionStyle == "verticalDown" then
-            dx, dy = Anim.ComputeVertical(progress, -(floatDistance > 0 and floatDistance or 20))
+            dx, dy = Anim.ComputeVertical(motionProgress, -(floatDistance > 0 and floatDistance or 20))
         end
         local x = (frame.startX or 0) + dx
         local y = (frame.startY or 0) + extraY + dy
@@ -535,6 +716,7 @@ local function ReleaseFrame(frame)
     frame.usesClassicShove = nil
     frame.classicBaseX = nil
     frame.classicBaseY = nil
+    frame.classicFanIndex = nil
     frame.amountScale = nil
     frame.classicHidden = nil
     frame.lingerFrozen = nil
@@ -552,28 +734,97 @@ local function ReleaseFrame(frame)
     table.insert(pool, frame)
 end
 
-local function PickClearSpawn(anchor, frame, baseX, baseY, isCrit)
+local function ApproxFrameWorldPos(frame, sx, sy)
+    sx = sx or frame.startX or 0
+    sy = sy or frame.startY or 0
+    local host = frame.lingerHost or frame.anchor
+    local hx, hy = ReadWorldCenter(host)
+    if hx ~= nil then
+        return hx + sx, hy + sy
+    end
+    if frame.lingerWorldX ~= nil and frame.lingerWorldY ~= nil then
+        return frame.lingerWorldX + sx, frame.lingerWorldY + sy
+    end
+    return nil, nil
+end
+
+local function SpawnSlotBlocked(frame, anchor, cx, cy, minDistSq, acrossAnchors)
+    local selfHostX, selfHostY = ReadWorldCenter(frame.lingerHost or anchor)
+    local candWX, candWY
+    if acrossAnchors and selfHostX ~= nil then
+        candWX, candWY = selfHostX + cx, selfHostY + cy
+    end
+
+    for other in pairs(active) do
+        if other ~= frame then
+            local sameAnchor = other.anchor == anchor
+            -- Across anchors with no readable plate center: treat plates as
+            -- stacked (AOE pack) and block on relative offsets globally.
+            local check = acrossAnchors or sameAnchor
+            if check then
+                local ox, oy = ComputeMotion(other)
+                if acrossAnchors and candWX ~= nil then
+                    local owx, owy = ApproxFrameWorldPos(other, ox, oy)
+                    if owx ~= nil then
+                        local dx = candWX - owx
+                        local dy = candWY - owy
+                        if (dx * dx + dy * dy) < minDistSq then
+                            return true
+                        end
+                    else
+                        local dx = cx - ox
+                        local dy = cy - oy
+                        if (dx * dx + dy * dy) < minDistSq then
+                            return true
+                        end
+                    end
+                else
+                    local dx = cx - ox
+                    local dy = cy - oy
+                    if (dx * dx + dy * dy) < minDistSq then
+                        return true
+                    end
+                end
+            end
+        end
+    end
+    return false
+end
+
+--- acrossAnchors: also avoid numbers on other nameplates (AOE packs).
+--- Uses a golden-angle spiral so packed plates still fan out on screen.
+local function PickClearSpawn(anchor, frame, baseX, baseY, isCrit, acrossAnchors)
     local lanes = frame.spawnLanes or DEFAULT_SPAWN_LANES
     local minDist = isCrit and (frame.spawnMinDistCrit or 26) or (frame.spawnMinDist or 20)
+    if acrossAnchors then
+        minDist = math.max(minDist, isCrit and CLASSIC_AOE_MIN_DIST_CRIT or CLASSIC_AOE_MIN_DIST)
+    end
     local minDistSq = minDist * minDist
     local jitter = frame.spawnJitter or 10
+
+    if acrossAnchors then
+        classicFanIndex = classicFanIndex + 1
+        frame.classicFanIndex = classicFanIndex
+        -- Tight spiral near the plate (about 10-36px), not screen-wide.
+        for n = 0, 11 do
+            local idx = classicFanIndex + n
+            local angle = idx * CLASSIC_GOLDEN_ANGLE
+            local ring = 10 + (n % 6) * 5
+            local cx = baseX + math.cos(angle) * ring
+            local cy = baseY + math.sin(angle) * ring
+            if not SpawnSlotBlocked(frame, anchor, cx, cy, minDistSq, true) then
+                return cx, cy
+            end
+        end
+        local angle = classicFanIndex * CLASSIC_GOLDEN_ANGLE
+        local ring = 14 + (classicFanIndex % 6) * 4
+        return baseX + math.cos(angle) * ring, baseY + math.sin(angle) * ring
+    end
 
     for _, lane in ipairs(lanes) do
         local cx = baseX + lane[1]
         local cy = baseY + lane[2]
-        local blocked = false
-        for other in pairs(active) do
-            if other ~= frame and other.anchor == anchor then
-                local ox, oy = ComputeMotion(other)
-                local dx = cx - ox
-                local dy = cy - oy
-                if (dx * dx + dy * dy) < minDistSq then
-                    blocked = true
-                    break
-                end
-            end
-        end
-        if not blocked then
+        if not SpawnSlotBlocked(frame, anchor, cx, cy, minDistSq, false) then
             return cx, cy
         end
     end
@@ -681,7 +932,10 @@ BD.Pool = {
     Acquire = AcquireFrame,
     Release = ReleaseFrame,
     PickClearSpawn = PickClearSpawn,
-    RelayoutClassic = RelayoutClassicAnchor,
+    RelayoutClassic = function(anchor)
+        RelayoutClassicAnchor(anchor)
+        DeconflictClassicScreen()
+    end,
     ReleasePreviewFrames = ReleasePreviewFrames,
     AttachLingerHost = AttachLingerHost,
     SnapshotLingerHost = SnapshotLingerHost,

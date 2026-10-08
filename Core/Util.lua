@@ -11,6 +11,85 @@ function BD:IsClassicNumberStyle()
     return (self.db.numberStyle or "retail") == "classic"
 end
 
+local FALLBACK_FONT = "Fonts\\FRIZQT__.TTF"
+
+function BD.GetDefaultFontPath()
+    return STANDARD_TEXT_FONT or FALLBACK_FONT
+end
+
+--- Resolve a saved fontFace id to a disk path. Supports built-ins and optional LibSharedMedia.
+function BD.ResolveFontPath(fontFace)
+    local face = fontFace or (BD.db and BD.db.fontFace) or "game"
+    if face == "game" or not face then
+        return BD.GetDefaultFontPath()
+    end
+
+    if type(face) == "string" and face:sub(1, 4) == "lsm:" then
+        local name = face:sub(5)
+        local LSM = LibStub and LibStub("LibSharedMedia-3.0", true)
+        if LSM and name ~= "" then
+            local path = LSM:Fetch("font", name)
+            if path then
+                return path
+            end
+        end
+        return BD.GetDefaultFontPath()
+    end
+
+    local fonts = BD.BUILTIN_FONTS
+    if fonts then
+        for _, entry in ipairs(fonts) do
+            if entry.id == face then
+                return entry.path or BD.GetDefaultFontPath()
+            end
+        end
+    end
+
+    return BD.GetDefaultFontPath()
+end
+
+--- Build dropdown options: built-ins first, then LibSharedMedia fonts when present.
+function BD.GetFontFaceOptions()
+    local options = {}
+    for _, entry in ipairs(BD.BUILTIN_FONTS or {}) do
+        options[#options + 1] = {
+            id = entry.id,
+            labelKey = entry.labelKey,
+            recommended = entry.id == "game",
+        }
+    end
+
+    local LSM = LibStub and LibStub("LibSharedMedia-3.0", true)
+    if LSM then
+        local list = LSM:List("font")
+        if list then
+            table.sort(list)
+            for _, name in ipairs(list) do
+                options[#options + 1] = {
+                    id = "lsm:" .. name,
+                    label = name,
+                }
+            end
+        end
+    end
+
+    return options
+end
+
+function BD.SafeSetFont(fontString, path, size, flags)
+    if not fontString then
+        return BD.GetDefaultFontPath()
+    end
+    local usePath = path or BD.GetDefaultFontPath()
+    local ok = pcall(fontString.SetFont, fontString, usePath, size, flags or "")
+    if ok then
+        return usePath
+    end
+    local fallback = BD.GetDefaultFontPath()
+    pcall(fontString.SetFont, fontString, fallback, size, flags or "")
+    return fallback
+end
+
 function BD:DebugPrint(...)
     if self.db.debug then
         print("|cff66ccffPlateSCT:|r", ...)
@@ -606,7 +685,7 @@ function BD.UnitLooksHostile(unit)
     return true
 end
 
-function BD:IsNameplateInConfiguredScope(unit)
+function BD:IsNameplateInConfiguredScope(unit, allowFriendly)
     if BD.API.IsClassic() then
         return true
     end
@@ -616,6 +695,11 @@ function BD:IsNameplateInConfiguredScope(unit)
         end
         local targetPlate = BD.GetNamePlateFrame("target")
         return targetPlate ~= nil and targetPlate == BD.GetNamePlateFrame(unit)
+    end
+
+    -- Friendly heals: no threat gate (they are never "engaged").
+    if allowFriendly and not BD.UnitLooksHostile(unit) then
+        return true
     end
 
     local strict = self.GetActiveStrictness and self:GetActiveStrictness()
@@ -636,6 +720,22 @@ function BD:ShouldShowOutgoingHit(unit)
         return false
     end
     if not self:IsNameplateInConfiguredScope(unit) then
+        return false
+    end
+    return true
+end
+
+function BD:ShouldShowOutgoingHeal(unit)
+    if not BD.IsNameplateUnit(unit) then
+        return false
+    end
+    if not BD.GetNamePlateFrame(unit) then
+        return false
+    end
+    if BD.UnitsMatch(unit, "player") then
+        return false
+    end
+    if not self:IsNameplateInConfiguredScope(unit, true) then
         return false
     end
     return true

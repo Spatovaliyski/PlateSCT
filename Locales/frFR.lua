@@ -25,6 +25,7 @@ L["Display"] = "Affichage"
 L["Damage"] = "Dégâts"
 L["Tools"] = "Outils"
 L["Tools & Preview"] = "Outils & Aperçu"
+L["What's new?"] = "Nouveautés"
 L["Choose whose damage and which nameplates to show."] =
     "Choisissez les dégâts et les barres de nom à afficher."
 L["Control how numbers look and how they animate."] =
@@ -33,6 +34,20 @@ L["Hide small hits so the big numbers stay readable."] =
     "Masquez les petits coups pour garder les gros nombres lisibles."
 L["Preview numbers and maintain your setup."] =
     "Prévisualisez les nombres et gérez votre configuration."
+L["Recent changes in PlateSCT."] = "Changements récents dans PlateSCT."
+L["Version 1.1.4"] = "Version 1.1.4"
+L["NEW"] = "NOUVEAU"
+L["IMPROVED"] = "AMÉLIORÉ"
+L["Outgoing healing on the recipient's nameplate. Enable Show healing under General (off by default). Friendly nameplates must be on in the game."] =
+    "Soins sortants sur la barre de nom du destinataire. Activez Afficher les soins sous Général (désactivé par défaut). Barres amicales requises dans le jeu."
+L["Scroll speed slider - numbers travel faster; fade still follows Display duration."] =
+    "Vitesse de défilement - les nombres vont plus vite ; le fondu suit toujours la durée d'affichage."
+L["Font picker - game fonts, plus SharedMedia fonts when another addon provides them."] =
+    "Sélecteur de police - polices du jeu, plus SharedMedia si un autre addon les fournit."
+L["Font size up to 48, Scroll offset up to 120 px, Display duration up to 4 seconds."] =
+    "Taille de police jusqu'à 48, décalage jusqu'à 120 px, durée jusqu'à 4 secondes."
+L["Larger fonts spread out more in Modern number style so hits overlap less."] =
+    "Les grandes polices s'espacent davantage en style Moderne, moins de chevauchement."
 
 L["Combat text"] = "Texte de combat"
 L["Enable PlateSCT"] = "Activer PlateSCT"
@@ -62,6 +77,12 @@ L["Available when Only my damage is off. Use this to see numbers on every enemy 
 L["Include pet damage"] = "Inclure les dégâts du familier"
 L["In Only my damage mode, also treat a recent pet cast as your hit."] =
     "En mode « Uniquement mes dégâts », traite aussi un sort récent du familier comme votre coup."
+L["Healing"] = "Soins"
+L["Show healing"] = "Afficher les soins"
+L["Show your outgoing heals on the recipient's nameplate. Friendly nameplates must be enabled in the game."] =
+    "Affiche vos soins sortants sur la barre de nom du destinataire. Les barres de nom amicales doivent être activées dans le jeu."
+L["Uses the same size, motion, duration, icons, and threshold as damage. Skips heals on you."] =
+    "Utilise la même taille, le même mouvement, la même durée, les mêmes icônes et le même seuil que les dégâts. Ignore les soins sur vous."
 
 L["Number style"] = "Style des nombres"
 L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the grow-and-settle pow, packed close to the plate."] =
@@ -92,12 +113,24 @@ L["Off"] = "Désactivé"
 L["Comma (10,000)"] = "Virgule (10,000)"
 L["Dot (10.000)"] = "Point (10.000)"
 L["Animation"] = "Animation"
+L["Font"] = "Police"
 L["Font size"] = "Taille de police"
 L["Scroll offset"] = "Décalage du défilement"
+L["Scroll speed"] = "Vitesse de défilement"
 L["Display duration"] = "Durée d'affichage"
+L["Game default"] = "Par défaut du jeu"
+L["Friz Quadrata"] = "Friz Quadrata"
+L["Arial Narrow"] = "Arial Narrow"
+L["Skurri"] = "Skurri"
+L["Morpheus"] = "Morpheus"
+L["Game fonts, plus SharedMedia fonts when that library is loaded by another addon."] =
+    "Polices du jeu, plus les polices SharedMedia lorsque cette bibliothèque est chargée par un autre addon."
+L["Only fonts inside the WoW folder can load. SharedMedia fonts appear when another addon provides them."] =
+    "Seules les polices du dossier WoW peuvent être chargées. Les polices SharedMedia apparaissent lorsqu'un autre addon les fournit."
 L["Recommended"] = "Recommandé"
 L["%d px"] = "%d px"
 L["%.1fs"] = "%.1fs"
+L["%.1fx"] = "%.1fx"
 L["Show CRITICAL"] = "Afficher CRITIQUE"
 L["Show the word CRITICAL in small caps next to critical hit numbers."] =
     "Affiche le mot CRITIQUE en petites capitales à côté des coups critiques."

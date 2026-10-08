@@ -11,6 +11,17 @@ local function AnchorCritLabel(frame)
     end
 end
 
+local function ScaleSpawnLanes(lanes, scale)
+    if not lanes or scale == 1 then
+        return lanes
+    end
+    local scaled = {}
+    for index, lane in ipairs(lanes) do
+        scaled[index] = { lane[1] * scale, lane[2] * scale }
+    end
+    return scaled
+end
+
 local function ApplyTextLayout(frame, fontSize, fontPath, fontFlags, preset, layoutOpts)
     layoutOpts = layoutOpts or {}
     local showIcon = layoutOpts.showIcon
@@ -31,7 +42,7 @@ local function ApplyTextLayout(frame, fontSize, fontPath, fontFlags, preset, lay
     local critLabelW = 0
     if showCritLabel and frame.critLabel then
         local critSize = math.max(8, math.floor(fontSize * 0.55 + 0.5))
-        frame.critLabel:SetFont(fontPath, critSize, fontFlags)
+        BD.SafeSetFont(frame.critLabel, fontPath, critSize, fontFlags)
         frame.critLabel:SetText(L["CRITICAL"])
         frame.critLabel:SetTextColor(r, g, b, 1)
         if preset.shadowOffset then
@@ -119,6 +130,7 @@ local function ConfigureFrameCommon(self, frame, preset, isCrit, hitKind, isInco
     end
     frame.duration = (self.db.duration or self.DEFAULTS.duration) * durationMult
     frame.floatDistance = (self.db.floatDistance or self.DEFAULTS.floatDistance) * preset.floatMult
+    frame.scrollSpeed = self.db.scrollSpeed or self.DEFAULTS.scrollSpeed or 1
     frame.baseAlpha = 1
     frame.popScale = preset.popScale
     frame.popDuration = preset.popDuration
@@ -131,16 +143,24 @@ local function ConfigureFrameCommon(self, frame, preset, isCrit, hitKind, isInco
     frame.critsHold = preset.critsHold and true or false
     frame.critRestScale = preset.critRestScale or 1.4
     frame.critPopStartScale = preset.critPopStartScale or 0.72
-        frame.critSlapScale = preset.critSlapScale or 1.50
+    frame.critSlapScale = preset.critSlapScale or 1.50
     frame.critSlapDuration = preset.critSlapDuration or 0
     frame.critSlapDrop = preset.critSlapDrop or 0
     frame.critPowStartScale = preset.critPowStartScale or 1
     frame.critPowPeakScale = preset.critPowPeakScale or 2.0
     frame.critPowDuration = preset.critPowDuration or 0.22
-    frame.spawnLanes = preset.spawnLanes
-    frame.spawnMinDist = preset.spawnMinDist
-    frame.spawnMinDistCrit = preset.spawnMinDistCrit
-    frame.spawnJitter = preset.spawnJitter
+
+    -- Scale Modern-style spawn lanes with font size so larger numbers spread out.
+    local defaultFontSize = self.DEFAULTS.fontSize or 14
+    if defaultFontSize < 1 then
+        defaultFontSize = 14
+    end
+    local fontSize = self.db.fontSize or defaultFontSize
+    local spacingScale = fontSize / defaultFontSize
+    frame.spawnLanes = ScaleSpawnLanes(preset.spawnLanes, spacingScale)
+    frame.spawnMinDist = (preset.spawnMinDist or 20) * spacingScale
+    frame.spawnMinDistCrit = (preset.spawnMinDistCrit or 26) * spacingScale
+    frame.spawnJitter = (preset.spawnJitter or 10) * spacingScale
     frame.spawnCritY = preset.spawnCritY
 
     local motionStyle = self:ResolveMotionStyle(frame.hitKind)
@@ -219,18 +239,19 @@ local function SpawnMotionPreviewFrame(anchor, sample)
             spawnY = spawnY + (hitY - critY)
         end
         frame.usesClassicShove = true
-        frame.classicBaseX = 0
-        frame.classicBaseY = spawnY
-        frame.startX = 0
-        frame.startY = spawnY
+        local sx, sy = BD.Pool.PickClearSpawn(anchor, frame, 0, spawnY, isCrit, true)
+        frame.classicBaseX = sx
+        frame.classicBaseY = sy
+        frame.startX = sx
+        frame.startY = sy
     else
         frame.startX, frame.startY = BD.Pool.PickClearSpawn(anchor, frame, 0, spawnY, isCrit)
     end
     frame:SetPoint("CENTER", anchor, "CENTER", frame.startX, frame.startY)
 
     local fontSize = (BD.db.fontSize or BD.DEFAULTS.fontSize) * preset.fontScale
-    local fontPath = STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"
-    frame.text:SetFont(fontPath, fontSize, preset.fontFlags)
+    local fontPath = BD.ResolveFontPath(BD.db.fontFace)
+    fontPath = BD.SafeSetFont(frame.text, fontPath, fontSize, preset.fontFlags)
     if preset.shadowOffset then
         frame.text:SetShadowOffset(preset.shadowOffset[1], preset.shadowOffset[2])
         frame.text:SetShadowColor(0, 0, 0, 1)
@@ -284,10 +305,10 @@ local function SpawnMotionPreviewFrame(anchor, sample)
     else
         frame:SetScale(frame.popScale or 1)
     end
+    frame:Show()
     if frame.usesClassicShove then
         BD.Pool.RelayoutClassic(anchor)
     end
-    frame:Show()
 end
 
 function BD:ShowMotionPreview(anchor)
@@ -397,10 +418,12 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
     end
     if self:IsClassicNumberStyle() then
         frame.usesClassicShove = true
-        frame.classicBaseX = 0
-        frame.classicBaseY = baseY
-        frame.startX = 0
-        frame.startY = baseY
+        -- Spread across plates in world space so AOE packs do not stack.
+        local sx, sy = BD.Pool.PickClearSpawn(plate, frame, 0, baseY, frame.isCrit, true)
+        frame.classicBaseX = sx
+        frame.classicBaseY = sy
+        frame.startX = sx
+        frame.startY = sy
     else
         frame.startX, frame.startY = BD.Pool.PickClearSpawn(plate, frame, 0, baseY, frame.isCrit)
     end
@@ -409,8 +432,8 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
     frame:SetPoint("CENTER", lingerAt, frame.lingerHost and "CENTER" or "TOP", frame.startX, frame.startY)
 
     local fontSize = (self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale
-    local fontPath = STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"
-    frame.text:SetFont(fontPath, fontSize, preset.fontFlags)
+    local fontPath = BD.ResolveFontPath(self.db.fontFace)
+    fontPath = BD.SafeSetFont(frame.text, fontPath, fontSize, preset.fontFlags)
     if preset.shadowOffset then
         frame.text:SetShadowOffset(preset.shadowOffset[1], preset.shadowOffset[2])
         frame.text:SetShadowColor(0, 0, 0, 1)
@@ -423,14 +446,21 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
     local iconSize = math.max(12, math.floor((fontSize * 1.1) + 0.5))
     local showCritLabel = frame.isCrit and self.db.showCritLabel and true or false
 
-    if not isHeal then
+    if isHeal then
         if self:ShouldUseSchoolColors() then
             if not r then
                 r, g, b = BD.GetSchoolColor(nil)
             end
         else
-            r, g, b = preset.defaultColor[1], preset.defaultColor[2], preset.defaultColor[3]
+            local heal = BD.HEAL_COLOR
+            r, g, b = heal[1], heal[2], heal[3]
         end
+    elseif self:ShouldUseSchoolColors() then
+        if not r then
+            r, g, b = BD.GetSchoolColor(nil)
+        end
+    else
+        r, g, b = preset.defaultColor[1], preset.defaultColor[2], preset.defaultColor[3]
     end
 
     ApplyTextLayout(frame, fontSize, fontPath, preset.fontFlags, preset, {
@@ -476,10 +506,11 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
     else
         frame:SetScale(frame.popScale or 1)
     end
+    frame:Show()
+    -- Show first so screen centers exist for Classic AOE deconflict.
     if frame.usesClassicShove then
         BD.Pool.RelayoutClassic(plate)
     end
-    frame:Show()
     -- Layout exists now. Snapshot before death can hide the plate this frame.
     BD.Pool.SnapshotLingerHost(frame, true)
 
@@ -525,10 +556,11 @@ function BD:ShowIncoming(text, r, g, b, amountForThreshold, isCrit, hitKind)
     local spawnY = oy + baseY
     if self:IsClassicNumberStyle() then
         frame.usesClassicShove = true
-        frame.classicBaseX = ox
-        frame.classicBaseY = spawnY
-        frame.startX = ox
-        frame.startY = spawnY
+        local sx, sy = BD.Pool.PickClearSpawn(anchor, frame, ox, spawnY, frame.isCrit, true)
+        frame.classicBaseX = sx
+        frame.classicBaseY = sy
+        frame.startX = sx
+        frame.startY = sy
     else
         frame.startX, frame.startY = BD.Pool.PickClearSpawn(anchor, frame, ox, spawnY, frame.isCrit)
     end
@@ -536,8 +568,8 @@ function BD:ShowIncoming(text, r, g, b, amountForThreshold, isCrit, hitKind)
     frame:SetPoint("CENTER", anchor, frame.anchorRelPoint, frame.startX, frame.startY)
 
     local fontSize = (self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale
-    local fontPath = STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"
-    frame.text:SetFont(fontPath, fontSize, preset.fontFlags)
+    local fontPath = BD.ResolveFontPath(self.db.fontFace)
+    fontPath = BD.SafeSetFont(frame.text, fontPath, fontSize, preset.fontFlags)
     if preset.shadowOffset then
         frame.text:SetShadowOffset(preset.shadowOffset[1], preset.shadowOffset[2])
         frame.text:SetShadowColor(0, 0, 0, 1)
@@ -591,10 +623,10 @@ function BD:ShowIncoming(text, r, g, b, amountForThreshold, isCrit, hitKind)
     else
         frame:SetScale(frame.popScale or 1)
     end
+    frame:Show()
     if frame.usesClassicShove then
         BD.Pool.RelayoutClassic(anchor)
     end
-    frame:Show()
 end
 
 function BD:ShowTestNumbers()

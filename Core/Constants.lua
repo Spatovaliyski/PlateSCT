@@ -10,10 +10,13 @@ BD.DEFAULTS = {
     fontSize = 14,
     duration = 1.0,
     floatDistance = 20,
+    scrollSpeed = 1.0,
+    fontFace = "game",
     hideBlizzardFCT = true,
     onlyMyDamage = true,
     allNameplates = false,
     includePetDamage = true,
+    showHealing = false,
     showIncoming = false,
     incomingOffsetX = 0,
     incomingOffsetY = -100,
@@ -54,6 +57,16 @@ BD.DEFAULTS = {
 }
 
 BD.INCOMING_COLOR = { 1.0, 0.32, 0.28 }
+BD.HEAL_COLOR = { 0.25, 0.95, 0.35 }
+
+-- Built-in font faces. Paths are under the WoW install; "game" uses STANDARD_TEXT_FONT.
+BD.BUILTIN_FONTS = {
+    { id = "game", labelKey = "Game default" },
+    { id = "friz", labelKey = "Friz Quadrata", path = "Fonts\\FRIZQT__.TTF" },
+    { id = "arialn", labelKey = "Arial Narrow", path = "Fonts\\ARIALN.TTF" },
+    { id = "skurri", labelKey = "Skurri", path = "Fonts\\skurri.ttf" },
+    { id = "morpheus", labelKey = "Morpheus", path = "Fonts\\MORPHEUS.TTF" },
+}
 
 BD.ANIM_STYLES = {
     { id = "platesct", labelKey = "Vertical Up", recommended = true },
@@ -153,19 +166,22 @@ BD.STYLE_PRESETS = {
         floatEase = "outQuad",
         spawnBaseY = 36,
         spawnCritY = 8,
+        -- Modest lanes: enough to unstack AOE without flinging off the plate.
         spawnLanes = {
             { 0, 0 },
             { 18, 0 },
             { -18, 0 },
             { 0, 16 },
-            { 16, 14 },
-            { -16, 14 },
+            { 14, 12 },
+            { -14, 12 },
             { 0, 28 },
-            { 10, 8 },
-            { -10, 8 },
+            { 24, 8 },
+            { -24, 8 },
+            { 12, 22 },
+            { -12, 22 },
         },
-        spawnMinDist = 20,
-        spawnMinDistCrit = 26,
+        spawnMinDist = 22,
+        spawnMinDistCrit = 28,
         spawnJitter = 10,
         shadowOffset = { 2, -2 },
     },

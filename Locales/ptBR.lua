@@ -25,6 +25,7 @@ L["Display"] = "Exibição"
 L["Damage"] = "Dano"
 L["Tools"] = "Ferramentas"
 L["Tools & Preview"] = "Ferramentas e prévia"
+L["What's new?"] = "Novidades"
 L["Choose whose damage and which nameplates to show."] =
     "Escolha cujo dano e quais placas de nome mostrar."
 L["Control how numbers look and how they animate."] =
@@ -33,6 +34,20 @@ L["Hide small hits so the big numbers stay readable."] =
     "Oculte golpes pequenos para que os números grandes continuem legíveis."
 L["Preview numbers and maintain your setup."] =
     "Pré-visualize números e mantenha sua configuração."
+L["Recent changes in PlateSCT."] = "Mudanças recentes no PlateSCT."
+L["Version 1.1.4"] = "Versão 1.1.4"
+L["NEW"] = "NOVO"
+L["IMPROVED"] = "MELHORADO"
+L["Outgoing healing on the recipient's nameplate. Enable Show healing under General (off by default). Friendly nameplates must be on in the game."] =
+    "Cura de saída na placa do destinatário. Ative Mostrar cura em Geral (desligado por padrão). Placas amigáveis ativas no jogo."
+L["Scroll speed slider - numbers travel faster; fade still follows Display duration."] =
+    "Velocidade da rolagem - os números se movem mais rápido; o fade ainda segue a duração."
+L["Font picker - game fonts, plus SharedMedia fonts when another addon provides them."] =
+    "Seletor de fonte - fontes do jogo, mais SharedMedia quando outro addon as fornece."
+L["Font size up to 48, Scroll offset up to 120 px, Display duration up to 4 seconds."] =
+    "Tamanho da fonte até 48, deslocamento até 120 px, duração até 4 segundos."
+L["Larger fonts spread out more in Modern number style so hits overlap less."] =
+    "Fontes maiores se espalham mais no estilo Moderno, menos sobreposição."
 
 L["Combat text"] = "Texto de combate"
 L["Enable PlateSCT"] = "Ativar PlateSCT"
@@ -62,6 +77,12 @@ L["Available when Only my damage is off. Use this to see numbers on every enemy 
 L["Include pet damage"] = "Incluir dano do ajudante"
 L["In Only my damage mode, also treat a recent pet cast as your hit."] =
     "No modo «Apenas meu dano», também trate um lançamento recente do ajudante como seu golpe."
+L["Healing"] = "Cura"
+L["Show healing"] = "Mostrar cura"
+L["Show your outgoing heals on the recipient's nameplate. Friendly nameplates must be enabled in the game."] =
+    "Mostra suas curas de saída na placa de nome do destinatário. As placas amigáveis precisam estar ativadas no jogo."
+L["Uses the same size, motion, duration, icons, and threshold as damage. Skips heals on you."] =
+    "Usa o mesmo tamanho, movimento, duração, ícones e limite do dano. Ignora curas em você."
 
 L["Number style"] = "Estilo dos números"
 L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the grow-and-settle pow, packed close to the plate."] =
@@ -92,12 +113,24 @@ L["Off"] = "Desligado"
 L["Comma (10,000)"] = "Vírgula (10,000)"
 L["Dot (10.000)"] = "Ponto (10.000)"
 L["Animation"] = "Animação"
+L["Font"] = "Fonte"
 L["Font size"] = "Tamanho da fonte"
 L["Scroll offset"] = "Deslocamento da rolagem"
+L["Scroll speed"] = "Velocidade da rolagem"
 L["Display duration"] = "Duração da exibição"
+L["Game default"] = "Padrão do jogo"
+L["Friz Quadrata"] = "Friz Quadrata"
+L["Arial Narrow"] = "Arial Narrow"
+L["Skurri"] = "Skurri"
+L["Morpheus"] = "Morpheus"
+L["Game fonts, plus SharedMedia fonts when that library is loaded by another addon."] =
+    "Fontes do jogo, mais fontes SharedMedia quando essa biblioteca é carregada por outro addon."
+L["Only fonts inside the WoW folder can load. SharedMedia fonts appear when another addon provides them."] =
+    "Só fontes dentro da pasta do WoW podem ser carregadas. Fontes SharedMedia aparecem quando outro addon as fornece."
 L["Recommended"] = "Recomendado"
 L["%d px"] = "%d px"
 L["%.1fs"] = "%.1fs"
+L["%.1fx"] = "%.1fx"
 L["Show CRITICAL"] = "Mostrar CRÍTICO"
 L["Show the word CRITICAL in small caps next to critical hit numbers."] =
     "Mostra a palavra CRÍTICO em letras maiúsculas pequenas ao lado de acertos críticos."

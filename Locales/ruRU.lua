@@ -25,6 +25,7 @@ L["Display"] = "Отображение"
 L["Damage"] = "Урон"
 L["Tools"] = "Инструменты"
 L["Tools & Preview"] = "Инструменты и просмотр"
+L["What's new?"] = "Что нового?"
 L["Choose whose damage and which nameplates to show."] =
     "Выберите чей урон и какие индикаторы здоровья показывать."
 L["Control how numbers look and how they animate."] =
@@ -33,6 +34,20 @@ L["Hide small hits so the big numbers stay readable."] =
     "Скрывайте мелкие удары, чтобы крупные числа оставались читаемыми."
 L["Preview numbers and maintain your setup."] =
     "Просматривайте числа и управляйте настройками."
+L["Recent changes in PlateSCT."] = "Недавние изменения в PlateSCT."
+L["Version 1.1.4"] = "Версия 1.1.4"
+L["NEW"] = "НОВОЕ"
+L["IMPROVED"] = "УЛУЧШЕНО"
+L["Outgoing healing on the recipient's nameplate. Enable Show healing under General (off by default). Friendly nameplates must be on in the game."] =
+    "Исходящее исцеление на индикаторе получателя. Включите «Показывать исцеление» в «Общие» (по умолчанию выкл.). Дружественные индикаторы должны быть включены."
+L["Scroll speed slider - numbers travel faster; fade still follows Display duration."] =
+    "Скорость прокрутки - числа движутся быстрее; затухание по-прежнему следует длительности показа."
+L["Font picker - game fonts, plus SharedMedia fonts when another addon provides them."] =
+    "Выбор шрифта - игровые шрифты и SharedMedia, если их даёт другой аддон."
+L["Font size up to 48, Scroll offset up to 120 px, Display duration up to 4 seconds."] =
+    "Размер шрифта до 48, смещение до 120 пкс, длительность до 4 секунд."
+L["Larger fonts spread out more in Modern number style so hits overlap less."] =
+    "Крупные шрифты сильнее разводятся в современном стиле, меньше наложений."
 
 L["Combat text"] = "Текст боя"
 L["Enable PlateSCT"] = "Включить PlateSCT"
@@ -62,6 +77,12 @@ L["Available when Only my damage is off. Use this to see numbers on every enemy 
 L["Include pet damage"] = "Учитывать урон питомца"
 L["In Only my damage mode, also treat a recent pet cast as your hit."] =
     "В режиме «Только мой урон» также считать недавнее заклинание питомца вашим ударом."
+L["Healing"] = "Исцеление"
+L["Show healing"] = "Показывать исцеление"
+L["Show your outgoing heals on the recipient's nameplate. Friendly nameplates must be enabled in the game."] =
+    "Показывает ваше исходящее исцеление на индикаторе получателя. Дружественные индикаторы должны быть включены в игре."
+L["Uses the same size, motion, duration, icons, and threshold as damage. Skips heals on you."] =
+    "Использует тот же размер, движение, длительность, иконки и порог, что и урон. Пропускает исцеление на вас."
 
 L["Number style"] = "Стиль чисел"
 L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the grow-and-settle pow, packed close to the plate."] =
@@ -92,12 +113,24 @@ L["Off"] = "Выкл."
 L["Comma (10,000)"] = "Запятая (10,000)"
 L["Dot (10.000)"] = "Точка (10.000)"
 L["Animation"] = "Анимация"
+L["Font"] = "Шрифт"
 L["Font size"] = "Размер шрифта"
 L["Scroll offset"] = "Смещение прокрутки"
+L["Scroll speed"] = "Скорость прокрутки"
 L["Display duration"] = "Длительность показа"
+L["Game default"] = "Игровой по умолчанию"
+L["Friz Quadrata"] = "Friz Quadrata"
+L["Arial Narrow"] = "Arial Narrow"
+L["Skurri"] = "Skurri"
+L["Morpheus"] = "Morpheus"
+L["Game fonts, plus SharedMedia fonts when that library is loaded by another addon."] =
+    "Игровые шрифты, плюс шрифты SharedMedia, если эту библиотеку загрузил другой аддон."
+L["Only fonts inside the WoW folder can load. SharedMedia fonts appear when another addon provides them."] =
+    "Загружаются только шрифты из папки WoW. Шрифты SharedMedia появляются, когда их предоставляет другой аддон."
 L["Recommended"] = "Рекомендуется"
 L["%d px"] = "%d пкс"
 L["%.1fs"] = "%.1fс"
+L["%.1fx"] = "%.1fx"
 L["Show CRITICAL"] = "Показывать КРИТ"
 L["Show the word CRITICAL in small caps next to critical hit numbers."] =
     "Показывает слово КРИТ прописными буквами рядом с критическими ударами."

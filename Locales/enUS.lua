@@ -27,11 +27,26 @@ L["Display"] = "Display"
 L["Damage"] = "Damage"
 L["Tools"] = "Tools"
 L["Tools & Preview"] = "Tools & Preview"
+L["What's new?"] = "What's new?"
 L["Choose whose damage and which nameplates to show."] = "Choose whose damage and which nameplates to show."
 L["Control how numbers look and how they animate."] = "Control how numbers look and how they animate."
 L["Hide small hits so the big numbers stay readable."] = "Hide small hits so the big numbers stay readable."
 L["Hide small hits and play sounds on big crits."] = "Hide small hits and play sounds on big crits."
 L["Preview numbers and maintain your setup."] = "Preview numbers and maintain your setup."
+L["Recent changes in PlateSCT."] = "Recent changes in PlateSCT."
+L["Version 1.1.4"] = "Version 1.1.4"
+L["NEW"] = "NEW"
+L["IMPROVED"] = "IMPROVED"
+L["Outgoing healing on the recipient's nameplate. Enable Show healing under General (off by default). Friendly nameplates must be on in the game."] =
+    "Outgoing healing on the recipient's nameplate. Enable Show healing under General (off by default). Friendly nameplates must be on in the game."
+L["Scroll speed slider - numbers travel faster; fade still follows Display duration."] =
+    "Scroll speed slider - numbers travel faster; fade still follows Display duration."
+L["Font picker - game fonts, plus SharedMedia fonts when another addon provides them."] =
+    "Font picker - game fonts, plus SharedMedia fonts when another addon provides them."
+L["Font size up to 48, Scroll offset up to 120 px, Display duration up to 4 seconds."] =
+    "Font size up to 48, Scroll offset up to 120 px, Display duration up to 4 seconds."
+L["Larger fonts spread out more in Modern number style so hits overlap less."] =
+    "Larger fonts spread out more in Modern number style so hits overlap less."
 
 -- Sound Effects
 L["Sound effects"] = "Sound effects"
@@ -91,6 +106,12 @@ L["Shows your damage on hostile nameplates. Source is read from the combat log."
     "Shows your damage on hostile nameplates. Source is read from the combat log."
 L["Display the spell's icon next to the damage number. Uses the spell from the combat log."] =
     "Display the spell's icon next to the damage number. Uses the spell from the combat log."
+L["Healing"] = "Healing"
+L["Show healing"] = "Show healing"
+L["Show your outgoing heals on the recipient's nameplate. Friendly nameplates must be enabled in the game."] =
+    "Show your outgoing heals on the recipient's nameplate. Friendly nameplates must be enabled in the game."
+L["Uses the same size, motion, duration, icons, and threshold as damage. Skips heals on you."] =
+    "Uses the same size, motion, duration, icons, and threshold as damage. Skips heals on you."
 L["Attribution profiles"] = "Attribution profiles"
 L["How strict PlateSCT is when guessing which hits are yours. Auto-switch follows the instance type."] =
     "How strict PlateSCT is when guessing which hits are yours. Auto-switch follows the instance type."
@@ -166,12 +187,24 @@ L["Off"] = "Off"
 L["Comma (10,000)"] = "Comma (10,000)"
 L["Dot (10.000)"] = "Dot (10.000)"
 L["Animation"] = "Animation"
+L["Font"] = "Font"
 L["Font size"] = "Font size"
 L["Scroll offset"] = "Scroll offset"
+L["Scroll speed"] = "Scroll speed"
 L["Display duration"] = "Display duration"
+L["Game default"] = "Game default"
+L["Friz Quadrata"] = "Friz Quadrata"
+L["Arial Narrow"] = "Arial Narrow"
+L["Skurri"] = "Skurri"
+L["Morpheus"] = "Morpheus"
+L["Game fonts, plus SharedMedia fonts when that library is loaded by another addon."] =
+    "Game fonts, plus SharedMedia fonts when that library is loaded by another addon."
+L["Only fonts inside the WoW folder can load. SharedMedia fonts appear when another addon provides them."] =
+    "Only fonts inside the WoW folder can load. SharedMedia fonts appear when another addon provides them."
 L["Recommended"] = "Recommended"
 L["%d px"] = "%d px"
 L["%.1fs"] = "%.1fs"
+L["%.1fx"] = "%.1fx"
 L["Motion (Modern)"] = "Motion (Modern)"
 L["Pick a motion for each hit type. Classic number style ignores these and keeps its own animation."] =
     "Pick a motion for each hit type. Classic number style ignores these and keeps its own animation."

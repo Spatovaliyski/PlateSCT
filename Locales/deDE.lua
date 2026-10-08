@@ -25,6 +25,7 @@ L["Display"] = "Anzeige"
 L["Damage"] = "Schaden"
 L["Tools"] = "Werkzeuge"
 L["Tools & Preview"] = "Werkzeuge & Vorschau"
+L["What's new?"] = "Neuigkeiten"
 L["Choose whose damage and which nameplates to show."] =
     "Wählt, wessen Schaden und welche Namensplaketten angezeigt werden."
 L["Control how numbers look and how they animate."] =
@@ -33,6 +34,20 @@ L["Hide small hits so the big numbers stay readable."] =
     "Blendet kleine Treffer aus, damit große Zahlen lesbar bleiben."
 L["Preview numbers and maintain your setup."] =
     "Zahlen vorschauen und eure Einstellungen pflegen."
+L["Recent changes in PlateSCT."] = "Aktuelle Änderungen in PlateSCT."
+L["Version 1.1.4"] = "Version 1.1.4"
+L["NEW"] = "NEU"
+L["IMPROVED"] = "VERBESSERT"
+L["Outgoing healing on the recipient's nameplate. Enable Show healing under General (off by default). Friendly nameplates must be on in the game."] =
+    "Ausgehende Heilung auf der Namensplakette des Empfängers. „Heilung anzeigen“ unter Allgemein aktivieren (standardmäßig aus). Freundliche Namensplaketten müssen im Spiel an sein."
+L["Scroll speed slider - numbers travel faster; fade still follows Display duration."] =
+    "Scroll-Geschwindigkeit - Zahlen bewegen sich schneller; Ausblenden folgt weiter der Anzeigedauer."
+L["Font picker - game fonts, plus SharedMedia fonts when another addon provides them."] =
+    "Schriftauswahl - Spielschriften plus SharedMedia, wenn ein anderes Addon sie bereitstellt."
+L["Font size up to 48, Scroll offset up to 120 px, Display duration up to 4 seconds."] =
+    "Schriftgröße bis 48, Scroll-Versatz bis 120 px, Anzeigedauer bis 4 Sekunden."
+L["Larger fonts spread out more in Modern number style so hits overlap less."] =
+    "Größere Schriften verteilen sich im modernen Zahlenstil stärker, weniger Überlappung."
 
 L["Combat text"] = "Kampftext"
 L["Enable PlateSCT"] = "PlateSCT aktivieren"
@@ -62,6 +77,12 @@ L["Available when Only my damage is off. Use this to see numbers on every enemy 
 L["Include pet damage"] = "Begleiterschaden einbeziehen"
 L["In Only my damage mode, also treat a recent pet cast as your hit."] =
     "Im Modus „Nur mein Schaden“ einen kürzlichen Begleiterzauber ebenfalls als euren Treffer werten."
+L["Healing"] = "Heilung"
+L["Show healing"] = "Heilung anzeigen"
+L["Show your outgoing heals on the recipient's nameplate. Friendly nameplates must be enabled in the game."] =
+    "Zeigt eure ausgehenden Heilungen auf der Namensplakette des Empfängers. Freundliche Namensplaketten müssen im Spiel aktiviert sein."
+L["Uses the same size, motion, duration, icons, and threshold as damage. Skips heals on you."] =
+    "Nutzt dieselbe Größe, Bewegung, Dauer, Symbole und Schwelle wie Schaden. Überspringt Heilungen auf euch."
 
 L["Number style"] = "Zahlenstil"
 L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the grow-and-settle pow, packed close to the plate."] =
@@ -92,12 +113,24 @@ L["Off"] = "Aus"
 L["Comma (10,000)"] = "Komma (10,000)"
 L["Dot (10.000)"] = "Punkt (10.000)"
 L["Animation"] = "Animation"
+L["Font"] = "Schriftart"
 L["Font size"] = "Schriftgröße"
 L["Scroll offset"] = "Scroll-Versatz"
+L["Scroll speed"] = "Scroll-Geschwindigkeit"
 L["Display duration"] = "Anzeigedauer"
+L["Game default"] = "Spielstandard"
+L["Friz Quadrata"] = "Friz Quadrata"
+L["Arial Narrow"] = "Arial Narrow"
+L["Skurri"] = "Skurri"
+L["Morpheus"] = "Morpheus"
+L["Game fonts, plus SharedMedia fonts when that library is loaded by another addon."] =
+    "Schriftarten des Spiels sowie SharedMedia-Schriften, wenn diese Bibliothek von einem anderen Addon geladen ist."
+L["Only fonts inside the WoW folder can load. SharedMedia fonts appear when another addon provides them."] =
+    "Nur Schriften im WoW-Ordner können geladen werden. SharedMedia-Schriften erscheinen, wenn ein anderes Addon sie bereitstellt."
 L["Recommended"] = "Empfohlen"
 L["%d px"] = "%d px"
 L["%.1fs"] = "%.1fs"
+L["%.1fx"] = "%.1fx"
 L["Show CRITICAL"] = "KRITISCH anzeigen"
 L["Show the word CRITICAL in small caps next to critical hit numbers."] =
     "Zeigt das Wort KRITISCH in kleinen Versalien neben kritischen Treffern."
