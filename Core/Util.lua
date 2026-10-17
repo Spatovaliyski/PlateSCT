@@ -284,22 +284,36 @@ local function ResolveSoundChannel(channel)
     return "Dialog"
 end
 
-function BD:PlayOutgoingCritSound(amount, isCrit)
-    if not isCrit then
-        return
-    end
+-- Crit sound tiers: 0 none, 1 critical, 2 huge critical.
+function BD:GetCritSoundTier(amount)
     if not self.db then
-        return
+        return 0
     end
-
     if self.db.hugeCritSoundEnabled and BD.AmountExceeds(amount, self.db.hugeCritSoundThreshold) then
-        pcall(PlaySoundFile, HUGE_CRIT_SOUND_PATH, ResolveSoundChannel(self.db.hugeCritSoundChannel))
-        return
+        return 2
     end
-
     if self.db.critSoundEnabled and BD.AmountExceeds(amount, self.db.critSoundThreshold) then
+        return 1
+    end
+    return 0
+end
+
+function BD:PlayCritSoundTier(tier)
+    if tier == 2 then
+        pcall(PlaySoundFile, HUGE_CRIT_SOUND_PATH, ResolveSoundChannel(self.db.hugeCritSoundChannel))
+    elseif tier == 1 then
         pcall(PlaySoundFile, CRIT_SOUND_PATH, ResolveSoundChannel(self.db.critSoundChannel))
     end
+end
+
+-- Returns the tier played so combined crits only replay on a higher tier.
+function BD:PlayOutgoingCritSound(amount, isCrit)
+    if not isCrit then
+        return 0
+    end
+    local tier = self:GetCritSoundTier(amount)
+    self:PlayCritSoundTier(tier)
+    return tier
 end
 
 function BD:PlayCritSoundPreview(kind)
@@ -361,6 +375,37 @@ function BD.FormatAmount(amount, abbreviate)
     return amount
 end
 
+-- Spell names never change during a session, so they are cached by ID.
+local spellNameCache = {}
+
+local function ReadableSpellID(spellID)
+    return type(spellID) == "number" and not BD.IsSecret(spellID) and BD.CanAccessValue(spellID)
+end
+
+function BD.GetSpellName(spellID)
+    if not ReadableSpellID(spellID) then
+        return nil
+    end
+    local cached = spellNameCache[spellID]
+    if cached ~= nil then
+        return cached or nil
+    end
+    local name
+    if C_Spell and type(C_Spell.GetSpellName) == "function" then
+        local ok, result = pcall(C_Spell.GetSpellName, spellID)
+        name = ok and result or nil
+    end
+    if not name and GetSpellInfo then
+        local ok, result = pcall(GetSpellInfo, spellID)
+        name = ok and result or nil
+    end
+    if type(name) ~= "string" or BD.IsSecret(name) or name == "" then
+        name = nil
+    end
+    spellNameCache[spellID] = name or false
+    return name
+end
+
 function BD.GetSpellIconTexture(spellID)
     if not BD.ValuePresent(spellID) then
         return nil
@@ -420,6 +465,40 @@ function BD.GetSpellIconTexture(spellID)
     end
 
     return nil
+end
+
+-- Ignored spells: a comma-, semicolon- or line-separated list of spell IDs and names
+-- (case-insensitive). Parsed again whenever the saved text changes.
+local ignoredSource, ignoredIDs, ignoredNames, ignoredAny
+
+local function RebuildIgnoredSpells(source)
+    ignoredSource, ignoredIDs, ignoredNames, ignoredAny = source, {}, {}, false
+    for entry in tostring(source or ""):gmatch("[^,;\n]+") do
+        entry = entry:gsub("^%s+", ""):gsub("%s+$", "")
+        local id = tonumber(entry)
+        if id then
+            ignoredIDs[id] = true
+            ignoredAny = true
+        elseif entry ~= "" then
+            ignoredNames[entry:lower()] = true
+            ignoredAny = true
+        end
+    end
+end
+
+function BD:IsSpellIgnored(spellID)
+    local source = self.db and self.db.ignoredSpells or ""
+    if source ~= ignoredSource then
+        RebuildIgnoredSpells(source)
+    end
+    if not ignoredAny or not ReadableSpellID(spellID) then
+        return false
+    end
+    if ignoredIDs[spellID] then
+        return true
+    end
+    local name = BD.GetSpellName(spellID)
+    return name ~= nil and ignoredNames[name:lower()] == true
 end
 
 BD.petIconByGUID = BD.petIconByGUID or {}

@@ -88,6 +88,47 @@ L["Click to open settings."] = "Нажмите, чтобы открыть нас
 L["Enemy nameplates are turned off. PlateSCT needs them to show numbers.\nPress V (default) or enable them under Interface → Game → Names."] =
     "Индикаторы врагов выключены. PlateSCT нужны они, чтобы показывать числа.\nНажмите V (по умолчанию) или включите их в Интерфейс → Игра → Имена."
 L["Who to show"] = "Что показывать"
+
+-- What's new: less clutter
+L["Less clutter"] = "Меньше лишнего"
+L["Dim or hide numbers on enemies you are not targeting, show crits only, shrink small hits, and ignore chosen spells. Find them on the Combat page."] =
+    "Приглушайте или скрывайте числа на врагах, которые не являются целью, показывайте только криты, уменьшайте слабые удары и игнорируйте выбранные заклинания. На странице «Бой»."
+
+
+-- Ignored spells
+L["Ignored spells"] = "Игнорируемые заклинания"
+L["Ignore these spells"] = "Игнорировать заклинания"
+L["Spell names or IDs, separated by commas. Their hits, crits, and misses are not shown."] =
+    "Названия или ID заклинаний через запятую. Их удары, криты и промахи не показываются."
+L["Example: Auto Attack, 133."] = "Пример: Автоматическая атака, 133."
+L["Example: Auto Attack, 133. Modern API knows the spell only in Personal - experimental mode."] =
+    "Пример: Автоматическая атака, 133. Modern API знает заклинание только в режиме «Личный - экспериментальный»."
+
+
+-- Shrink small hits
+L["Shrink small hits"] = "Уменьшать слабые удары"
+L["Show hits well below your recent average smaller instead of hiding them."] =
+    "Показывать удары намного ниже вашего недавнего среднего уменьшенными, а не скрывать их."
+L["Small hit below"] = "Слабый удар ниже"
+L["%s of average"] = "%s от среднего"
+
+
+-- Crits only
+L["Crits only"] = "Только критические"
+L["Show only critical hits. Normal hits and heals are hidden; miss text such as Immune still shows."] =
+    "Показывать только критические удары. Обычные удары и исцеление скрываются; тексты промахов вроде «Невосприимчив» остаются."
+
+
+-- Off-target numbers
+L["Show"] = "Показывать"
+L["Dim"] = "Приглушить"
+L["Hide"] = "Скрыть"
+L["Other nameplates"] = "Другие индикаторы"
+L["How numbers look on enemies you are not targeting. Dim makes them smaller and fainter so your target stands out."] =
+    "Как выглядят числа на врагах, которые не являются вашей целью. «Приглушить» делает их меньше и бледнее, чтобы цель выделялась."
+L["Off-target size"] = "Размер вне цели"
+L["Off-target opacity"] = "Непрозрачность вне цели"
+
 L["Only my damage"] = "Только мой урон"
 L["Show hits on your current target when you recently cast or auto-attacked. Midnight cannot prove who dealt the hit in a group."] =
     "Показывает удары по текущей цели, если вы недавно произнесли заклинание или автоатаковали. Midnight не может доказать, кто нанёс удар в группе."
@@ -142,6 +183,7 @@ L["Font"] = "Шрифт"
 L["Font size"] = "Размер шрифта"
 L["Scroll offset"] = "Смещение прокрутки"
 L["Scroll speed"] = "Скорость прокрутки"
+L["%d%%"] = "%d%%"
 L["Display duration"] = "Длительность показа"
 L["Game default"] = "Игровой по умолчанию"
 L["Friz Quadrata"] = "Friz Quadrata"
@@ -169,6 +211,26 @@ L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be di
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "В рейдах и Эпохальном+ некоторые значения секретны, поэтому порог скрывает эти удары визуально, а не пропускает их."
 
+-- Combine hits
+L["Combine hits"] = "Объединение ударов"
+L["Combine rapid hits"] = "Объединять быстрые удары"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "Складывает удары, быстро попадающие по одному индикатору, в одно число вместо множества отдельных."
+L["Combine"] = "Объединять"
+L["Same spell"] = "Одно заклинание"
+L["All hits"] = "Все удары"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "«Одно заклинание» показывает число каждого заклинания отдельно. «Все удары» объединяет все удары по цели; иконка показывает заклинание, нанёсшее больше всего урона."
+L["Combine window"] = "Окно объединения"
+L["%.2fs"] = "%.2fс"
+L["Show hit count"] = "Показывать число ударов"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] =
+    "Показывает, сколько ударов объединено, например 37 200 (3). С иконками заклинаний число отображается на иконке."
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "Критические удары, обычные удары и исцеление объединяются отдельно."
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "Критические удары, обычные удары и исцеление объединяются отдельно. Секретные значения нельзя сложить, поэтому такие удары по-прежнему показываются по отдельности."
+
 L["Preview"] = "Просмотр"
 L["Updates live as you change options."] = "Обновляется сразу при изменении настроек."
 L["Target an enemy, then spawn sample numbers on its nameplate."] =
@@ -177,6 +239,18 @@ L["Test on Target"] = "Тест на цели"
 L["Show sample damage numbers on your target."] = "Показывает примеры чисел урона на вашей цели."
 L["Maintenance"] = "Обслуживание"
 L["Debug mode"] = "Режим отладки"
+
+-- Personal splash
+L["Only Engaged nameplates mode, or Personal with Show splash from my casts, shows numbers on enemies you are not targeting. Change it under Modern API → Damage mode."] =
+    "Числа на врагах, которые не являются вашей целью, показывают только режим «Индикаторы в бою» или «Личный» с параметром «Показывать задевающий урон моих заклинаний». Измените это в разделе Современный API → Режим урона."
+L["Show splash from my casts"] = "Показывать задевающий урон моих заклинаний"
+L["In Personal mode, also show hits on other enemies that land right after your cast hits its target, with the same damage school, on enemies you have threat on."] =
+    "В личном режиме также показывать удары по другим врагам сразу после попадания вашего заклинания в цель, той же школы урона и по врагам, у которых есть ваша угроза."
+L["Choose Personal - experimental to show splash from your casts."] =
+    "Выберите «Личный - экспериментальный», чтобы видеть задевающий урон своих заклинаний."
+L["Splash is best effort: another player's same-school hit in that split second can still appear. DoT ticks spread to other enemies and unreadable damage schools are not shown."] =
+    "Задевающий урон определяется приблизительно: удар другого игрока той же школы в то же мгновение всё ещё может появиться. Тики периодического урона на других врагах и нечитаемые школы урона не показываются."
+
 L["Print combat events to chat for troubleshooting."] =
     "Выводит события боя в чат для диагностики."
 L["Dump meter now"] = "Дамп счётчика"
@@ -285,3 +359,15 @@ L["This client does not expose the damage meter API. A snapshot can still report
 L["Turn off Auto-switch by instance to choose manual strictness."] = "Отключите автоматическое переключение по подземелью для ручного выбора строгости."
 L["Unreadable amounts cannot trigger threshold sounds. Unreadable damage schools are always allowed by the school filter."] = "Недоступные значения не вызывают звуки по порогу. Урон с недоступной школой всегда проходит фильтр."
 L["Use gentle fades and row reveals in this settings window. Combat animation is unaffected."] = "Плавное появление окна и строк настроек. Анимация боевых чисел не меняется."
+
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "Быстрые удары по одному индикатору можно объединять в одно растущее число со счётчиком ударов. Включите в разделе «Бой» → «Объединение ударов»."
+
+-- Reduce clutter
+L["Reduce clutter"] = "Меньше лишнего"
+
+-- Combine hits: merge pop
+L["Pop on each merge"] = "Всплеск при каждом объединении"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "Ненадолго увеличивать число каждый раз, когда к нему добавляется удар. Отключите для более спокойного отображения."

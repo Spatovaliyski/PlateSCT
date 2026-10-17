@@ -3,6 +3,10 @@ local _, BD = ...
 BD.DEFAULTS = {
     enabled = true,
     minDamage = 0,
+    critsOnly = false,
+    shrinkSmallHits = false,
+    smallHitPercent = 0.5, -- share of the recent average below which a hit is small
+    ignoredSpells = "", -- comma-separated spell IDs or names
     abbreviate = false,
     thousandSeparator = "none", -- "none" | "comma" | "dot"
     showSpellIcon = false,
@@ -14,10 +18,19 @@ BD.DEFAULTS = {
     fontFace = "game",
     hideBlizzardFCT = true,
     onlyMyDamage = true,
+    personalSplash = false,
     allNameplates = false,
     includePetDamage = true,
+    offTargetMode = "show", -- "show" | "dim" | "hide"
+    offTargetScale = 0.75,
+    offTargetAlpha = 0.5,
     showHealing = false,
     showIncoming = false,
+    combineHits = false,
+    combineWindow = 0.5,
+    combineMode = "spell", -- "spell" | "target"
+    combineShowCount = true,
+    combinePulse = true, -- pop the number again each time a hit merges in
     incomingOffsetX = 0,
     incomingOffsetY = -100,
     debug = false,
@@ -98,6 +111,24 @@ BD.ICON_POSITIONS = {
     { id = "right", labelKey = "Right" },
     { id = "top", labelKey = "Top" },
     { id = "bottom", labelKey = "Bottom" },
+}
+
+BD.OFF_TARGET_MODES = {
+    { id = "show", labelKey = "Show" },
+    { id = "dim", labelKey = "Dim" },
+    { id = "hide", labelKey = "Hide" },
+}
+
+-- Size of a shrunk small hit, relative to a normal one.
+BD.SMALL_HIT_SCALE = 0.7
+
+-- Scale pulse when a hit merges into a live number.
+BD.COMBINE_PULSE_DURATION = 0.15
+BD.COMBINE_PULSE_SCALE = 0.2
+
+BD.COMBINE_MODES = {
+    { id = "spell", labelKey = "Same spell" },
+    { id = "target", labelKey = "All hits" },
 }
 
 BD.THOUSAND_SEPARATORS = {
@@ -313,6 +344,12 @@ BD.GENERIC_PET_ICON = "Interface\\Icons\\Ability_Hunter_BeastTaming"
 BD.POOL_SIZE = 24
 BD.METER_PROBE_MAX_SPELLS = 6
 BD.PENDING_CAP = 8
+
+-- Personal splash (Modern): how long after a confirmed hit a same-school hit on another enemy
+-- counts as yours, how many such hits one cast covers, and how long an early hit waits for its cast.
+BD.SPLASH_WINDOW = 0.4
+BD.SPLASH_HITS = 8
+BD.SPLASH_QUEUE_DELAY = 0.15
 
 BD.STRICTNESS = {
     loose = {

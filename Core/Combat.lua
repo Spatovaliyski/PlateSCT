@@ -36,6 +36,64 @@ local function RememberPersonalHit(plate, amount, isCrit)
     lastPersonalCrit = isCrit
 end
 
+local function DisplayPersonalDamage(unit, plate, amount, isCrit, schoolMask, spellID, usedAuto)
+    local preset = BD:GetStylePreset()
+    local display = BD.FormatAmount(amount, BD.db.abbreviate)
+    local r, g, b = BD.GetSchoolColor(schoolMask)
+    if not BD:ShouldUseSchoolColors() then
+        r, g, b = preset.defaultColor[1], preset.defaultColor[2], preset.defaultColor[3]
+    end
+    local hitKind = isCrit and "crit" or "hit"
+    BD:DebugPrint("personal", unit, display, hitKind, usedAuto and "auto" or spellID)
+    RememberPersonalHit(plate, amount, isCrit)
+    -- Modern-only: spellId comes from attribution, not UNIT_COMBAT.
+    BD:ShowOnNameplate(unit, display, r, g, b, amount, isCrit, false, nil, hitKind, spellID)
+    return true
+end
+
+-- Splash hits can be reported a moment before the confirmed hit they splash from, and threat
+-- can lag a frame. Unmatched hits wait SPLASH_QUEUE_DELAY for a match, then are dropped.
+local splashQueue = {}
+
+local function TrySplash(entry)
+    if BD.GetNamePlateFrame(entry.unit) ~= entry.plate then
+        return true -- plate gone or reused: drop
+    end
+    local spellID = BD:MatchSplashHit(entry.unit, entry.schoolMask)
+    if not spellID then
+        return false
+    end
+    BD:DebugPrint("personal splash", entry.unit, spellID)
+    DisplayPersonalDamage(entry.unit, entry.plate, entry.amount, entry.isCrit, entry.schoolMask, spellID, false)
+    return true
+end
+
+-- final: the wait is over for entries queued SPLASH_QUEUE_DELAY ago; drop them if still unmatched.
+local function RetrySplashQueue(final)
+    local now = GetTime()
+    for index = #splashQueue, 1, -1 do
+        local entry = splashQueue[index]
+        if TrySplash(entry) then
+            table.remove(splashQueue, index)
+        elseif final and (now - entry.at) >= BD.SPLASH_QUEUE_DELAY - 0.01 then
+            BD:DebugPrint("personal skip, no splash match")
+            table.remove(splashQueue, index)
+        end
+    end
+end
+
+local function QueueSplash(unit, plate, amount, isCrit, schoolMask)
+    if #splashQueue >= 16 then
+        table.remove(splashQueue, 1)
+    end
+    splashQueue[#splashQueue + 1] = {
+        unit = unit, plate = plate, amount = amount, isCrit = isCrit, schoolMask = schoolMask, at = GetTime(),
+    }
+    C_Timer.After(BD.SPLASH_QUEUE_DELAY, function()
+        RetrySplashQueue(true)
+    end)
+end
+
 local function ShowPersonalDamage(unit, amount, isCrit, schoolMask)
     if not BD.IsNameplateUnit(unit) then
         return false
@@ -57,23 +115,26 @@ local function ShowPersonalDamage(unit, amount, isCrit, schoolMask)
     end
 
     local spellID, usedAuto = BD:MatchOutgoingHit(unit, schoolMask)
-    if not spellID then
-        BD:DebugPrint("personal skip, no outgoing match")
-        return false
+    if spellID then
+        DisplayPersonalDamage(unit, plate, amount, isCrit, schoolMask, spellID, usedAuto)
+        -- A confirmed hit may be the anchor that queued splash hits were waiting for.
+        if #splashQueue > 0 then
+            RetrySplashQueue(false)
+        end
+        return true
     end
 
-    local preset = BD:GetStylePreset()
-    local display = BD.FormatAmount(amount, BD.db.abbreviate)
-    local r, g, b = BD.GetSchoolColor(schoolMask)
-    if not BD:ShouldUseSchoolColors() then
-        r, g, b = preset.defaultColor[1], preset.defaultColor[2], preset.defaultColor[3]
+    if BD.db.personalSplash then
+        spellID = BD:MatchSplashHit(unit, schoolMask)
+        if spellID then
+            BD:DebugPrint("personal splash", unit, spellID)
+            return DisplayPersonalDamage(unit, plate, amount, isCrit, schoolMask, spellID, false)
+        end
+        QueueSplash(unit, plate, amount, isCrit, schoolMask)
+        return false
     end
-    local hitKind = isCrit and "crit" or "hit"
-    BD:DebugPrint("personal", unit, display, hitKind, usedAuto and "auto" or spellID)
-    RememberPersonalHit(plate, amount, isCrit)
-    -- Modern-only: spellId comes from attribution, not UNIT_COMBAT.
-    BD:ShowOnNameplate(unit, display, r, g, b, amount, isCrit, false, nil, hitKind, spellID)
-    return true
+    BD:DebugPrint("personal skip, no outgoing match")
+    return false
 end
 
 local function ShowPersonalHeal(unit, amount, isCrit, schoolMask)

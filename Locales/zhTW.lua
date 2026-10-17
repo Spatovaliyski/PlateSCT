@@ -98,6 +98,47 @@ L["Click to open settings."] = "點擊開啟設定。"
 L["Enemy nameplates are turned off. PlateSCT needs them to show numbers.\nPress V (default) or enable them under Interface → Game → Names."] =
     "敵方名條已關閉。PlateSCT 需要名條才能顯示數字。\n按 V（預設按鍵），或在「介面 → 遊戲 → 名稱」中啟用。"
 L["Who to show"] = "顯示來源"
+
+-- What's new: less clutter
+L["Less clutter"] = "更少雜亂"
+L["Dim or hide numbers on enemies you are not targeting, show crits only, shrink small hits, and ignore chosen spells. Find them on the Combat page."] =
+    "淡化或隱藏非目標敵人身上的數字、僅顯示致命一擊、縮小小額命中並忽略指定法術。見「戰鬥」頁面。"
+
+
+-- Ignored spells
+L["Ignored spells"] = "忽略的法術"
+L["Ignore these spells"] = "忽略這些法術"
+L["Spell names or IDs, separated by commas. Their hits, crits, and misses are not shown."] =
+    "法術名稱或 ID，以逗號分隔。這些法術的命中、致命一擊和未命中都不會顯示。"
+L["Example: Auto Attack, 133."] = "範例：自動攻擊, 133。"
+L["Example: Auto Attack, 133. Modern API knows the spell only in Personal - experimental mode."] =
+    "範例：自動攻擊, 133。現代 API 僅在「個人傷害 - 實驗性」模式下能識別法術。"
+
+
+-- Shrink small hits
+L["Shrink small hits"] = "縮小小額命中"
+L["Show hits well below your recent average smaller instead of hiding them."] =
+    "將明顯低於你近期平均值的命中縮小顯示，而不是隱藏。"
+L["Small hit below"] = "小額命中門檻"
+L["%s of average"] = "平均值的 %s"
+
+
+-- Crits only
+L["Crits only"] = "僅顯示致命一擊"
+L["Show only critical hits. Normal hits and heals are hidden; miss text such as Immune still shows."] =
+    "僅顯示致命一擊。一般命中和治療會被隱藏；「免疫」等未命中文字仍會顯示。"
+
+
+-- Off-target numbers
+L["Show"] = "顯示"
+L["Dim"] = "淡化"
+L["Hide"] = "隱藏"
+L["Other nameplates"] = "其他名條"
+L["How numbers look on enemies you are not targeting. Dim makes them smaller and fainter so your target stands out."] =
+    "非目前目標敵人身上的數字顯示方式。「淡化」會讓它們更小更淡，使目前目標更突出。"
+L["Off-target size"] = "非目標大小"
+L["Off-target opacity"] = "非目標不透明度"
+
 L["Only my damage"] = "僅顯示我的傷害"
 L["Show hits when a recent cast or auto-attack matches the nameplate. Midnight cannot prove who dealt the hit in a group."] =
     "近期施法或自動攻擊與名條符合時，顯示該次命中。Midnight 在隊伍中無法確認是誰造成了傷害。"
@@ -188,6 +229,7 @@ L["Font"] = "字型"
 L["Font size"] = "字型大小"
 L["Scroll offset"] = "捲動距離"
 L["Scroll speed"] = "捲動速度"
+L["%d%%"] = "%d%%"
 L["Display duration"] = "顯示時間"
 L["Game default"] = "遊戲預設"
 L["Friz Quadrata"] = "Friz Quadrata"
@@ -235,6 +277,26 @@ L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be di
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "在團隊副本和傳奇鑰石地城中，部分傷害數值受限，因此門檻篩選會在畫面上隱藏這些命中，而非跳過處理。"
 
+-- Combine hits
+L["Combine hits"] = "合併命中"
+L["Combine rapid hits"] = "合併快速命中"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "將短時間內連續落在同一名條上的命中合併為一個數字，而不是堆疊多個數字。"
+L["Combine"] = "合併方式"
+L["Same spell"] = "同一法術"
+L["All hits"] = "全部命中"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "「同一法術」會讓每個法術的數字分開顯示。「全部命中」會合併目標身上的所有命中，圖示顯示造成最多傷害的法術。"
+L["Combine window"] = "合併時間範圍"
+L["%.2fs"] = "%.2f秒"
+L["Show hit count"] = "顯示命中次數"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] =
+    "顯示合併了多少次命中，例如 37,200 (3)。開啟法術圖示時，次數會顯示在圖示上。"
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "致命一擊、一般命中和治療會分別合併。"
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "致命一擊、一般命中和治療會分別合併。部分數值受限，無法相加，因此這些命中仍會個別顯示。"
+
 -- Tools
 L["Preview"] = "預覽"
 L["Updates live as you change options."] = "修改選項時，預覽會即時更新。"
@@ -243,6 +305,18 @@ L["Test on Target"] = "在目標上測試"
 L["Show sample damage numbers on your target."] = "在目前目標上顯示範例傷害數字。"
 L["Maintenance"] = "維護"
 L["Debug mode"] = "除錯模式"
+
+-- Personal splash
+L["Only Engaged nameplates mode, or Personal with Show splash from my casts, shows numbers on enemies you are not targeting. Change it under Modern API → Damage mode."] =
+    "只有「交戰中的名條」模式，或開啟「顯示我施法的濺射傷害」的個人模式，會在非目標敵人身上顯示數字。請在「現代 API」→「傷害模式」中更改。"
+L["Show splash from my casts"] = "顯示我施法的濺射傷害"
+L["In Personal mode, also show hits on other enemies that land right after your cast hits its target, with the same damage school, on enemies you have threat on."] =
+    "在個人模式下，也顯示你的法術命中目標後緊接著落在其他敵人身上、傷害類型相同、且你在其仇恨列表中的命中。"
+L["Choose Personal - experimental to show splash from your casts."] =
+    "選擇「個人傷害 - 實驗性」後才能顯示你施法的濺射傷害。"
+L["Splash is best effort: another player's same-school hit in that split second can still appear. DoT ticks spread to other enemies and unreadable damage schools are not shown."] =
+    "濺射為盡力配對：同一瞬間其他玩家相同類型的命中仍可能出現。擴散到其他敵人的持續傷害跳數和無法讀取的傷害類型不會顯示。"
+
 L["Print combat events to chat for troubleshooting."] = "將戰鬥事件輸出到聊天欄，以便排查問題。"
 L["Dump meter now"] = "立即匯出傷害統計"
 L["Open a copyable snapshot of C_DamageMeter fields. Use this in combat while hitting a target."] = "開啟 C_DamageMeter 欄位的可複製快照。請在戰鬥中攻擊目標時使用。"
@@ -360,3 +434,15 @@ L["Your WoW API"] = "目前 WoW API"
 -- Translation feedback
 L["This translation was generated with AI. If you find inconsistent terminology or incorrect wording, please report it through GitHub Issues. Thank you for your help! Translation contributors will be credited."] =
     "此翻譯由 AI 產生。如果發現術語不一致或用詞不正確，請透過 GitHub Issues 回報。感謝你的協助！翻譯貢獻者將獲得署名致謝。"
+
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "同一名條上的快速命中可合併為一個持續增長的數字，並顯示命中次數。在「戰鬥」→「合併命中」中開啟。"
+
+-- Reduce clutter
+L["Reduce clutter"] = "減少雜亂"
+
+-- Combine hits: merge pop
+L["Pop on each merge"] = "每次合併時彈跳"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "每當有新的命中合併進來時短暫放大數字。關閉可獲得更平靜的顯示。"
