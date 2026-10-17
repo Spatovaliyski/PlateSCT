@@ -266,6 +266,10 @@ L["Auto"] = "자동"
 L["A new WoW-inspired settings window with clear sections, searchable controls, and gentle animations."] =
     "WoW 분위기의 새로운 설정 창입니다. 항목별 구분, 설정 검색, 부드러운 애니메이션을 제공합니다."
 L["Animate settings"] = "설정 창 애니메이션 사용"
+
+-- Settings window resize
+L["Drag to resize. Double-click to restore the default size."] = "끌어서 크기를 조절합니다. 두 번 클릭하면 기본 크기로 돌아갑니다."
+
 L["Appearance"] = "외형"
 L["Appearance only · Test on Target checks gameplay size."] = "외형만 미리 표시 · 실제 크기는 '대상에서 테스트'로 확인하세요."
 L["Appearance preview"] = "외형 미리 보기"

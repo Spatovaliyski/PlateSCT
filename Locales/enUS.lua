@@ -302,6 +302,10 @@ L["Auto"] = "Auto"
 -- Settings redesign
 L["A new WoW-inspired settings window with clear sections, searchable controls, and gentle animations."] = "A new WoW-inspired settings window with clear sections, searchable controls, and gentle animations."
 L["Animate settings"] = "Animate settings"
+
+-- Settings window resize
+L["Drag to resize. Double-click to restore the default size."] = "Drag to resize. Double-click to restore the default size."
+
 L["Appearance"] = "Appearance"
 L["Appearance only · Test on Target checks gameplay size."] = "Appearance only · Test on Target checks gameplay size."
 L["Appearance preview"] = "Appearance preview"

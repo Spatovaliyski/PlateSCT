@@ -194,6 +194,10 @@ L["Auto"] = "Auto"
 
 -- Settings redesign
 L["Animate settings"] = "Animar ajustes"
+
+-- Settings window resize
+L["Drag to resize. Double-click to restore the default size."] = "Arrastra para cambiar el tamaño. Haz doble clic para restaurar el tamaño predeterminado."
+
 L["Appearance"] = "Apariencia"
 L["Appearance only · Test on Target checks gameplay size."] = "Solo apariencia · Probar en objetivo comprueba el tamaño en juego."
 L["Appearance preview"] = "Vista previa de apariencia"

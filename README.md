@@ -51,6 +51,8 @@ The settings cover combat text, appearance, animations, critical-hit sounds, and
 
 The locale preference can follow the game client automatically or select a supported language. Missing translations fall back to English.
 
+Drag the settings window's bottom-right corner to resize it; double-click the corner to restore the default size.
+
 Settings are stored in the `PlateSCTDB` saved variable. On login, if `PlateSCTDB` is missing and legacy `BetterDamageDB` settings exist, the addon copies those settings once. Existing PlateSCT settings take precedence.
 
 ## Troubleshooting

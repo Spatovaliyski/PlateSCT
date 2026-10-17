@@ -919,6 +919,15 @@ function W.NewLayout(parent, root, pageId, tabId, width)
             self.finished = true
             root.refreshers = root.refreshers or {}
             root.refreshers[#root.refreshers + 1] = function() self:Reflow() end
+            -- Resizing the settings window changes the page width: rewrap every row to it.
+            -- Reflow only changes the page height, so it cannot retrigger this.
+            parent:HookScript("OnSizeChanged", function(_, width)
+                local newWidth = math.max(200, (width or 0) - 32)
+                if width and width > 0 and math.abs(newWidth - self.width) >= 1 then
+                    self.width = newWidth
+                    self:Reflow()
+                end
+            end)
         end
         return self:Reflow()
     end

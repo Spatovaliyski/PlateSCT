@@ -292,6 +292,16 @@ local function CreatePreview(root, content)
     return pane
 end
 
+-- The default size is the minimum; the maximum is the screen area FitToScreen allows.
+local function ApplyResizeBounds(frame, maxWidth, maxHeight)
+    if frame.SetResizeBounds then
+        frame:SetResizeBounds(WINDOW_WIDTH, WINDOW_HEIGHT, maxWidth, maxHeight)
+    else
+        if frame.SetMinResize then frame:SetMinResize(WINDOW_WIDTH, WINDOW_HEIGHT) end
+        if frame.SetMaxResize then frame:SetMaxResize(maxWidth, maxHeight) end
+    end
+end
+
 local function BuildConfigFrame()
     local frame = CreateFrame("Frame", "PlateSCTConfigFrame", UIParent, "BackdropTemplate")
     frame:Hide(); frame:SetSize(WINDOW_WIDTH, WINDOW_HEIGHT); frame:SetPoint("CENTER")
@@ -370,7 +380,10 @@ local function BuildConfigFrame()
     local targetTest = W.Button(sidebar, L["Test on Target"], 152, 26, function() BD:ShowTestNumbers() end)
     targetTest:SetPoint("BOTTOMLEFT", 12, 48)
     W.Tooltip(targetTest, L["Target an enemy, then spawn sample numbers on its nameplate."])
-    W.Text(sidebar, L["/platesct  ·  ESC to close"], 12, -532, 154, "GameFontDisableSmall")
+    local hint = W.Text(sidebar, L["/platesct  ·  ESC to close"], 12, -532, 154, "GameFontDisableSmall")
+    -- Pinned to the bottom so it stays under the test button when the window is taller.
+    hint:ClearAllPoints()
+    hint:SetPoint("BOTTOMLEFT", 12, 22)
     local footer = sidebar:CreateTexture(nil, "ARTWORK")
     footer:SetColorTexture(GOLD[1], GOLD[2], GOLD[3], 0.25); footer:SetHeight(1)
     footer:SetPoint("BOTTOMLEFT", 12, 88); footer:SetPoint("BOTTOMRIGHT", -12, 88)
@@ -566,7 +579,15 @@ local function BuildConfigFrame()
     end)
     function frame:FitToScreen()
         local availableWidth, availableHeight = UIParent:GetWidth() * 0.94, UIParent:GetHeight() * 0.94
-        self:SetScale(math.min(1, availableWidth / WINDOW_WIDTH, availableHeight / WINDOW_HEIGHT))
+        local scale = math.min(1, availableWidth / WINDOW_WIDTH, availableHeight / WINDOW_HEIGHT)
+        self:SetScale(scale)
+        -- Restore the saved size within what fits on screen at this scale.
+        local maxWidth = math.max(WINDOW_WIDTH, availableWidth / scale)
+        local maxHeight = math.max(WINDOW_HEIGHT, availableHeight / scale)
+        ApplyResizeBounds(self, maxWidth, maxHeight)
+        local db = BD.db or {}
+        self:SetSize(math.min(maxWidth, math.max(WINDOW_WIDTH, db.settingsWidth or WINDOW_WIDTH)),
+            math.min(maxHeight, math.max(WINDOW_HEIGHT, db.settingsHeight or WINDOW_HEIGHT)))
         if session.left and session.top then
             self:ClearAllPoints()
             self:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", session.left / self:GetEffectiveScale(), session.top / self:GetEffectiveScale())
@@ -594,6 +615,10 @@ local function BuildConfigFrame()
         if SOUNDKIT and SOUNDKIT.IG_MAINMENU_OPTION then pcall(PlaySound, SOUNDKIT.IG_MAINMENU_OPTION) end
     end)
     frame:SetScript("OnHide", function(self)
+        if self.resizeGrip and self.resizeGrip:GetButtonState() == "PUSHED" then
+            BD.db.settingsWidth = math.floor(self:GetWidth() + 0.5)
+            BD.db.settingsHeight = math.floor(self:GetHeight() + 0.5)
+        end
         self:StopMovingOrSizing(); SaveScroll()
         if self:GetLeft() and self:GetTop() then
             session.left, session.top = self:GetLeft() * self:GetEffectiveScale(), self:GetTop() * self:GetEffectiveScale()
@@ -602,6 +627,35 @@ local function BuildConfigFrame()
         self:UnregisterAllEvents(); BD:ReleaseMotionPreviews()
         if SOUNDKIT and SOUNDKIT.IG_MAINMENU_CLOSE then pcall(PlaySound, SOUNDKIT.IG_MAINMENU_CLOSE) end
     end)
+    frame:SetResizable(true)
+    -- Resize grip in the bottom-right corner. The size is kept between sessions;
+    -- double-click returns to the default size.
+    local grip = CreateFrame("Button", nil, frame)
+    grip:SetSize(16, 16)
+    grip:SetPoint("BOTTOMRIGHT", -3, 3)
+    grip:SetFrameLevel(frame:GetFrameLevel() + 50)
+    grip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
+    grip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
+    grip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+    local function SaveSize()
+        BD.db.settingsWidth = math.floor(frame:GetWidth() + 0.5)
+        BD.db.settingsHeight = math.floor(frame:GetHeight() + 0.5)
+    end
+    grip:SetScript("OnMouseDown", function(_, button)
+        if button ~= "LeftButton" then return end
+        frame:DismissTransient(); search:ClearFocus()
+        frame:StartSizing("BOTTOMRIGHT")
+    end)
+    grip:SetScript("OnMouseUp", function()
+        frame:StopMovingOrSizing(); frame:SetUserPlaced(false)
+        SaveSize()
+    end)
+    grip:SetScript("OnDoubleClick", function()
+        BD.db.settingsWidth, BD.db.settingsHeight = nil, nil
+        frame:FitToScreen()
+    end)
+    W.Tooltip(grip, L["Drag to resize. Double-click to restore the default size."])
+    frame.resizeGrip = grip
     frame:FitToScreen(); frame:SelectPage(session.page, session.tabs[session.page], true)
     return frame
 end
