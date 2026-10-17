@@ -45,4 +45,5 @@ Core/Events.lua
 Options/Widgets.lua
 Options/Pages.lua
 Options/Options.lua
+Options/Welcome.lua
 Core/Minimap.lua

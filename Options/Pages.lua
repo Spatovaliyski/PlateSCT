@@ -47,6 +47,10 @@ local function PixelValue(value)
     return string.format(L["%d px"], value)
 end
 
+local function PercentValue(value)
+    return string.format(L["%d%%"], math.floor(value * 100 + 0.5))
+end
+
 local function RefreshScenario()
     if BD.RefreshScenario then
         BD:RefreshScenario()
@@ -60,6 +64,18 @@ local function EnemyNameplatesEnabled()
     end
     local ok, enabled = pcall(reader, "nameplateShowEnemies")
     return not ok or enabled == nil or (enabled ~= false and enabled ~= "0" and enabled ~= 0)
+end
+
+-- On Modern only Engaged nameplates shows other enemies: Current target never does, and Personal
+-- attributes hits only to the cast's target, so off-target styling would have nothing to style.
+local function OffTargetAvailable()
+    if not IsModernAPI() then
+        return true
+    end
+    if BD.db.onlyMyDamage then
+        return BD.db.personalSplash and true or false
+    end
+    return BD.db.allNameplates and true or false
 end
 
 local function BuildCombat(parent, root)
@@ -99,6 +115,13 @@ local function BuildCombat(parent, root)
             or L["Also show damage from your pet and guardians on nameplates."],
         PersonalModeAvailable, nil,
         L["Choose Personal - experimental under Modern API → Damage mode to use pet matching."])
+    layout:Choice("offTargetMode", L["Other nameplates"], BD.OFF_TARGET_MODES,
+        L["How numbers look on enemies you are not targeting. Dim makes them smaller and fainter so your target stands out."],
+        OffTargetAvailable, nil, L["Only Engaged nameplates mode, or Personal with Show splash from my casts, shows numbers on enemies you are not targeting. Change it under Modern API → Damage mode."])
+    layout:When(function() return BD.db.offTargetMode == "dim" and OffTargetAvailable() end, function()
+        layout:Slider("offTargetScale", L["Off-target size"], 0.4, 1, 0.05, PercentValue)
+        layout:Slider("offTargetAlpha", L["Off-target opacity"], 0.1, 1, 0.05, PercentValue)
+    end)
 
     layout:Heading(L["Healing"])
     layout:Checkbox("showHealing", L["Show healing"],
@@ -116,7 +139,8 @@ local function BuildCombat(parent, root)
     layout:Slider("incomingOffsetY", L["Incoming Y"], -200, 200, 2, PixelValue,
         incomingEnabled, nil, incomingReason)
 
-    layout:Heading(L["Minimum damage threshold"])
+    -- Everything that limits how many numbers appear lives under one heading.
+    layout:Heading(L["Reduce clutter"])
     layout:Input("minDamage", L["Minimum damage threshold"],
         L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be displayed."], function()
             BD:RebuildThresholdCurve()
@@ -125,6 +149,38 @@ local function BuildCombat(parent, root)
     if IsModernAPI() then
         layout:Note(L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."])
     end
+    layout:Checkbox("critsOnly", L["Crits only"],
+        L["Show only critical hits. Normal hits and heals are hidden; miss text such as Immune still shows."])
+    layout:Checkbox("shrinkSmallHits", L["Shrink small hits"],
+        L["Show hits well below your recent average smaller instead of hiding them."])
+    layout:When(function() return BD.db.shrinkSmallHits end, function()
+        layout:Slider("smallHitPercent", L["Small hit below"], 0.1, 0.9, 0.05, function(value)
+            return string.format(L["%s of average"], PercentValue(value))
+        end)
+    end)
+
+    layout:Checkbox("combineHits", L["Combine rapid hits"],
+        L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."])
+    layout:When(function() return BD.db.combineHits end, function()
+        layout:Slider("combineWindow", L["Combine window"], 0.1, 1, 0.05,
+            function(value) return string.format(L["%.2fs"], value) end)
+        layout:Choice("combineMode", L["Combine"], BD.COMBINE_MODES,
+            L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."])
+        layout:Checkbox("combineShowCount", L["Show hit count"],
+            L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."])
+        layout:Checkbox("combinePulse", L["Pop on each merge"],
+            L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."])
+        layout:Note(IsModernAPI()
+            and L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."]
+            or L["Crits, normal hits, and heals combine separately."])
+    end)
+
+    layout:Heading(L["Ignored spells"])
+    layout:TextInput("ignoredSpells", L["Ignore these spells"],
+        L["Spell names or IDs, separated by commas. Their hits, crits, and misses are not shown."])
+    layout:Note(IsModernAPI()
+        and L["Example: Auto Attack, 133. Modern API knows the spell only in Personal - experimental mode."]
+        or L["Example: Auto Attack, 133."])
     layout:Finish()
 end
 
@@ -136,8 +192,19 @@ local function BuildAppearance(parent, root)
     layout:Note(L["Hover over a font to preview 12345."])
     layout:Note(L["Only fonts inside the WoW folder can load. SharedMedia fonts appear when another addon provides them."])
     layout:Slider("fontSize", L["Font size"], 10, 48, 1, tostring)
+    layout:Choice("fontOutline", L["Outline"], BD.OUTLINE_OPTIONS,
+        L["Text outline. Number style default uses each style's own outline: thick for Classic, thin for Modern and Impact."])
     layout:Checkbox("useSchoolColors", L["Color by damage school"],
         L["Tint numbers by school (fire orange, frost blue, and so on). Off keeps the default yellow."])
+    local customColorsAvailable = function() return not BD:ShouldUseSchoolColors() end
+    layout:Checkbox("useCustomColors", L["Custom colors"],
+        L["Pick your own colors for normal hits, crits, and miss text instead of the default yellow."],
+        customColorsAvailable, nil, L["Turn off Color by damage school to pick custom colors."])
+    layout:When(function() return BD.db.useCustomColors and customColorsAvailable() end, function()
+        layout:Color("hitColor", L["Normal hits"], L["Color of normal damage numbers."])
+        layout:Color("critColor", L["Critical hits"], L["Color of critical hit numbers."])
+        layout:Color("missColor", L["Miss text"], L["Color of Miss, Dodge, Immune, and similar text."])
+    end)
     layout:Checkbox({
         id = "showCritLabel",
         get = function() return BD:GetCritLabelSetting() end,
@@ -155,16 +222,31 @@ local function BuildAppearance(parent, root)
         L["Group digits by thousands."], function() return not BD.db.abbreviate end,
         nil, L["Unavailable while Abbreviate numbers is on."])
 
-    layout:Heading(L["Spell icons"])
-    layout:Checkbox("showSpellIcon", L["Show spell icon"],
-        IsModernAPI() and L["Display the spell's icon next to the damage number. Uses the matched cast or auto-attack."]
-            or L["Display the spell's icon next to the damage number. Uses the spell from the combat log."],
+    layout:Heading(L["Spell label"])
+    layout:Checkbox("showSpellIcon", L["Show spell label"],
+        IsModernAPI() and L["Show which spell dealt each hit. Uses the matched cast or auto-attack."]
+            or L["Show which spell dealt each hit. Uses the spell from the combat log."],
         PersonalModeAvailable, nil,
         L["Choose Personal - experimental under Modern API → Damage mode to use spell icons."])
+    local labelsOn = function() return PersonalModeAvailable() and BD.db.showSpellIcon end
+    layout:Choice("spellLabel", L["Label"], BD.SPELL_LABEL_OPTIONS,
+        L["Show the spell's icon, its name, or both."],
+        labelsOn, nil, L["Enable Show spell label to choose the label."])
+    layout:When(function() return labelsOn() and BD.db.spellLabel ~= "icon" end, function()
+        layout:Choice("spellNamePosition", L["Name position"], BD.SPELL_NAME_POSITIONS,
+            L["Where the spell name sits relative to the number."])
+        layout:Slider("spellNameScale", L["Name size"], 0.4, 1, 0.05, PercentValue)
+        layout:Slider("spellNameMaxLength", L["Shorten long names"], 0, 30, 1, function(value)
+            return value <= 0 and L["Off"] or string.format(L["After %d characters"], value)
+        end)
+    end)
     layout:Choice("iconPosition", L["Icon position"], BD.ICON_POSITIONS,
         L["Place the spell icon beside, above, or below the number."], function()
-            return PersonalModeAvailable() and BD.db.showSpellIcon
-        end, nil, L["Enable Show spell icon to choose its position."])
+            return labelsOn() and BD.db.spellLabel ~= "name"
+        end, nil, function()
+            return labelsOn() and L["The Name label has no icon to place."]
+                or L["Enable Show spell label to choose its position."]
+        end)
     layout:Note(IsModernAPI()
         and L["Spell icons use matched casts in Personal mode; Modern API cannot identify a spell for every hit."]
         or L["Spell icons use the spell from the combat log."])
@@ -223,6 +305,9 @@ local function BuildAnimation(parent, root)
             L["Motion used for critical hits. Classic Slap uses the Classic grow-and-settle pow."], ModernNumberStyle)
         layout:Choice("animMiss", L["Miss / Parry / Dodge"], BD.ANIM_STYLES,
             L["Motion used for miss, parry, dodge, and similar outcomes."], ModernNumberStyle)
+        layout:Choice("animAuto", L["Auto-attacks"], BD.ANIM_STYLES_AUTO,
+            L["Motion used for your normal auto-attack hits, so melee swings can move differently from spells. Auto-attack crits use the Critical hits motion."],
+            ModernNumberStyle)
     end)
     layout:When(ImpactNumberStyle, function()
         layout:Heading(L["Impact style position"])
@@ -310,6 +395,10 @@ local function BuildModernMode(layout)
     control.searchAliases = { L["Only my damage"], L["All engaged nameplates"] }
     layout:Note(L["Personal - experimental: best-effort matching by destination and timing. Other players' hits on the same target can appear."])
     layout:Note(L["Current target: all-source numbers on your target. Engaged nameplates: all-source numbers on engaged enemies."])
+    layout:Checkbox("personalSplash", L["Show splash from my casts"],
+        L["In Personal mode, also show hits on other enemies that land right after your cast hits its target, with the same damage school, on enemies you have threat on."],
+        function() return BD.db.onlyMyDamage end, nil, L["Choose Personal - experimental to show splash from your casts."])
+    layout:Note(L["Splash is best effort: another player's same-school hit in that split second can still appear. DoT ticks spread to other enemies and unreadable damage schools are not shown."])
     layout:Heading(L["Attribution limitations"])
     layout:Note(L["Best effort: matches your casts to nameplates by destination and timing. Dest-matched cleave can show. Other players on the same target can still appear. Mythic+ uses the Dungeon profile."])
     layout:Note(L["Pet matching and spell icons require Personal mode. Choose their appearance and visibility under Combat and Appearance."])
@@ -386,6 +475,18 @@ local function BuildModern(parent, root, tabId)
 end
 
 local function BuildPreferences(layout, root)
+    layout:Heading(L["Profiles"])
+    layout:Action("showWelcome", L["Show welcome screen"], L["Open the first-install welcome and profile choice again."], function()
+        -- Welcome.lua is a newer file: the game loads it only after a full restart.
+        if BD.ShowWelcome then BD:ShowWelcome() end
+    end)
+    layout:Note(L["A profile replaces all settings except the language. Default restores every setting; Extended adds spell icons and names, school colors, combined hits, and fainter cleave."])
+    for _, profile in ipairs(BD.PROFILES) do
+        layout:Action("profile_" .. profile.id, string.format(L["Apply %s profile"], L[profile.labelKey]),
+            L[profile.descriptionKey], function()
+                root:ConfirmProfile(profile.id)
+            end)
+    end
     layout:Heading(L["Language"])
     local localeOptions = {}
     for _, option in ipairs(BD.LOCALE_OPTIONS) do
@@ -410,10 +511,6 @@ local function BuildPreferences(layout, root)
     layout:Note(L["The preview shows appearance only. It does not prove attribution or simulate damage filtering."])
     layout:Action("testTarget", L["Test on Target"], L["Show sample damage numbers on your target."], function()
         BD:ShowTestNumbers()
-    end)
-    layout:Heading(L["Maintenance"])
-    layout:Action("resetDefaults", L["Reset Defaults"], L["Restore every PlateSCT setting to its default."], function()
-        root:ConfirmReset()
     end)
 end
 
@@ -441,6 +538,12 @@ local function BuildDiagnostics(layout)
 end
 
 local function BuildWhatsNew(layout)
+    layout:Heading(L["Less clutter"])
+    layout:Note(L["Dim or hide numbers on enemies you are not targeting, show crits only, shrink small hits, and ignore chosen spells. Find them on the Combat page."])
+    layout:Heading(L["Combine hits"])
+    layout:Note(L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."])
+    layout:Heading(L["Labels and colors"])
+    layout:Note(L["Spell names next to numbers, a text outline choice, custom hit, crit, and miss colors, and a separate auto-attack motion."])
     layout:Heading(L["Impact number style"])
     layout:Note(L["Impact slams outgoing damage beside or above the nameplate, then floats up. New hits layer in front; crits amplify and CRITICAL flashes above when enabled."])
     layout:Note(L["Impact uses Modern for incoming damage, healing, and miss text, preserving saved Modern motions."])

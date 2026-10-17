@@ -10,12 +10,17 @@ PlateSCT displays outgoing combat numbers on nameplates and supports incoming pl
 
 - Outgoing combat text anchored to nameplates.
 - Incoming player combat text.
+- Spell labels: show the spell's icon, its name, or both next to each number, with name position, size, and length options.
+- Separate motion for auto-attacks.
 - Classic style with a grow-and-settle animation and Modern style with a pop animation.
-- Configurable fonts, colors, critical-hit presentation, and damage thresholds.
+- Configurable fonts, outlines, custom colors, critical-hit presentation, and damage thresholds.
 - Animation options, including fountain and rainfall motion, with settings previews.
+- Optional hit combining: rapid hits on the same nameplate merge into one growing number with a hit count, grouped by spell or by target.
+- Clutter controls: dim or hide numbers on enemies you are not targeting, show crits only, shrink small hits, and ignore chosen spells.
 - Classic API client support for player and pet combat-log events, with spell icons taken from combat-log spell IDs.
 - Modern API client attribution and school-filter settings.
-- English, French, German, Spanish, Russian, Italian, and Brazilian Portuguese localization.
+- English, French, German, Spanish, Russian, Italian, Brazilian Portuguese, Simplified Chinese, Traditional Chinese, and Korean localization.
+- Starting profiles: Default, or Extended with spell icons and names, school colors, combined hits, and dimmed cleave. A welcome screen offers the choice on first install.
 
 ## Supported clients and number styles
 
@@ -47,7 +52,15 @@ Enable the nameplates you want to see outgoing numbers on in the game's settings
 
 Use the minimap button or addon compartment entry to access PlateSCT's options.
 
-The settings cover combat text, appearance, animations, critical-hit sounds, and Modern API client behavior. Use the number and motion previews to check changes. Preferences and diagnostics are available in the Help page.
+On first install a welcome screen offers two starting profiles. Apply either one later under **Help & Settings → Profiles**, or reopen the welcome with `/psct welcome`. Applying a profile replaces every setting except the language.
+
+The settings cover combat text, appearance, animations, critical-hit sounds, and Modern API client behavior.
+
+The **Combat** page groups everything that limits how many numbers appear: **Other nameplates** (Show, Dim, or Hide numbers on enemies you are not targeting), and under **Reduce clutter** the damage threshold, **Crits only**, **Shrink small hits**, and hit combining. **Ignored spells** takes spell names or IDs separated by commas; it needs the spell, which Classic API clients always know and Modern API clients know only in Personal mode.
+
+On Modern API clients, Personal mode shows numbers only on your cast's target. **Show splash from my casts** (Modern API → Damage mode) also credits hits on other enemies that land within 0.4 seconds of your confirmed hit, share its damage school, and are on enemies you have threat on. It is best effort, since the game does not report who dealt a hit.
+
+Hit combining is off by default. Turn on **Combat → Combine hits → Combine rapid hits** to merge hits that land on the same nameplate within the combine window (0.5 seconds by default). **Same spell** keeps each spell separate; **All hits** merges everything on the target and shows the icon of the spell that dealt the most damage. The hit count appears as `37,200 (3)`, or on the spell icon when icons are on. Crits, normal hits, and heals combine separately, and each hit must still pass the damage threshold. On Modern API clients, secret amounts cannot be added together, so those hits still show individually. Use the number and motion previews to check changes. Preferences and diagnostics are available in the Help page.
 
 The locale preference can follow the game client automatically or select a supported language. Missing translations fall back to English.
 

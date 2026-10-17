@@ -31,7 +31,6 @@ L["The compact bottom preview includes Mixed, Hit, Crit, and Miss samples. All n
 L["PlateSCT is in Beta"] = "PlateSCT ist in der Beta"
 L["This addon is in Beta mode. Inaccuracies and errors may show up. Please report such issues on the addon's page."] =
     "Dieses Addon befindet sich im Beta-Modus. Ungenauigkeiten und Fehler können auftreten. Bitte meldet solche Probleme auf der Addon-Seite."
-L["Reset PlateSCT settings to defaults?"] = "PlateSCT-Einstellungen auf Standard zurücksetzen?"
 L["Addon page"] = "Addon-Seite"
 L["Select the URL below, copy it, then paste it in your browser."] =
     "Markiert die URL unten, kopiert sie und fügt sie in eurem Browser ein."
@@ -88,6 +87,47 @@ L["Click to open settings."] = "Klicken, um die Einstellungen zu öffnen."
 L["Enemy nameplates are turned off. PlateSCT needs them to show numbers.\nPress V (default) or enable them under Interface → Game → Names."] =
     "Feindliche Namensplaketten sind deaktiviert. PlateSCT braucht sie, um Zahlen anzuzeigen.\nDrückt V (Standard) oder aktiviert sie unter Interface → Spiel → Namen."
 L["Who to show"] = "Wen anzeigen"
+
+-- What's new: less clutter
+L["Less clutter"] = "Weniger Durcheinander"
+L["Dim or hide numbers on enemies you are not targeting, show crits only, shrink small hits, and ignore chosen spells. Find them on the Combat page."] =
+    "Zahlen auf nicht anvisierten Gegnern abdunkeln oder ausblenden, nur kritische Treffer zeigen, kleine Treffer verkleinern und gewählte Zauber ignorieren. Zu finden auf der Seite Kampf."
+
+
+-- Ignored spells
+L["Ignored spells"] = "Ignorierte Zauber"
+L["Ignore these spells"] = "Diese Zauber ignorieren"
+L["Spell names or IDs, separated by commas. Their hits, crits, and misses are not shown."] =
+    "Zaubernamen oder -IDs, durch Kommas getrennt. Ihre Treffer, kritischen Treffer und Fehlschläge werden nicht angezeigt."
+L["Example: Auto Attack, 133."] = "Beispiel: Automatischer Angriff, 133."
+L["Example: Auto Attack, 133. Modern API knows the spell only in Personal - experimental mode."] =
+    "Beispiel: Automatischer Angriff, 133. Die Modern API kennt den Zauber nur im Modus „Persönlich - experimentell“."
+
+
+-- Shrink small hits
+L["Shrink small hits"] = "Kleine Treffer verkleinern"
+L["Show hits well below your recent average smaller instead of hiding them."] =
+    "Zeigt Treffer, die deutlich unter eurem jüngsten Durchschnitt liegen, kleiner an, statt sie auszublenden."
+L["Small hit below"] = "Kleiner Treffer unter"
+L["%s of average"] = "%s des Durchschnitts"
+
+
+-- Crits only
+L["Crits only"] = "Nur kritische Treffer"
+L["Show only critical hits. Normal hits and heals are hidden; miss text such as Immune still shows."] =
+    "Zeigt nur kritische Treffer. Normale Treffer und Heilungen werden ausgeblendet; Fehltexte wie Immun erscheinen weiterhin."
+
+
+-- Off-target numbers
+L["Show"] = "Anzeigen"
+L["Dim"] = "Abdunkeln"
+L["Hide"] = "Ausblenden"
+L["Other nameplates"] = "Andere Namensplaketten"
+L["How numbers look on enemies you are not targeting. Dim makes them smaller and fainter so your target stands out."] =
+    "Wie Zahlen auf Gegnern aussehen, die ihr nicht anvisiert. Abdunkeln macht sie kleiner und blasser, damit euer Ziel hervorsticht."
+L["Off-target size"] = "Größe abseits des Ziels"
+L["Off-target opacity"] = "Deckkraft abseits des Ziels"
+
 L["Only my damage"] = "Nur mein Schaden"
 L["Show hits on your current target when you recently cast or auto-attacked. Midnight cannot prove who dealt the hit in a group."] =
     "Zeigt Treffer auf eurem aktuellen Ziel, wenn ihr kürzlich gezaubert oder auto-angegriffen habt. Midnight kann in einer Gruppe nicht beweisen, wer den Treffer verursacht hat."
@@ -128,6 +168,68 @@ L["Uses your last spell in Only my damage mode. Left of the number."] =
     "Nutzt euren letzten Zauber im Modus „Nur mein Schaden“. Links neben der Zahl."
 L["Text style"] = "Textstil"
 L["Abbreviate numbers"] = "Zahlen abkürzen"
+
+-- What's new: labels and colors
+L["Labels and colors"] = "Beschriftungen und Farben"
+L["Spell names next to numbers, a text outline choice, custom hit, crit, and miss colors, and a separate auto-attack motion."] =
+    "Zaubernamen neben den Zahlen, wählbare Textkontur, eigene Farben für Treffer, kritische Treffer und Fehltexte sowie eigene Bewegung für automatische Angriffe."
+
+
+-- Auto-attack motion
+L["Same as normal hits"] = "Wie normale Treffer"
+L["Auto-attacks"] = "Automatische Angriffe"
+L["Motion used for your normal auto-attack hits, so melee swings can move differently from spells. Auto-attack crits use the Critical hits motion."] =
+    "Bewegung für normale Treffer eures automatischen Angriffs, damit sich Nahkampfschläge von Zaubern unterscheiden. Kritische automatische Angriffe nutzen die Bewegung für kritische Treffer."
+
+
+-- Spell label
+L["Label"] = "Beschriftung"
+L["Top"] = "Oben"
+L["Bottom"] = "Unten"
+L["Name"] = "Name"
+L["Left"] = "Links"
+L["Icon"] = "Symbol"
+L["Right"] = "Rechts"
+L["Icon and name"] = "Symbol und Name"
+L["Spell label"] = "Zauberbeschriftung"
+L["Show spell label"] = "Zauberbeschriftung anzeigen"
+L["Show which spell dealt each hit. Uses the matched cast or auto-attack."] =
+    "Zeigt, welcher Zauber jeden Treffer verursacht hat. Nutzt den zugeordneten Zauber oder den automatischen Angriff."
+L["Show which spell dealt each hit. Uses the spell from the combat log."] =
+    "Zeigt, welcher Zauber jeden Treffer verursacht hat. Nutzt den Zauber aus dem Kampflog."
+L["Show the spell's icon, its name, or both."] = "Zeigt das Symbol des Zaubers, seinen Namen oder beides."
+L["Enable Show spell label to choose the label."] = "Aktiviert „Zauberbeschriftung anzeigen“, um die Beschriftung zu wählen."
+L["Name position"] = "Namensposition"
+L["Where the spell name sits relative to the number."] = "Wo der Zaubername relativ zur Zahl steht."
+L["Name size"] = "Namensgröße"
+L["Shorten long names"] = "Lange Namen kürzen"
+L["After %d characters"] = "Nach %d Zeichen"
+L["The Name label has no icon to place."] = "Die Beschriftung „Name“ hat kein Symbol zum Platzieren."
+L["Enable Show spell label to choose its position."] = "Aktiviert „Zauberbeschriftung anzeigen“, um die Position zu wählen."
+
+
+-- Custom colors
+L["Normal hits"] = "Normale Treffer"
+L["Custom colors"] = "Eigene Farben"
+L["Pick your own colors for normal hits, crits, and miss text instead of the default yellow."] =
+    "Wählt eigene Farben für normale Treffer, kritische Treffer und Fehltexte statt des Standard-Gelbs."
+L["Turn off Color by damage school to pick custom colors."] = "Deaktiviert „Nach Schadensschule einfärben“, um eigene Farben zu wählen."
+L["Color of normal damage numbers."] = "Farbe normaler Schadenszahlen."
+L["Critical hits"] = "Kritische Treffer"
+L["Color of critical hit numbers."] = "Farbe kritischer Trefferzahlen."
+L["Miss text"] = "Fehltext"
+L["Color of Miss, Dodge, Immune, and similar text."] = "Farbe von Verfehlt, Ausgewichen, Immun und ähnlichen Texten."
+
+
+-- Outline
+L["Outline"] = "Kontur"
+L["Number style default"] = "Zahlenstil-Standard"
+L["None"] = "Keine"
+L["Thin"] = "Dünn"
+L["Thick"] = "Dick"
+L["Text outline. Number style default uses each style's own outline: thick for Classic, thin for Modern and Impact."] =
+    "Textkontur. Zahlenstil-Standard nutzt die Kontur des jeweiligen Stils: dick für Classic, dünn für Modern und Impact."
+
 L["Display large numbers as 214k or 1.2M."] = "Zeigt große Zahlen als 214k oder 1,2M."
 L["Display large numbers as 214k or 1.2M. Disables thousand separators."] =
     "Zeigt große Zahlen als 214k oder 1,2M. Deaktiviert Tausendertrennzeichen."
@@ -142,6 +244,7 @@ L["Font"] = "Schriftart"
 L["Font size"] = "Schriftgröße"
 L["Scroll offset"] = "Scroll-Versatz"
 L["Scroll speed"] = "Scroll-Geschwindigkeit"
+L["%d%%"] = "%d %%"
 L["Display duration"] = "Anzeigedauer"
 L["Game default"] = "Spielstandard"
 L["Friz Quadrata"] = "Friz Quadrata"
@@ -169,22 +272,50 @@ L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be di
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "In Schlachtzügen und Mythisch+ sind manche Werte geheim, daher blendet die Schwelle diese Treffer optisch aus statt sie zu überspringen."
 
+-- Combine hits
+L["Combine hits"] = "Treffer zusammenfassen"
+L["Combine rapid hits"] = "Schnelle Treffer zusammenfassen"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "Fasst Treffer, die kurz nacheinander auf derselben Namensplakette landen, zu einer Zahl zusammen, statt viele zu stapeln."
+L["Combine"] = "Zusammenfassen"
+L["Same spell"] = "Gleicher Zauber"
+L["All hits"] = "Alle Treffer"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "Gleicher Zauber hält die Zahl jedes Zaubers getrennt. Alle Treffer fasst jeden Treffer auf dem Ziel zusammen; das Symbol zeigt den Zauber mit dem meisten Schaden."
+L["Combine window"] = "Zeitfenster"
+L["%.2fs"] = "%.2fs"
+L["Show hit count"] = "Trefferanzahl anzeigen"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] =
+    "Zeigt, wie viele Treffer zusammengefasst wurden, z. B. 37.200 (3). Mit Zauber-Symbolen steht die Anzahl auf dem Symbol."
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "Kritische Treffer, normale Treffer und Heilungen werden getrennt zusammengefasst."
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "Kritische Treffer, normale Treffer und Heilungen werden getrennt zusammengefasst. Geheime Werte lassen sich nicht addieren, daher erscheinen diese Treffer weiterhin einzeln."
+
 L["Preview"] = "Vorschau"
 L["Updates live as you change options."] = "Aktualisiert sich live bei Optionsänderungen."
 L["Target an enemy, then spawn sample numbers on its nameplate."] =
     "Wählt einen Feind und erzeugt Beispielzahlen auf seiner Namensplakette."
 L["Test on Target"] = "Am Ziel testen"
 L["Show sample damage numbers on your target."] = "Zeigt Beispiel-Schadenszahlen auf eurem Ziel."
-L["Maintenance"] = "Wartung"
 L["Debug mode"] = "Debug-Modus"
+
+-- Personal splash
+L["Only Engaged nameplates mode, or Personal with Show splash from my casts, shows numbers on enemies you are not targeting. Change it under Modern API → Damage mode."] =
+    "Nur der Modus „Namensplaketten im Kampf“ oder „Persönlich“ mit „Flächenschaden eigener Zauber zeigen“ zeigt Zahlen auf Gegnern, die ihr nicht anvisiert. Ändert ihn unter Moderne API → Schadensmodus."
+L["Show splash from my casts"] = "Flächenschaden eigener Zauber zeigen"
+L["In Personal mode, also show hits on other enemies that land right after your cast hits its target, with the same damage school, on enemies you have threat on."] =
+    "Zeigt im persönlichen Modus auch Treffer auf anderen Gegnern, die direkt nach dem Treffer eures Zaubers auf sein Ziel landen, mit derselben Schadensschule und auf Gegnern, bei denen ihr Bedrohung habt."
+L["Choose Personal - experimental to show splash from your casts."] =
+    "Wählt „Persönlich - experimentell“, um Flächenschaden eurer Zauber zu zeigen."
+L["Splash is best effort: another player's same-school hit in that split second can still appear. DoT ticks spread to other enemies and unreadable damage schools are not shown."] =
+    "Flächenschaden ist eine Annäherung: Ein Treffer eines anderen Spielers derselben Schule im selben Augenblick kann trotzdem erscheinen. Auf andere Gegner verteilte DoT-Ticks und nicht lesbare Schadensschulen werden nicht angezeigt."
+
 L["Print combat events to chat for troubleshooting."] =
     "Gibt Kampfereignisse zum Troubleshooting im Chat aus."
 L["Dump meter now"] = "Meter jetzt dumpen"
 L["Open a copyable snapshot of C_DamageMeter fields. Use this in combat while hitting a target."] =
     "Öffnet eine kopierbare Momentaufnahme der C_DamageMeter-Felder. Im Kampf nutzen, während ihr ein Ziel trefft."
-L["Reset Defaults"] = "Standard zurücksetzen"
-L["Restore every PlateSCT setting to its default."] =
-    "Setzt alle PlateSCT-Einstellungen auf den Standard zurück."
 
 -- Language
 L["Language"] = "Sprache"
@@ -207,6 +338,37 @@ L["Close"] = "Schließen"
 L["Combat"] = "Kampf"
 L["Current target"] = "Aktuelles Ziel"
 L["Damage mode"] = "Schadensmodus"
+
+-- Profiles and welcome
+L["Default"] = "Standard"
+L["Clean and minimal: numbers on your target in classic yellow. Every option at its default."] =
+    "Schlicht und minimal: Zahlen auf eurem Ziel in klassischem Gelb. Alle Optionen auf Standard."
+L["Extended"] = "Erweitert"
+L["Spell icons and short names, school colors, abbreviated numbers, combined rapid hits, fainter cleave on other enemies, and livelier motion."] =
+    "Zaubersymbole und kurze Namen, Schulfarben, abgekürzte Zahlen, zusammengefasste schnelle Treffer, blassere Flächentreffer auf anderen Gegnern und lebhaftere Bewegung."
+L["Apply the %s profile? This replaces all PlateSCT settings except the language."] =
+    "Profil %s anwenden? Dies ersetzt alle PlateSCT-Einstellungen außer der Sprache."
+L["Profiles"] = "Profile"
+L["Show welcome screen"] = "Willkommensbildschirm zeigen"
+L["Open the first-install welcome and profile choice again."] = "Öffnet die Begrüßung und Profilauswahl der Erstinstallation erneut."
+L["A profile replaces all settings except the language. Default restores every setting; Extended adds spell icons and names, school colors, combined hits, and fainter cleave."] =
+    "Ein Profil ersetzt alle Einstellungen außer der Sprache. Standard stellt jede Einstellung wieder her; Erweitert fügt Zaubersymbole und -namen, Schulfarben, zusammengefasste Treffer und blassere Flächentreffer hinzu."
+L["Apply %s profile"] = "Profil %s anwenden"
+L["%s profile applied. Type /psct to customize it."] = "Profil %s angewendet. Gebt /psct ein, um es anzupassen."
+L["Welcome to PlateSCT"] = "Willkommen bei PlateSCT"
+L["PlateSCT puts your damage numbers on enemy nameplates, so every hit shows up right where it landed."] =
+    "PlateSCT zeigt eure Schadenszahlen auf den Namensplaketten der Gegner, sodass jeder Treffer genau dort erscheint, wo er landet."
+L["It keeps busy fights readable: rapid hits combine, small hits fade back, and crits stand out."] =
+    "Hektische Kämpfe bleiben lesbar: Schnelle Treffer werden zusammengefasst, kleine Treffer treten zurück und kritische Treffer stechen hervor."
+L["It works on Midnight and on Classic clients, within each game version's combat rules."] =
+    "Es funktioniert auf Midnight und auf Classic-Clients, im Rahmen der Kampfregeln der jeweiligen Spielversion."
+L["Note: Blizzard's new addon rules hide who dealt each hit, so some numbers can be credited to the wrong source or missed."] =
+    "Hinweis: Blizzards neue Addon-Regeln verbergen, wer welchen Treffer verursacht hat. Manche Zahlen können daher der falschen Quelle zugeordnet werden oder fehlen."
+L["Choose a starting profile. You can change every setting later."] =
+    "Wählt ein Startprofil. Ihr könnt jede Einstellung später ändern."
+L["Open settings instead"] = "Stattdessen Einstellungen öffnen"
+L["Keep the Default profile and open the settings window."] = "Standardprofil behalten und das Einstellungsfenster öffnen."
+
 L["Damage threshold"] = "Schadensschwelle"
 L["Diagnostics"] = "Diagnose"
 L["Engaged nameplates"] = "Namensplaketten im Kampf"
@@ -285,3 +447,15 @@ L["This client does not expose the damage meter API. A snapshot can still report
 L["Turn off Auto-switch by instance to choose manual strictness."] = "Deaktiviere den automatischen Wechsel nach Instanz, um die Strenge manuell zu wählen."
 L["Unreadable amounts cannot trigger threshold sounds. Unreadable damage schools are always allowed by the school filter."] = "Nicht lesbare Werte lösen keine Schwellwerttöne aus. Nicht lesbare Schadensschulen werden vom Filter immer zugelassen."
 L["Use gentle fades and row reveals in this settings window. Combat animation is unaffected."] = "Verwendet sanftes Einblenden und Zeilenanimationen im Einstellungsfenster. Kampfanimationen bleiben unverändert."
+
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "Schnelle Treffer auf derselben Namensplakette können zu einer wachsenden Zahl mit Trefferanzahl zusammengefasst werden. Aktiviert es unter Kampf → Treffer zusammenfassen."
+
+-- Reduce clutter
+L["Reduce clutter"] = "Weniger Durcheinander"
+
+-- Combine hits: merge pop
+L["Pop on each merge"] = "Bei jedem Zusammenfassen aufploppen"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "Vergrößert die Zahl kurz, wenn ein weiterer Treffer hinzukommt. Ausschalten für eine ruhigere Anzeige."

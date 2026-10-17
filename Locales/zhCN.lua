@@ -30,7 +30,6 @@ L["The compact bottom preview includes Mixed, Hit, Crit, and Miss samples. All n
 -- Titles / meta
 L["PlateSCT is in Beta"] = "PlateSCT 正处于测试阶段"
 L["This addon is in Beta mode. Inaccuracies and errors may show up. Please report such issues on the addon's page."] = "本插件仍处于测试阶段，可能出现显示不准确或报错的情况。请在插件页面反馈这些问题。"
-L["Reset PlateSCT settings to defaults?"] = "要将 PlateSCT 设置重置为默认值吗？"
 L["Addon page"] = "插件页面"
 L["Select the URL below, copy it, then paste it in your browser."] = "选中下方的网址并复制，然后粘贴到浏览器中。"
 L["Click to open the addon page URL."] = "点击查看插件页面网址。"
@@ -98,6 +97,47 @@ L["Click to open settings."] = "点击打开设置。"
 L["Enemy nameplates are turned off. PlateSCT needs them to show numbers.\nPress V (default) or enable them under Interface → Game → Names."] =
     "敌方姓名板已关闭。PlateSCT 需要姓名板才能显示数字。\n按 V（默认按键），或在“界面 → 游戏 → 名称”中启用。"
 L["Who to show"] = "显示来源"
+
+-- What's new: less clutter
+L["Less clutter"] = "更少杂乱"
+L["Dim or hide numbers on enemies you are not targeting, show crits only, shrink small hits, and ignore chosen spells. Find them on the Combat page."] =
+    "淡化或隐藏非目标敌人身上的数字、仅显示暴击、缩小小额命中并忽略指定法术。见“战斗”页面。"
+
+
+-- Ignored spells
+L["Ignored spells"] = "忽略的法术"
+L["Ignore these spells"] = "忽略这些法术"
+L["Spell names or IDs, separated by commas. Their hits, crits, and misses are not shown."] =
+    "法术名称或 ID，用逗号分隔。这些法术的命中、暴击和未命中都不会显示。"
+L["Example: Auto Attack, 133."] = "示例：自动攻击, 133。"
+L["Example: Auto Attack, 133. Modern API knows the spell only in Personal - experimental mode."] =
+    "示例：自动攻击, 133。现代 API 仅在“个人伤害 - 实验性”模式下能识别法术。"
+
+
+-- Shrink small hits
+L["Shrink small hits"] = "缩小小额命中"
+L["Show hits well below your recent average smaller instead of hiding them."] =
+    "将明显低于你近期平均值的命中缩小显示，而不是隐藏。"
+L["Small hit below"] = "小额命中阈值"
+L["%s of average"] = "平均值的 %s"
+
+
+-- Crits only
+L["Crits only"] = "仅显示暴击"
+L["Show only critical hits. Normal hits and heals are hidden; miss text such as Immune still shows."] =
+    "仅显示暴击。普通命中和治疗会被隐藏；“免疫”等未命中文字仍会显示。"
+
+
+-- Off-target numbers
+L["Show"] = "显示"
+L["Dim"] = "淡化"
+L["Hide"] = "隐藏"
+L["Other nameplates"] = "其他姓名板"
+L["How numbers look on enemies you are not targeting. Dim makes them smaller and fainter so your target stands out."] =
+    "非当前目标敌人身上的数字显示方式。“淡化”会让它们更小更淡，使当前目标更突出。"
+L["Off-target size"] = "非目标大小"
+L["Off-target opacity"] = "非目标不透明度"
+
 L["Only my damage"] = "仅显示我的伤害"
 L["Show hits when a recent cast or auto-attack matches the nameplate. Midnight cannot prove who dealt the hit in a group."] =
     "近期施法或自动攻击与姓名板匹配时，显示该次命中。Midnight 在队伍中无法确认是谁造成了伤害。"
@@ -175,6 +215,62 @@ L["Top"] = "上方"
 L["Bottom"] = "下方"
 L["Text style"] = "文字样式"
 L["Abbreviate numbers"] = "缩写数字"
+
+-- What's new: labels and colors
+L["Labels and colors"] = "标签与颜色"
+L["Spell names next to numbers, a text outline choice, custom hit, crit, and miss colors, and a separate auto-attack motion."] =
+    "数字旁显示法术名称、可选文字描边、自定义命中/暴击/未命中颜色，以及独立的自动攻击运动效果。"
+
+
+-- Auto-attack motion
+L["Same as normal hits"] = "与普通命中相同"
+L["Auto-attacks"] = "自动攻击"
+L["Motion used for your normal auto-attack hits, so melee swings can move differently from spells. Auto-attack crits use the Critical hits motion."] =
+    "你的普通自动攻击命中所使用的运动效果，让近战挥击与法术区分开。自动攻击暴击使用暴击的运动效果。"
+
+
+-- Spell label
+L["Label"] = "标签"
+L["Name"] = "名称"
+L["Icon"] = "图标"
+L["Icon and name"] = "图标和名称"
+L["Spell label"] = "法术标签"
+L["Show spell label"] = "显示法术标签"
+L["Show which spell dealt each hit. Uses the matched cast or auto-attack."] =
+    "显示每次命中来自哪个法术。使用匹配到的施法或自动攻击。"
+L["Show which spell dealt each hit. Uses the spell from the combat log."] =
+    "显示每次命中来自哪个法术。使用战斗日志中的法术。"
+L["Show the spell's icon, its name, or both."] = "显示法术图标、法术名称，或两者都显示。"
+L["Enable Show spell label to choose the label."] = "开启“显示法术标签”后才能选择标签。"
+L["Name position"] = "名称位置"
+L["Where the spell name sits relative to the number."] = "法术名称相对于数字的位置。"
+L["Name size"] = "名称大小"
+L["Shorten long names"] = "缩短长名称"
+L["After %d characters"] = "超过 %d 个字符"
+L["The Name label has no icon to place."] = "“名称”标签没有可放置的图标。"
+L["Enable Show spell label to choose its position."] = "开启“显示法术标签”后才能选择位置。"
+
+
+-- Custom colors
+L["Custom colors"] = "自定义颜色"
+L["Pick your own colors for normal hits, crits, and miss text instead of the default yellow."] =
+    "为普通命中、暴击和未命中文字选择自己的颜色，替代默认黄色。"
+L["Turn off Color by damage school to pick custom colors."] = "关闭“按伤害类型着色”后才能选择自定义颜色。"
+L["Color of normal damage numbers."] = "普通伤害数字的颜色。"
+L["Color of critical hit numbers."] = "暴击数字的颜色。"
+L["Miss text"] = "未命中文字"
+L["Color of Miss, Dodge, Immune, and similar text."] = "未命中、躲闪、免疫等文字的颜色。"
+
+
+-- Outline
+L["Outline"] = "描边"
+L["Number style default"] = "数字样式默认"
+L["None"] = "无"
+L["Thin"] = "细"
+L["Thick"] = "粗"
+L["Text outline. Number style default uses each style's own outline: thick for Classic, thin for Modern and Impact."] =
+    "文字描边。“数字样式默认”使用各样式自带的描边：经典样式为粗描边，现代样式和 Impact 为细描边。"
+
 L["Display large numbers as 214k or 1.2M."] = "将大数字显示为 214k 或 1.2M。"
 L["Display large numbers as 214k or 1.2M. Disables thousand separators."] = "将大数字显示为 214k 或 1.2M。启用后会关闭千位分隔符。"
 L["Thousand separators"] = "千位分隔符"
@@ -188,6 +284,7 @@ L["Font"] = "字体"
 L["Font size"] = "字号"
 L["Scroll offset"] = "滚动距离"
 L["Scroll speed"] = "滚动速度"
+L["%d%%"] = "%d%%"
 L["Display duration"] = "显示时长"
 L["Game default"] = "游戏默认"
 L["Friz Quadrata"] = "Friz Quadrata"
@@ -235,19 +332,48 @@ L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be di
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "在团队副本和史诗钥石地下城中，部分伤害数值受限，因此阈值过滤会从视觉上隐藏这些命中，而不是跳过处理。"
 
+-- Combine hits
+L["Combine hits"] = "合并命中"
+L["Combine rapid hits"] = "合并快速命中"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "将短时间内连续落在同一姓名板上的命中合并为一个数字，而不是堆叠多个数字。"
+L["Combine"] = "合并方式"
+L["Same spell"] = "同一法术"
+L["All hits"] = "全部命中"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "“同一法术”会让每个法术的数字分开显示。“全部命中”会合并目标身上的所有命中，图标显示造成伤害最多的法术。"
+L["Combine window"] = "合并时间窗口"
+L["%.2fs"] = "%.2f秒"
+L["Show hit count"] = "显示命中次数"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] =
+    "显示合并了多少次命中，例如 37,200 (3)。开启法术图标时，次数显示在图标上。"
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "暴击、普通命中和治疗会分别合并。"
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "暴击、普通命中和治疗会分别合并。部分数值受限，无法相加，因此这些命中仍会单独显示。"
+
 -- Tools
 L["Preview"] = "预览"
 L["Updates live as you change options."] = "修改选项时，预览会实时更新。"
 L["Target an enemy, then spawn sample numbers on its nameplate."] = "选中一个敌人，然后在其姓名板上生成示例数字。"
 L["Test on Target"] = "在目标上测试"
 L["Show sample damage numbers on your target."] = "在当前目标上显示示例伤害数字。"
-L["Maintenance"] = "维护"
 L["Debug mode"] = "调试模式"
+
+-- Personal splash
+L["Only Engaged nameplates mode, or Personal with Show splash from my casts, shows numbers on enemies you are not targeting. Change it under Modern API → Damage mode."] =
+    "只有“交战中的姓名板”模式，或开启“显示我施法的溅射伤害”的个人模式，会在非目标敌人身上显示数字。请在“现代 API”→“伤害模式”中更改。"
+L["Show splash from my casts"] = "显示我施法的溅射伤害"
+L["In Personal mode, also show hits on other enemies that land right after your cast hits its target, with the same damage school, on enemies you have threat on."] =
+    "在个人模式下，也显示你的法术命中目标后紧接着落在其他敌人身上、伤害类型相同、且你在其仇恨列表中的命中。"
+L["Choose Personal - experimental to show splash from your casts."] =
+    "选择“个人伤害 - 实验性”后才能显示你施法的溅射伤害。"
+L["Splash is best effort: another player's same-school hit in that split second can still appear. DoT ticks spread to other enemies and unreadable damage schools are not shown."] =
+    "溅射为尽力匹配：同一瞬间其他玩家相同类型的命中仍可能出现。扩散到其他敌人的持续伤害跳数和无法读取的伤害类型不会显示。"
+
 L["Print combat events to chat for troubleshooting."] = "将战斗事件输出到聊天框，便于排查问题。"
 L["Dump meter now"] = "立即导出伤害统计"
 L["Open a copyable snapshot of C_DamageMeter fields. Use this in combat while hitting a target."] = "打开 C_DamageMeter 字段的可复制快照。请在战斗中攻击目标时使用。"
-L["Reset Defaults"] = "恢复默认设置"
-L["Restore every PlateSCT setting to its default."] = "将所有 PlateSCT 设置恢复为默认值。"
 
 -- Language
 L["Language"] = "语言"
@@ -281,6 +407,37 @@ L["Current target: all-source numbers on your target. Engaged nameplates: all-so
     "当前目标：显示当前目标受到的所有来源伤害。交战中的姓名板：显示交战敌人受到的所有来源伤害。"
 L["Damage meter probe is available. Capture a snapshot while hitting a target."] = "伤害统计探测可用。请在攻击目标时采集快照。"
 L["Damage mode"] = "伤害模式"
+
+-- Profiles and welcome
+L["Default"] = "默认"
+L["Clean and minimal: numbers on your target in classic yellow. Every option at its default."] =
+    "简洁朴素：在目标身上以经典黄色显示数字。所有选项保持默认。"
+L["Extended"] = "扩展"
+L["Spell icons and short names, school colors, abbreviated numbers, combined rapid hits, fainter cleave on other enemies, and livelier motion."] =
+    "法术图标与短名称、伤害类型颜色、缩写数字、合并快速命中、其他敌人身上更淡的溅射伤害，以及更生动的运动效果。"
+L["Apply the %s profile? This replaces all PlateSCT settings except the language."] =
+    "应用“%s”配置？这会替换除语言外的所有 PlateSCT 设置。"
+L["Profiles"] = "配置"
+L["Show welcome screen"] = "显示欢迎界面"
+L["Open the first-install welcome and profile choice again."] = "再次打开首次安装时的欢迎界面和配置选择。"
+L["A profile replaces all settings except the language. Default restores every setting; Extended adds spell icons and names, school colors, combined hits, and fainter cleave."] =
+    "配置会替换除语言外的所有设置。“默认”恢复所有设置；“扩展”增加法术图标与名称、伤害类型颜色、合并命中以及更淡的溅射伤害。"
+L["Apply %s profile"] = "应用“%s”配置"
+L["%s profile applied. Type /psct to customize it."] = "已应用“%s”配置。输入 /psct 进行自定义。"
+L["Welcome to PlateSCT"] = "欢迎使用 PlateSCT"
+L["PlateSCT puts your damage numbers on enemy nameplates, so every hit shows up right where it landed."] =
+    "PlateSCT 会把你的伤害数字显示在敌人的姓名板上，让每次命中都出现在它落下的位置。"
+L["It keeps busy fights readable: rapid hits combine, small hits fade back, and crits stand out."] =
+    "让激烈的战斗依然清晰：快速命中会合并，小额命中退居次要，暴击格外醒目。"
+L["It works on Midnight and on Classic clients, within each game version's combat rules."] =
+    "它适用于 Midnight 和经典客户端，并遵守各游戏版本的战斗规则。"
+L["Note: Blizzard's new addon rules hide who dealt each hit, so some numbers can be credited to the wrong source or missed."] =
+    "注意：暴雪新的插件规则隐藏了每次命中的来源，因此部分数字可能被归到错误的来源或被遗漏。"
+L["Choose a starting profile. You can change every setting later."] =
+    "选择一个初始配置。之后可以随时修改任何设置。"
+L["Open settings instead"] = "改为打开设置"
+L["Keep the Default profile and open the settings window."] = "保留默认配置并打开设置窗口。"
+
 L["Damage threshold"] = "伤害阈值"
 L["Diagnostics"] = "诊断"
 L["Enable Auto-switch by instance to edit the instance profiles."] = "启用“按副本自动切换”后，即可编辑副本配置。"
@@ -360,3 +517,15 @@ L["Your WoW API"] = "当前 WoW API"
 -- Translation feedback
 L["This translation was generated with AI. If you find inconsistent terminology or incorrect wording, please report it through GitHub Issues. Thank you for your help! Translation contributors will be credited."] =
     "此翻译由 AI 生成。如果发现术语不一致或措辞不准确，请通过 GitHub Issues 反馈。感谢你的帮助！翻译贡献者将获得署名致谢。"
+
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "同一姓名板上的快速命中可合并为一个不断增长的数字，并显示命中次数。在“战斗”→“合并命中”中开启。"
+
+-- Reduce clutter
+L["Reduce clutter"] = "减少杂乱"
+
+-- Combine hits: merge pop
+L["Pop on each merge"] = "每次合并时弹跳"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "每当有新的命中合并进来时短暂放大数字。关闭可获得更平静的显示。"

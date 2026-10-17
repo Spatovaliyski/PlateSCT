@@ -31,7 +31,6 @@ L["The compact bottom preview includes Mixed, Hit, Crit, and Miss samples. All n
 L["PlateSCT is in Beta"] = "PlateSCT est en bêta"
 L["This addon is in Beta mode. Inaccuracies and errors may show up. Please report such issues on the addon's page."] =
     "Cet addon est en mode bêta. Des imprécisions et des erreurs peuvent apparaître. Merci de signaler ces problèmes sur la page de l'addon."
-L["Reset PlateSCT settings to defaults?"] = "Réinitialiser les paramètres de PlateSCT par défaut ?"
 L["Addon page"] = "Page de l'addon"
 L["Select the URL below, copy it, then paste it in your browser."] =
     "Sélectionnez l'URL ci-dessous, copiez-la, puis collez-la dans votre navigateur."
@@ -88,6 +87,47 @@ L["Click to open settings."] = "Cliquez pour ouvrir les réglages."
 L["Enemy nameplates are turned off. PlateSCT needs them to show numbers.\nPress V (default) or enable them under Interface → Game → Names."] =
     "Les barres de nom ennemies sont désactivées. PlateSCT en a besoin pour afficher les nombres.\nAppuyez sur V (par défaut) ou activez-les dans Interface → Jeu → Noms."
 L["Who to show"] = "Qui afficher"
+
+-- What's new: less clutter
+L["Less clutter"] = "Moins d'encombrement"
+L["Dim or hide numbers on enemies you are not targeting, show crits only, shrink small hits, and ignore chosen spells. Find them on the Combat page."] =
+    "Atténuez ou masquez les nombres sur les ennemis non ciblés, affichez uniquement les critiques, réduisez les petits coups et ignorez des sorts choisis. Sur la page Combat."
+
+
+-- Ignored spells
+L["Ignored spells"] = "Sorts ignorés"
+L["Ignore these spells"] = "Ignorer ces sorts"
+L["Spell names or IDs, separated by commas. Their hits, crits, and misses are not shown."] =
+    "Noms ou identifiants de sorts, séparés par des virgules. Leurs coups, critiques et échecs ne sont pas affichés."
+L["Example: Auto Attack, 133."] = "Exemple : Attaque automatique, 133."
+L["Example: Auto Attack, 133. Modern API knows the spell only in Personal - experimental mode."] =
+    "Exemple : Attaque automatique, 133. L'API Modern ne connaît le sort qu'en mode Personnel - expérimental."
+
+
+-- Shrink small hits
+L["Shrink small hits"] = "Réduire les petits coups"
+L["Show hits well below your recent average smaller instead of hiding them."] =
+    "Affiche en plus petit les coups nettement inférieurs à votre moyenne récente au lieu de les masquer."
+L["Small hit below"] = "Petit coup sous"
+L["%s of average"] = "%s de la moyenne"
+
+
+-- Crits only
+L["Crits only"] = "Critiques uniquement"
+L["Show only critical hits. Normal hits and heals are hidden; miss text such as Immune still shows."] =
+    "Affiche uniquement les coups critiques. Les coups normaux et les soins sont masqués ; les textes d'échec comme Insensible restent affichés."
+
+
+-- Off-target numbers
+L["Show"] = "Afficher"
+L["Dim"] = "Atténuer"
+L["Hide"] = "Masquer"
+L["Other nameplates"] = "Autres barres de nom"
+L["How numbers look on enemies you are not targeting. Dim makes them smaller and fainter so your target stands out."] =
+    "Apparence des nombres sur les ennemis que vous ne ciblez pas. Atténuer les rend plus petits et plus pâles pour faire ressortir votre cible."
+L["Off-target size"] = "Taille hors cible"
+L["Off-target opacity"] = "Opacité hors cible"
+
 L["Only my damage"] = "Uniquement mes dégâts"
 L["Show hits on your current target when you recently cast or auto-attacked. Midnight cannot prove who dealt the hit in a group."] =
     "Affiche les coups sur votre cible actuelle lorsque vous venez de lancer un sort ou d'attaquer automatiquement. Midnight ne peut pas prouver qui a infligé le coup en groupe."
@@ -128,6 +168,68 @@ L["Uses your last spell in Only my damage mode. Left of the number."] =
     "Utilise votre dernier sort en mode « Uniquement mes dégâts ». À gauche du nombre."
 L["Text style"] = "Style du texte"
 L["Abbreviate numbers"] = "Abréger les nombres"
+
+-- What's new: labels and colors
+L["Labels and colors"] = "Étiquettes et couleurs"
+L["Spell names next to numbers, a text outline choice, custom hit, crit, and miss colors, and a separate auto-attack motion."] =
+    "Noms des sorts à côté des nombres, choix du contour du texte, couleurs personnalisées pour les coups, critiques et échecs, et mouvement distinct pour les attaques automatiques."
+
+
+-- Auto-attack motion
+L["Same as normal hits"] = "Comme les coups normaux"
+L["Auto-attacks"] = "Attaques automatiques"
+L["Motion used for your normal auto-attack hits, so melee swings can move differently from spells. Auto-attack crits use the Critical hits motion."] =
+    "Mouvement des coups normaux de votre attaque automatique, pour distinguer les coups de mêlée des sorts. Les critiques d'attaque automatique utilisent le mouvement des coups critiques."
+
+
+-- Spell label
+L["Label"] = "Étiquette"
+L["Top"] = "Haut"
+L["Bottom"] = "Bas"
+L["Name"] = "Nom"
+L["Left"] = "Gauche"
+L["Icon"] = "Icône"
+L["Right"] = "Droite"
+L["Icon and name"] = "Icône et nom"
+L["Spell label"] = "Étiquette du sort"
+L["Show spell label"] = "Afficher l'étiquette du sort"
+L["Show which spell dealt each hit. Uses the matched cast or auto-attack."] =
+    "Indique quel sort a infligé chaque coup. Utilise le sort associé ou l'attaque automatique."
+L["Show which spell dealt each hit. Uses the spell from the combat log."] =
+    "Indique quel sort a infligé chaque coup. Utilise le sort du journal de combat."
+L["Show the spell's icon, its name, or both."] = "Affiche l'icône du sort, son nom, ou les deux."
+L["Enable Show spell label to choose the label."] = "Activez Afficher l'étiquette du sort pour choisir l'étiquette."
+L["Name position"] = "Position du nom"
+L["Where the spell name sits relative to the number."] = "Position du nom du sort par rapport au nombre."
+L["Name size"] = "Taille du nom"
+L["Shorten long names"] = "Raccourcir les noms longs"
+L["After %d characters"] = "Après %d caractères"
+L["The Name label has no icon to place."] = "L'étiquette Nom n'a pas d'icône à placer."
+L["Enable Show spell label to choose its position."] = "Activez Afficher l'étiquette du sort pour choisir sa position."
+
+
+-- Custom colors
+L["Normal hits"] = "Coups normaux"
+L["Custom colors"] = "Couleurs personnalisées"
+L["Pick your own colors for normal hits, crits, and miss text instead of the default yellow."] =
+    "Choisissez vos propres couleurs pour les coups normaux, les critiques et les textes d'échec au lieu du jaune par défaut."
+L["Turn off Color by damage school to pick custom colors."] = "Désactivez Couleur selon l'école de dégâts pour choisir des couleurs personnalisées."
+L["Color of normal damage numbers."] = "Couleur des nombres de dégâts normaux."
+L["Critical hits"] = "Coups critiques"
+L["Color of critical hit numbers."] = "Couleur des nombres de coups critiques."
+L["Miss text"] = "Texte d'échec"
+L["Color of Miss, Dodge, Immune, and similar text."] = "Couleur des textes Raté, Esquive, Insensible et similaires."
+
+
+-- Outline
+L["Outline"] = "Contour"
+L["Number style default"] = "Défaut du style"
+L["None"] = "Aucun"
+L["Thin"] = "Fin"
+L["Thick"] = "Épais"
+L["Text outline. Number style default uses each style's own outline: thick for Classic, thin for Modern and Impact."] =
+    "Contour du texte. Le réglage par défaut du style utilise le contour propre à chaque style : épais pour Classic, fin pour Moderne et Impact."
+
 L["Display large numbers as 214k or 1.2M."] = "Affiche les grands nombres comme 214k ou 1,2M."
 L["Display large numbers as 214k or 1.2M. Disables thousand separators."] =
     "Affiche les grands nombres comme 214k ou 1,2M. Désactive les séparateurs de milliers."
@@ -142,6 +244,7 @@ L["Font"] = "Police"
 L["Font size"] = "Taille de police"
 L["Scroll offset"] = "Décalage du défilement"
 L["Scroll speed"] = "Vitesse de défilement"
+L["%d%%"] = "%d %%"
 L["Display duration"] = "Durée d'affichage"
 L["Game default"] = "Par défaut du jeu"
 L["Friz Quadrata"] = "Friz Quadrata"
@@ -169,22 +272,50 @@ L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be di
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "En raids et Mythique+, certains montants sont secrets, donc le seuil masque ces coups visuellement au lieu de les ignorer."
 
+-- Combine hits
+L["Combine hits"] = "Regrouper les coups"
+L["Combine rapid hits"] = "Regrouper les coups rapides"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "Additionne les coups qui touchent la même barre de nom en succession rapide en un seul nombre au lieu d'en empiler plusieurs."
+L["Combine"] = "Regrouper"
+L["Same spell"] = "Même sort"
+L["All hits"] = "Tous les coups"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "Même sort garde un nombre séparé pour chaque sort. Tous les coups regroupe chaque coup sur la cible ; son icône montre le sort qui a infligé le plus de dégâts."
+L["Combine window"] = "Fenêtre de regroupement"
+L["%.2fs"] = "%.2fs"
+L["Show hit count"] = "Afficher le nombre de coups"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] =
+    "Indique combien de coups ont été regroupés, par ex. 37 200 (3). Avec les icônes de sort, le nombre s'affiche sur l'icône."
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "Les critiques, les coups normaux et les soins sont regroupés séparément."
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "Les critiques, les coups normaux et les soins sont regroupés séparément. Les montants secrets ne peuvent pas être additionnés, ces coups restent donc affichés individuellement."
+
 L["Preview"] = "Aperçu"
 L["Updates live as you change options."] = "Se met à jour en direct quand vous changez les options."
 L["Target an enemy, then spawn sample numbers on its nameplate."] =
     "Ciblez un ennemi, puis générez des nombres d'exemple sur sa barre de nom."
 L["Test on Target"] = "Tester sur la cible"
 L["Show sample damage numbers on your target."] = "Affiche des nombres de dégâts d'exemple sur votre cible."
-L["Maintenance"] = "Maintenance"
 L["Debug mode"] = "Mode débogage"
+
+-- Personal splash
+L["Only Engaged nameplates mode, or Personal with Show splash from my casts, shows numbers on enemies you are not targeting. Change it under Modern API → Damage mode."] =
+    "Seul le mode Ennemis engagés, ou Personnel avec Afficher les éclaboussures de mes sorts, affiche des nombres sur les ennemis que vous ne ciblez pas. Modifiez-le dans API moderne → Mode de dégâts."
+L["Show splash from my casts"] = "Afficher les éclaboussures de mes sorts"
+L["In Personal mode, also show hits on other enemies that land right after your cast hits its target, with the same damage school, on enemies you have threat on."] =
+    "En mode Personnel, affiche aussi les coups sur d'autres ennemis qui arrivent juste après que votre sort a touché sa cible, de la même école de dégâts, sur les ennemis où vous avez de la menace."
+L["Choose Personal - experimental to show splash from your casts."] =
+    "Choisissez Personnel - expérimental pour afficher les éclaboussures de vos sorts."
+L["Splash is best effort: another player's same-school hit in that split second can still appear. DoT ticks spread to other enemies and unreadable damage schools are not shown."] =
+    "Les éclaboussures sont approximatives : un coup d'un autre joueur de la même école au même instant peut encore apparaître. Les dégâts périodiques répartis sur d'autres ennemis et les écoles illisibles ne sont pas affichés."
+
 L["Print combat events to chat for troubleshooting."] =
     "Affiche les événements de combat dans le chat pour le dépannage."
 L["Dump meter now"] = "Dumper le compteur"
 L["Open a copyable snapshot of C_DamageMeter fields. Use this in combat while hitting a target."] =
     "Ouvre un instantané copiable des champs C_DamageMeter. À utiliser en combat en frappant une cible."
-L["Reset Defaults"] = "Réinitialiser"
-L["Restore every PlateSCT setting to its default."] =
-    "Restaure tous les paramètres de PlateSCT par défaut."
 
 -- Language
 L["Language"] = "Langue"
@@ -207,6 +338,37 @@ L["Close"] = "Fermer"
 L["Combat"] = "Combat"
 L["Current target"] = "Cible actuelle"
 L["Damage mode"] = "Mode de dégâts"
+
+-- Profiles and welcome
+L["Default"] = "Par défaut"
+L["Clean and minimal: numbers on your target in classic yellow. Every option at its default."] =
+    "Sobre et minimal : des nombres sur votre cible en jaune classique. Toutes les options par défaut."
+L["Extended"] = "Étendu"
+L["Spell icons and short names, school colors, abbreviated numbers, combined rapid hits, fainter cleave on other enemies, and livelier motion."] =
+    "Icônes et noms courts des sorts, couleurs d'école, nombres abrégés, coups rapides regroupés, éclaboussures plus discrètes sur les autres ennemis et mouvement plus vivant."
+L["Apply the %s profile? This replaces all PlateSCT settings except the language."] =
+    "Appliquer le profil %s ? Cela remplace tous les réglages de PlateSCT sauf la langue."
+L["Profiles"] = "Profils"
+L["Show welcome screen"] = "Afficher l'écran d'accueil"
+L["Open the first-install welcome and profile choice again."] = "Rouvre l'accueil et le choix de profil de la première installation."
+L["A profile replaces all settings except the language. Default restores every setting; Extended adds spell icons and names, school colors, combined hits, and fainter cleave."] =
+    "Un profil remplace tous les réglages sauf la langue. Par défaut restaure chaque réglage ; Étendu ajoute icônes et noms des sorts, couleurs d'école, coups regroupés et éclaboussures plus discrètes."
+L["Apply %s profile"] = "Appliquer le profil %s"
+L["%s profile applied. Type /psct to customize it."] = "Profil %s appliqué. Tapez /psct pour le personnaliser."
+L["Welcome to PlateSCT"] = "Bienvenue dans PlateSCT"
+L["PlateSCT puts your damage numbers on enemy nameplates, so every hit shows up right where it landed."] =
+    "PlateSCT affiche vos nombres de dégâts sur les barres de nom ennemies, pour que chaque coup apparaisse là où il a frappé."
+L["It keeps busy fights readable: rapid hits combine, small hits fade back, and crits stand out."] =
+    "Les combats chargés restent lisibles : les coups rapides se regroupent, les petits coups s'effacent et les critiques ressortent."
+L["It works on Midnight and on Classic clients, within each game version's combat rules."] =
+    "Il fonctionne sur Midnight et sur les clients Classic, dans le respect des règles de combat de chaque version du jeu."
+L["Note: Blizzard's new addon rules hide who dealt each hit, so some numbers can be credited to the wrong source or missed."] =
+    "Remarque : les nouvelles règles de Blizzard pour les addons masquent l'auteur de chaque coup, donc certains nombres peuvent être attribués à la mauvaise source ou manquer."
+L["Choose a starting profile. You can change every setting later."] =
+    "Choisissez un profil de départ. Vous pourrez modifier chaque réglage plus tard."
+L["Open settings instead"] = "Ouvrir plutôt les réglages"
+L["Keep the Default profile and open the settings window."] = "Garder le profil Par défaut et ouvrir la fenêtre des réglages."
+
 L["Damage threshold"] = "Seuil de dégâts"
 L["Diagnostics"] = "Diagnostic"
 L["Engaged nameplates"] = "Ennemis engagés"
@@ -285,3 +447,15 @@ L["This client does not expose the damage meter API. A snapshot can still report
 L["Turn off Auto-switch by instance to choose manual strictness."] = "Désactivez le changement automatique par instance pour choisir la rigueur manuellement."
 L["Unreadable amounts cannot trigger threshold sounds. Unreadable damage schools are always allowed by the school filter."] = "Les montants illisibles ne déclenchent pas les sons à seuil. Les écoles illisibles sont toujours autorisées par le filtre."
 L["Use gentle fades and row reveals in this settings window. Combat animation is unaffected."] = "Anime discrètement cette fenêtre de réglages. L'animation des nombres en combat n'est pas modifiée."
+
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "Les coups rapides sur la même barre de nom peuvent se regrouper en un seul nombre croissant avec le nombre de coups. Activez-le dans Combat → Regrouper les coups."
+
+-- Reduce clutter
+L["Reduce clutter"] = "Réduire l'encombrement"
+
+-- Combine hits: merge pop
+L["Pop on each merge"] = "Effet de rebond à chaque regroupement"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "Agrandit brièvement le nombre chaque fois qu'un coup s'y ajoute. Désactivez pour un affichage plus calme."

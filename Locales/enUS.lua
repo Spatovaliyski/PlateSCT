@@ -33,7 +33,6 @@ L["The compact bottom preview includes Mixed, Hit, Crit, and Miss samples. All n
 L["PlateSCT is in Beta"] = "PlateSCT is in Beta"
 L["This addon is in Beta mode. Inaccuracies and errors may show up. Please report such issues on the addon's page."] =
     "This addon is in Beta mode. Inaccuracies and errors may show up. Please report such issues on the addon's page."
-L["Reset PlateSCT settings to defaults?"] = "Reset PlateSCT settings to defaults?"
 L["Addon page"] = "Addon page"
 L["Select the URL below, copy it, then paste it in your browser."] =
     "Select the URL below, copy it, then paste it in your browser."
@@ -112,6 +111,47 @@ L["Click to open settings."] = "Click to open settings."
 L["Enemy nameplates are turned off. PlateSCT needs them to show numbers.\nPress V (default) or enable them under Interface → Game → Names."] =
     "Enemy nameplates are turned off. PlateSCT needs them to show numbers.\nPress V (default) or enable them under Interface → Game → Names."
 L["Who to show"] = "Who to show"
+
+-- What's new: less clutter
+L["Less clutter"] = "Less clutter"
+L["Dim or hide numbers on enemies you are not targeting, show crits only, shrink small hits, and ignore chosen spells. Find them on the Combat page."] =
+    "Dim or hide numbers on enemies you are not targeting, show crits only, shrink small hits, and ignore chosen spells. Find them on the Combat page."
+
+
+-- Ignored spells
+L["Ignored spells"] = "Ignored spells"
+L["Ignore these spells"] = "Ignore these spells"
+L["Spell names or IDs, separated by commas. Their hits, crits, and misses are not shown."] =
+    "Spell names or IDs, separated by commas. Their hits, crits, and misses are not shown."
+L["Example: Auto Attack, 133."] = "Example: Auto Attack, 133."
+L["Example: Auto Attack, 133. Modern API knows the spell only in Personal - experimental mode."] =
+    "Example: Auto Attack, 133. Modern API knows the spell only in Personal - experimental mode."
+
+
+-- Shrink small hits
+L["Shrink small hits"] = "Shrink small hits"
+L["Show hits well below your recent average smaller instead of hiding them."] =
+    "Show hits well below your recent average smaller instead of hiding them."
+L["Small hit below"] = "Small hit below"
+L["%s of average"] = "%s of average"
+
+
+-- Crits only
+L["Crits only"] = "Crits only"
+L["Show only critical hits. Normal hits and heals are hidden; miss text such as Immune still shows."] =
+    "Show only critical hits. Normal hits and heals are hidden; miss text such as Immune still shows."
+
+
+-- Off-target numbers
+L["Show"] = "Show"
+L["Dim"] = "Dim"
+L["Hide"] = "Hide"
+L["Other nameplates"] = "Other nameplates"
+L["How numbers look on enemies you are not targeting. Dim makes them smaller and fainter so your target stands out."] =
+    "How numbers look on enemies you are not targeting. Dim makes them smaller and fainter so your target stands out."
+L["Off-target size"] = "Off-target size"
+L["Off-target opacity"] = "Off-target opacity"
+
 L["Only my damage"] = "Only my damage"
 L["Show hits when a recent cast or auto-attack matches the nameplate. Midnight cannot prove who dealt the hit in a group."] =
     "Show hits when a recent cast or auto-attack matches the nameplate. Midnight cannot prove who dealt the hit in a group."
@@ -203,6 +243,62 @@ L["Top"] = "Top"
 L["Bottom"] = "Bottom"
 L["Text style"] = "Text style"
 L["Abbreviate numbers"] = "Abbreviate numbers"
+
+-- What's new: labels and colors
+L["Labels and colors"] = "Labels and colors"
+L["Spell names next to numbers, a text outline choice, custom hit, crit, and miss colors, and a separate auto-attack motion."] =
+    "Spell names next to numbers, a text outline choice, custom hit, crit, and miss colors, and a separate auto-attack motion."
+
+
+-- Auto-attack motion
+L["Same as normal hits"] = "Same as normal hits"
+L["Auto-attacks"] = "Auto-attacks"
+L["Motion used for your normal auto-attack hits, so melee swings can move differently from spells. Auto-attack crits use the Critical hits motion."] =
+    "Motion used for your normal auto-attack hits, so melee swings can move differently from spells. Auto-attack crits use the Critical hits motion."
+
+
+-- Spell label
+L["Label"] = "Label"
+L["Name"] = "Name"
+L["Icon"] = "Icon"
+L["Icon and name"] = "Icon and name"
+L["Spell label"] = "Spell label"
+L["Show spell label"] = "Show spell label"
+L["Show which spell dealt each hit. Uses the matched cast or auto-attack."] =
+    "Show which spell dealt each hit. Uses the matched cast or auto-attack."
+L["Show which spell dealt each hit. Uses the spell from the combat log."] =
+    "Show which spell dealt each hit. Uses the spell from the combat log."
+L["Show the spell's icon, its name, or both."] = "Show the spell's icon, its name, or both."
+L["Enable Show spell label to choose the label."] = "Enable Show spell label to choose the label."
+L["Name position"] = "Name position"
+L["Where the spell name sits relative to the number."] = "Where the spell name sits relative to the number."
+L["Name size"] = "Name size"
+L["Shorten long names"] = "Shorten long names"
+L["After %d characters"] = "After %d characters"
+L["The Name label has no icon to place."] = "The Name label has no icon to place."
+L["Enable Show spell label to choose its position."] = "Enable Show spell label to choose its position."
+
+
+-- Custom colors
+L["Custom colors"] = "Custom colors"
+L["Pick your own colors for normal hits, crits, and miss text instead of the default yellow."] =
+    "Pick your own colors for normal hits, crits, and miss text instead of the default yellow."
+L["Turn off Color by damage school to pick custom colors."] = "Turn off Color by damage school to pick custom colors."
+L["Color of normal damage numbers."] = "Color of normal damage numbers."
+L["Color of critical hit numbers."] = "Color of critical hit numbers."
+L["Miss text"] = "Miss text"
+L["Color of Miss, Dodge, Immune, and similar text."] = "Color of Miss, Dodge, Immune, and similar text."
+
+
+-- Outline
+L["Outline"] = "Outline"
+L["Number style default"] = "Number style default"
+L["None"] = "None"
+L["Thin"] = "Thin"
+L["Thick"] = "Thick"
+L["Text outline. Number style default uses each style's own outline: thick for Classic, thin for Modern and Impact."] =
+    "Text outline. Number style default uses each style's own outline: thick for Classic, thin for Modern and Impact."
+
 L["Display large numbers as 214k or 1.2M."] = "Display large numbers as 214k or 1.2M."
 L["Display large numbers as 214k or 1.2M. Disables thousand separators."] =
     "Display large numbers as 214k or 1.2M. Disables thousand separators."
@@ -217,6 +313,7 @@ L["Font"] = "Font"
 L["Font size"] = "Font size"
 L["Scroll offset"] = "Scroll offset"
 L["Scroll speed"] = "Scroll speed"
+L["%d%%"] = "%d%%"
 L["Display duration"] = "Display duration"
 L["Game default"] = "Game default"
 L["Friz Quadrata"] = "Friz Quadrata"
@@ -277,6 +374,25 @@ L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be di
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."
 
+-- Combine hits
+L["Combine hits"] = "Combine hits"
+L["Combine rapid hits"] = "Combine rapid hits"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "Add hits that land in quick succession on the same nameplate into one number instead of stacking many."
+L["Combine"] = "Combine"
+L["Same spell"] = "Same spell"
+L["All hits"] = "All hits"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."
+L["Combine window"] = "Combine window"
+L["%.2fs"] = "%.2fs"
+L["Show hit count"] = "Show hit count"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] = "Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "Crits, normal hits, and heals combine separately."
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."
+
 -- Tools
 L["Preview"] = "Preview"
 L["Updates live as you change options."] = "Updates live as you change options."
@@ -284,14 +400,23 @@ L["Target an enemy, then spawn sample numbers on its nameplate."] =
     "Target an enemy, then spawn sample numbers on its nameplate."
 L["Test on Target"] = "Test on Target"
 L["Show sample damage numbers on your target."] = "Show sample damage numbers on your target."
-L["Maintenance"] = "Maintenance"
 L["Debug mode"] = "Debug mode"
+
+-- Personal splash
+L["Only Engaged nameplates mode, or Personal with Show splash from my casts, shows numbers on enemies you are not targeting. Change it under Modern API → Damage mode."] =
+    "Only Engaged nameplates mode, or Personal with Show splash from my casts, shows numbers on enemies you are not targeting. Change it under Modern API → Damage mode."
+L["Show splash from my casts"] = "Show splash from my casts"
+L["In Personal mode, also show hits on other enemies that land right after your cast hits its target, with the same damage school, on enemies you have threat on."] =
+    "In Personal mode, also show hits on other enemies that land right after your cast hits its target, with the same damage school, on enemies you have threat on."
+L["Choose Personal - experimental to show splash from your casts."] =
+    "Choose Personal - experimental to show splash from your casts."
+L["Splash is best effort: another player's same-school hit in that split second can still appear. DoT ticks spread to other enemies and unreadable damage schools are not shown."] =
+    "Splash is best effort: another player's same-school hit in that split second can still appear. DoT ticks spread to other enemies and unreadable damage schools are not shown."
+
 L["Print combat events to chat for troubleshooting."] = "Print combat events to chat for troubleshooting."
 L["Dump meter now"] = "Dump meter now"
 L["Open a copyable snapshot of C_DamageMeter fields. Use this in combat while hitting a target."] =
     "Open a copyable snapshot of C_DamageMeter fields. Use this in combat while hitting a target."
-L["Reset Defaults"] = "Reset Defaults"
-L["Restore every PlateSCT setting to its default."] = "Restore every PlateSCT setting to its default."
 
 -- Language
 L["Language"] = "Language"
@@ -324,6 +449,37 @@ L["Current target"] = "Current target"
 L["Current target: all-source numbers on your target. Engaged nameplates: all-source numbers on engaged enemies."] = "Current target: all-source numbers on your target. Engaged nameplates: all-source numbers on engaged enemies."
 L["Damage meter probe is available. Capture a snapshot while hitting a target."] = "Damage meter probe is available. Capture a snapshot while hitting a target."
 L["Damage mode"] = "Damage mode"
+
+-- Profiles and welcome
+L["Default"] = "Default"
+L["Clean and minimal: numbers on your target in classic yellow. Every option at its default."] =
+    "Clean and minimal: numbers on your target in classic yellow. Every option at its default."
+L["Extended"] = "Extended"
+L["Spell icons and short names, school colors, abbreviated numbers, combined rapid hits, fainter cleave on other enemies, and livelier motion."] =
+    "Spell icons and short names, school colors, abbreviated numbers, combined rapid hits, fainter cleave on other enemies, and livelier motion."
+L["Apply the %s profile? This replaces all PlateSCT settings except the language."] =
+    "Apply the %s profile? This replaces all PlateSCT settings except the language."
+L["Profiles"] = "Profiles"
+L["Show welcome screen"] = "Show welcome screen"
+L["Open the first-install welcome and profile choice again."] = "Open the first-install welcome and profile choice again."
+L["A profile replaces all settings except the language. Default restores every setting; Extended adds spell icons and names, school colors, combined hits, and fainter cleave."] =
+    "A profile replaces all settings except the language. Default restores every setting; Extended adds spell icons and names, school colors, combined hits, and fainter cleave."
+L["Apply %s profile"] = "Apply %s profile"
+L["%s profile applied. Type /psct to customize it."] = "%s profile applied. Type /psct to customize it."
+L["Welcome to PlateSCT"] = "Welcome to PlateSCT"
+L["PlateSCT puts your damage numbers on enemy nameplates, so every hit shows up right where it landed."] =
+    "PlateSCT puts your damage numbers on enemy nameplates, so every hit shows up right where it landed."
+L["It keeps busy fights readable: rapid hits combine, small hits fade back, and crits stand out."] =
+    "It keeps busy fights readable: rapid hits combine, small hits fade back, and crits stand out."
+L["It works on Midnight and on Classic clients, within each game version's combat rules."] =
+    "It works on Midnight and on Classic clients, within each game version's combat rules."
+L["Note: Blizzard's new addon rules hide who dealt each hit, so some numbers can be credited to the wrong source or missed."] =
+    "Note: Blizzard's new addon rules hide who dealt each hit, so some numbers can be credited to the wrong source or missed."
+L["Choose a starting profile. You can change every setting later."] =
+    "Choose a starting profile. You can change every setting later."
+L["Open settings instead"] = "Open settings instead"
+L["Keep the Default profile and open the settings window."] = "Keep the Default profile and open the settings window."
+
 L["Damage threshold"] = "Damage threshold"
 L["Diagnostics"] = "Diagnostics"
 L["Enable Auto-switch by instance to edit the instance profiles."] = "Enable Auto-switch by instance to edit the instance profiles."
@@ -391,3 +547,15 @@ L["Unreadable amounts cannot trigger threshold sounds. Unreadable damage schools
 L["Unsupported client - combat text unavailable"] = "Unsupported client - combat text unavailable"
 L["Use gentle fades and row reveals in this settings window. Combat animation is unaffected."] = "Use gentle fades and row reveals in this settings window. Combat animation is unaffected."
 L["Your WoW API"] = "Your WoW API"
+
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."
+
+-- Reduce clutter
+L["Reduce clutter"] = "Reduce clutter"
+
+-- Combine hits: merge pop
+L["Pop on each merge"] = "Pop on each merge"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."

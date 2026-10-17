@@ -21,10 +21,11 @@ local function SearchText(text)
     return ((text or ""):gsub("[A-Z]", string.lower):gsub("[%z\1-\127\194-\244][\128-\191]*", searchCase))
 end
 
-StaticPopupDialogs["PLATESCT_RESET_CONFIRM"] = {
-    text = L["Reset PlateSCT settings to defaults?"],
+-- data: the profile id. The %s in the text is the profile's name.
+StaticPopupDialogs["PLATESCT_PROFILE_CONFIRM"] = {
+    text = L["Apply the %s profile? This replaces all PlateSCT settings except the language."],
     button1 = YES, button2 = NO,
-    OnAccept = function() BD:ResetToDefaults() end,
+    OnAccept = function(_, profileId) BD:ApplyProfile(profileId) end,
     timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
 
@@ -323,7 +324,10 @@ local function BuildConfigFrame()
         end
         return dismissed
     end
-    function frame:ConfirmReset() StaticPopup_Show("PLATESCT_RESET_CONFIRM") end
+    function frame:ConfirmProfile(id)
+        local profile = BD.GetProfile(id)
+        if profile then StaticPopup_Show("PLATESCT_PROFILE_CONFIRM", L[profile.labelKey], nil, id) end
+    end
     function frame:Refresh()
         if self.refreshing or self.disposed then return end
         StopMotion(self)
@@ -656,6 +660,10 @@ SlashCmdList["PLATESCT"] = function(message)
     if message == "probe" or message == "meter" then
         if BD.API.IsModern() then BD:DumpDamageMeterProbe()
         else print("|cffff6600PlateSCT:|r " .. L["Meter probe requires Modern API - Midnight & Forever."]) end
+        return
+    end
+    if message == "welcome" and BD.ShowWelcome then
+        BD:ShowWelcome()
         return
     end
     BD:OpenOptions()

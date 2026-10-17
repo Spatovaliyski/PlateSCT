@@ -403,7 +403,7 @@ local function ShowFontPreview(menu, entry)
     end
     local preset = BD:GetStylePreset()
     local size = (BD.db.fontSize or BD.DEFAULTS.fontSize) * preset.fontScale
-    BD.SafeSetFont(preview.number, BD.ResolveFontPath(entry.optionId), size, preset.fontFlags)
+    BD.SafeSetFont(preview.number, BD.ResolveFontPath(entry.optionId), size, BD:GetFontFlags(preset))
     local shadow = preset.shadowOffset
     preview.number:SetShadowOffset(shadow and shadow[1] or 0, shadow and shadow[2] or 0)
     preview.number:SetShadowColor(0, 0, 0, 1)
@@ -789,18 +789,19 @@ function W.NewLayout(parent, root, pageId, tabId, width)
         return control
     end
 
-    function layout:Input(key, label, tip, onChanged, enabledPredicate, disabledReason)
+    -- Edit box bound to a setting. parse turns text into a value (nil rejects it); format does the reverse.
+    local function BuildInput(self, key, label, tip, onChanged, enabledPredicate, disabledReason, parse, format, maxLetters)
         local row, caption, reason, controlWidth, y = self:NewRow(label, 40, disabledReason)
         local control = W.EditBox(row, controlWidth, 26)
         control:SetPoint("TOPRIGHT", -10, -7)
-        control:SetMaxLetters(12)
+        control:SetMaxLetters(maxLetters)
         control:SetNumeric(false)
         control.layoutType = "input"
         self:Register(control, key, row, caption, reason, y, tip, enabledPredicate, onChanged, disabledReason)
         local function Commit(self)
             if self.refreshing or not self:IsEnabled() then return end
             if not self.dirty then return end
-            local value = ParseAmount(self:GetText())
+            local value = parse(self:GetText())
             self.dirty = nil
             if value == nil then self:Refresh(); return end
             if value ~= GetBinding(key) then
@@ -828,16 +829,28 @@ function W.NewLayout(parent, root, pageId, tabId, width)
             if userInput and not self.refreshing then self.dirty = true end
         end)
         function control:Refresh()
-            -- Passive refreshes must not discard a threshold being typed.
+            -- Passive refreshes must not discard text being typed.
             if self.dirty and self:HasFocus() then SetAvailable(self); return end
             self.refreshing = true
-            self:SetText(FormatAmount(GetBinding(key)))
+            self:SetText(format(GetBinding(key)))
             self.dirty = nil
             self.refreshing = nil
             SetAvailable(self)
         end
         control:Refresh()
         return control
+    end
+
+    function layout:Input(key, label, tip, onChanged, enabledPredicate, disabledReason)
+        return BuildInput(self, key, label, tip, onChanged, enabledPredicate, disabledReason,
+            ParseAmount, FormatAmount, 12)
+    end
+
+    -- Free text, trimmed. An empty box stores "".
+    function layout:TextInput(key, label, tip, onChanged, enabledPredicate, disabledReason)
+        return BuildInput(self, key, label, tip, onChanged, enabledPredicate, disabledReason,
+            function(text) return (tostring(text or ""):gsub("^%s+", ""):gsub("%s+$", "")) end,
+            function(value) return tostring(value or "") end, 255)
     end
 
     function layout:Action(id, label, tip, callback)
@@ -852,6 +865,57 @@ function W.NewLayout(parent, root, pageId, tabId, width)
         control.layoutType = "action"
         self:Register(control, id, row, caption, nil, y, tip)
         function control:Refresh() end
+        return control
+    end
+
+    -- Color swatch bound to an "RRGGBB" setting; clicking opens the game's color picker.
+    function layout:Color(key, label, tip, enabledPredicate, onChanged, disabledReason)
+        local row, caption, reason, _, y = self:NewRow(label, 40, disabledReason)
+        local control = CreateFrame("Button", nil, row, "BackdropTemplate")
+        control:SetSize(48, 22)
+        control:SetPoint("TOPRIGHT", -10, -9)
+        W.Backdrop(control, "control")
+        local swatch = control:CreateTexture(nil, "OVERLAY")
+        swatch:SetPoint("TOPLEFT", 3, -3)
+        swatch:SetPoint("BOTTOMRIGHT", -3, 3)
+        control.layoutType = "color"
+        self:Register(control, key, row, caption, reason, y, tip, enabledPredicate, onChanged, disabledReason)
+        local function Pick(r, g, b)
+            local hex = BD.RGBToHex(r, g, b)
+            if hex ~= GetBinding(key) then Changed(root, key, hex, onChanged) end
+        end
+        control:SetScript("OnClick", function(self)
+            if not self:IsEnabled() then return end
+            root:DismissTransient()
+            local r, g, b = BD.HexToRGB(GetBinding(key))
+            local function Apply()
+                Pick(ColorPickerFrame:GetColorRGB())
+            end
+            local function Cancel()
+                Pick(r, g, b)
+            end
+            if ColorPickerFrame.SetupColorPickerAndShow then
+                ColorPickerFrame:SetupColorPickerAndShow({
+                    r = r, g = g, b = b, hasOpacity = false, swatchFunc = Apply, cancelFunc = Cancel,
+                })
+            else
+                -- Older clients: the pre-10.2.5 picker fields.
+                ColorPickerFrame.hasOpacity = false
+                ColorPickerFrame.previousValues = { r, g, b }
+                ColorPickerFrame.func, ColorPickerFrame.cancelFunc = Apply, Cancel
+                ColorPickerFrame:SetColorRGB(r, g, b)
+                ColorPickerFrame:Hide()
+                ColorPickerFrame:Show()
+            end
+            -- Same DIALOG strata as the settings window: bring the picker in front of it.
+            if ColorPickerFrame.Raise then ColorPickerFrame:Raise() end
+        end)
+        function control:Refresh()
+            swatch:SetColorTexture(BD.HexToRGB(GetBinding(key)))
+            SetAvailable(self)
+            swatch:SetAlpha(self:IsEnabled() and 1 or 0.35)
+        end
+        control:Refresh()
         return control
     end
 
@@ -891,7 +955,7 @@ function W.NewLayout(parent, root, pageId, tabId, width)
                         control:SetPoint("TOPRIGHT", -14, -15 - readoutHeight)
                         control:SetWidth(controlWidth - 8)
                         height = math.max(height, readoutHeight + 42)
-                    elseif control.layoutType then
+                    elseif control.layoutType and control.layoutType ~= "color" then
                         control:SetWidth(controlWidth)
                     end
                     if row.layoutReason then

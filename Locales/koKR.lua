@@ -33,7 +33,6 @@ L["The compact bottom preview includes Mixed, Hit, Crit, and Miss samples. All n
 L["PlateSCT is in Beta"] = "PlateSCT는 베타 버전입니다"
 L["This addon is in Beta mode. Inaccuracies and errors may show up. Please report such issues on the addon's page."] =
     "이 애드온은 베타 버전입니다. 표시가 부정확하거나 오류가 발생할 수 있습니다. 문제가 있으면 애드온 페이지에 알려 주세요."
-L["Reset PlateSCT settings to defaults?"] = "PlateSCT 설정을 기본값으로 초기화할까요?"
 L["Addon page"] = "애드온 페이지"
 L["Select the URL below, copy it, then paste it in your browser."] = "아래 주소를 선택하여 복사한 뒤 브라우저에 붙여 넣으세요."
 L["Click to open the addon page URL."] = "클릭하면 애드온 페이지 주소를 볼 수 있습니다."
@@ -104,6 +103,47 @@ L["Click to open settings."] = "클릭하면 설정을 엽니다."
 L["Enemy nameplates are turned off. PlateSCT needs them to show numbers.\nPress V (default) or enable them under Interface → Game → Names."] =
     "적 이름표가 꺼져 있습니다. PlateSCT가 숫자를 표시하려면 이름표가 필요합니다.\nV 키(기본값)를 누르거나 인터페이스 → 게임 → 이름에서 켜세요."
 L["Who to show"] = "표시할 피해 출처"
+
+-- What's new: less clutter
+L["Less clutter"] = "더 깔끔한 화면"
+L["Dim or hide numbers on enemies you are not targeting, show crits only, shrink small hits, and ignore chosen spells. Find them on the Combat page."] =
+    "대상이 아닌 적의 숫자를 흐리게 하거나 숨기고, 치명타만 표시하고, 작은 적중을 축소하고, 선택한 주문을 무시할 수 있습니다. 전투 페이지에서 설정하세요."
+
+
+-- Ignored spells
+L["Ignored spells"] = "무시할 주문"
+L["Ignore these spells"] = "이 주문 무시"
+L["Spell names or IDs, separated by commas. Their hits, crits, and misses are not shown."] =
+    "주문 이름 또는 ID를 쉼표로 구분해 입력합니다. 해당 주문의 적중, 치명타, 빗나감은 표시되지 않습니다."
+L["Example: Auto Attack, 133."] = "예: 자동 공격, 133."
+L["Example: Auto Attack, 133. Modern API knows the spell only in Personal - experimental mode."] =
+    "예: 자동 공격, 133. 모던 API는 개인 피해 - 실험 기능 모드에서만 주문을 알 수 있습니다."
+
+
+-- Shrink small hits
+L["Shrink small hits"] = "작은 적중 축소"
+L["Show hits well below your recent average smaller instead of hiding them."] =
+    "최근 평균보다 훨씬 낮은 적중을 숨기는 대신 작게 표시합니다."
+L["Small hit below"] = "작은 적중 기준"
+L["%s of average"] = "평균의 %s"
+
+
+-- Crits only
+L["Crits only"] = "치명타만"
+L["Show only critical hits. Normal hits and heals are hidden; miss text such as Immune still shows."] =
+    "치명타만 표시합니다. 일반 적중과 치유는 숨겨지며, 면역 같은 빗나감 문구는 계속 표시됩니다."
+
+
+-- Off-target numbers
+L["Show"] = "표시"
+L["Dim"] = "흐리게"
+L["Hide"] = "숨기기"
+L["Other nameplates"] = "다른 이름표"
+L["How numbers look on enemies you are not targeting. Dim makes them smaller and fainter so your target stands out."] =
+    "대상으로 지정하지 않은 적에게 표시되는 숫자의 모양입니다. 흐리게는 숫자를 더 작고 옅게 만들어 현재 대상이 돋보이게 합니다."
+L["Off-target size"] = "대상 외 크기"
+L["Off-target opacity"] = "대상 외 불투명도"
+
 L["Only my damage"] = "내가 준 피해만 표시"
 L["Show hits when a recent cast or auto-attack matches the nameplate. Midnight cannot prove who dealt the hit in a group."] =
     "최근 시전이나 자동 공격이 해당 이름표와 일치하면 피해를 표시합니다. Midnight에서는 파티 내 피해를 누가 주었는지 확인할 수 없습니다."
@@ -182,6 +222,62 @@ L["Top"] = "위"
 L["Bottom"] = "아래"
 L["Text style"] = "글자 스타일"
 L["Abbreviate numbers"] = "숫자 축약"
+
+-- What's new: labels and colors
+L["Labels and colors"] = "표시와 색상"
+L["Spell names next to numbers, a text outline choice, custom hit, crit, and miss colors, and a separate auto-attack motion."] =
+    "숫자 옆 주문 이름, 글자 외곽선 선택, 적중·치명타·빗나감 사용자 지정 색상, 그리고 자동 공격 전용 움직임을 추가했습니다."
+
+
+-- Auto-attack motion
+L["Same as normal hits"] = "일반 적중과 동일"
+L["Auto-attacks"] = "자동 공격"
+L["Motion used for your normal auto-attack hits, so melee swings can move differently from spells. Auto-attack crits use the Critical hits motion."] =
+    "일반 자동 공격 적중에 쓰는 움직임으로, 근접 공격을 주문과 다르게 움직이게 합니다. 자동 공격 치명타는 치명타 움직임을 사용합니다."
+
+
+-- Spell label
+L["Label"] = "표시 방식"
+L["Name"] = "이름"
+L["Icon"] = "아이콘"
+L["Icon and name"] = "아이콘과 이름"
+L["Spell label"] = "주문 표시"
+L["Show spell label"] = "주문 표시 사용"
+L["Show which spell dealt each hit. Uses the matched cast or auto-attack."] =
+    "각 적중을 어떤 주문이 냈는지 표시합니다. 연결된 시전이나 자동 공격을 사용합니다."
+L["Show which spell dealt each hit. Uses the spell from the combat log."] =
+    "각 적중을 어떤 주문이 냈는지 표시합니다. 전투 기록의 주문을 사용합니다."
+L["Show the spell's icon, its name, or both."] = "주문 아이콘, 주문 이름 또는 둘 다를 표시합니다."
+L["Enable Show spell label to choose the label."] = "표시 방식을 고르려면 주문 표시 사용을 켜세요."
+L["Name position"] = "이름 위치"
+L["Where the spell name sits relative to the number."] = "숫자를 기준으로 한 주문 이름의 위치입니다."
+L["Name size"] = "이름 크기"
+L["Shorten long names"] = "긴 이름 줄이기"
+L["After %d characters"] = "%d자 이후"
+L["The Name label has no icon to place."] = "이름 표시에는 배치할 아이콘이 없습니다."
+L["Enable Show spell label to choose its position."] = "위치를 고르려면 주문 표시 사용을 켜세요."
+
+
+-- Custom colors
+L["Custom colors"] = "사용자 지정 색상"
+L["Pick your own colors for normal hits, crits, and miss text instead of the default yellow."] =
+    "기본 노란색 대신 일반 적중, 치명타, 빗나감 문구의 색상을 직접 고릅니다."
+L["Turn off Color by damage school to pick custom colors."] = "사용자 지정 색상을 고르려면 피해 계열별 색상을 끄세요."
+L["Color of normal damage numbers."] = "일반 피해 숫자의 색상입니다."
+L["Color of critical hit numbers."] = "치명타 숫자의 색상입니다."
+L["Miss text"] = "빗나감 문구"
+L["Color of Miss, Dodge, Immune, and similar text."] = "빗나감, 회피, 면역 등 문구의 색상입니다."
+
+
+-- Outline
+L["Outline"] = "외곽선"
+L["Number style default"] = "숫자 스타일 기본값"
+L["None"] = "없음"
+L["Thin"] = "얇게"
+L["Thick"] = "두껍게"
+L["Text outline. Number style default uses each style's own outline: thick for Classic, thin for Modern and Impact."] =
+    "글자 외곽선입니다. 숫자 스타일 기본값은 각 스타일의 외곽선을 사용합니다. 클래식 스타일은 두껍게, 모던 스타일과 Impact는 얇게 표시됩니다."
+
 L["Display large numbers as 214k or 1.2M."] = "큰 숫자를 214k 또는 1.2M으로 표시합니다."
 L["Display large numbers as 214k or 1.2M. Disables thousand separators."] = "큰 숫자를 214k 또는 1.2M으로 표시합니다. 사용하면 천 단위 구분 기호는 꺼집니다."
 L["Thousand separators"] = "천 단위 구분 기호"
@@ -195,6 +291,7 @@ L["Font"] = "글꼴"
 L["Font size"] = "글꼴 크기"
 L["Scroll offset"] = "스크롤 거리"
 L["Scroll speed"] = "스크롤 속도"
+L["%d%%"] = "%d%%"
 L["Display duration"] = "표시 시간"
 L["Game default"] = "게임 기본값"
 L["Friz Quadrata"] = "Friz Quadrata"
@@ -243,19 +340,48 @@ L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be di
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "공격대와 신화 쐐기돌 던전에서는 일부 피해량의 읽기가 제한됩니다. 이런 피해는 처리를 건너뛰는 대신 화면에서 숨기는 방식으로 기준값을 적용합니다."
 
+-- Combine hits
+L["Combine hits"] = "적중 합치기"
+L["Combine rapid hits"] = "빠른 적중 합치기"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "같은 이름표에 짧은 간격으로 들어온 적중을 여러 개 쌓는 대신 하나의 숫자로 합칩니다."
+L["Combine"] = "합치기 방식"
+L["Same spell"] = "같은 주문"
+L["All hits"] = "모든 적중"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "같은 주문은 주문별 숫자를 따로 표시합니다. 모든 적중은 대상에 대한 모든 적중을 합치며, 아이콘은 가장 많은 피해를 준 주문을 표시합니다."
+L["Combine window"] = "합치기 시간"
+L["%.2fs"] = "%.2f초"
+L["Show hit count"] = "적중 횟수 표시"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] =
+    "합쳐진 적중 횟수를 표시합니다. 예: 37,200 (3). 주문 아이콘을 켜면 횟수가 아이콘 위에 표시됩니다."
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "치명타, 일반 적중, 치유는 각각 따로 합쳐집니다."
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "치명타, 일반 적중, 치유는 각각 따로 합쳐집니다. 일부 피해량은 읽기가 제한되어 더할 수 없으므로 해당 적중은 계속 따로 표시됩니다."
+
 -- Tools
 L["Preview"] = "미리 보기"
 L["Updates live as you change options."] = "옵션을 변경하면 즉시 갱신됩니다."
 L["Target an enemy, then spawn sample numbers on its nameplate."] = "적을 대상으로 선택한 뒤 이름표에 예시 숫자를 표시합니다."
 L["Test on Target"] = "대상에서 테스트"
 L["Show sample damage numbers on your target."] = "현재 대상에 예시 피해 숫자를 표시합니다."
-L["Maintenance"] = "관리"
 L["Debug mode"] = "디버그 모드"
+
+-- Personal splash
+L["Only Engaged nameplates mode, or Personal with Show splash from my casts, shows numbers on enemies you are not targeting. Change it under Modern API → Damage mode."] =
+    "대상이 아닌 적에게 숫자를 표시하는 것은 교전 중인 적의 이름표 모드, 또는 내 주문의 광역 피해 표시를 켠 개인 모드뿐입니다. 모던 API → 피해 모드에서 변경하세요."
+L["Show splash from my casts"] = "내 주문의 광역 피해 표시"
+L["In Personal mode, also show hits on other enemies that land right after your cast hits its target, with the same damage school, on enemies you have threat on."] =
+    "개인 모드에서 주문이 대상에 적중한 직후 다른 적에게 들어온 같은 피해 계열의 적중도, 위협 수준이 있는 적이라면 표시합니다."
+L["Choose Personal - experimental to show splash from your casts."] =
+    "주문의 광역 피해를 표시하려면 개인 피해 - 실험 기능을 선택하세요."
+L["Splash is best effort: another player's same-school hit in that split second can still appear. DoT ticks spread to other enemies and unreadable damage schools are not shown."] =
+    "광역 피해는 최선의 추정입니다. 같은 순간 다른 플레이어의 같은 계열 적중이 표시될 수 있습니다. 다른 적에게 퍼진 지속 피해와 읽을 수 없는 피해 계열은 표시되지 않습니다."
+
 L["Print combat events to chat for troubleshooting."] = "문제 해결을 위해 전투 이벤트를 대화창에 출력합니다."
 L["Dump meter now"] = "측정기 정보 내보내기"
 L["Open a copyable snapshot of C_DamageMeter fields. Use this in combat while hitting a target."] = "복사할 수 있는 C_DamageMeter 필드의 스냅샷을 엽니다. 전투 중 대상을 공격하면서 사용하세요."
-L["Reset Defaults"] = "기본값으로 초기화"
-L["Restore every PlateSCT setting to its default."] = "모든 PlateSCT 설정을 기본값으로 되돌립니다."
 
 -- Language
 L["Language"] = "언어"
@@ -291,6 +417,37 @@ L["Current target: all-source numbers on your target. Engaged nameplates: all-so
     "현재 대상: 현재 대상이 받은 모든 출처의 피해를 표시합니다. 교전 중인 적의 이름표: 교전 중인 적이 받은 모든 출처의 피해를 표시합니다."
 L["Damage meter probe is available. Capture a snapshot while hitting a target."] = "피해량 측정기 점검을 사용할 수 있습니다. 대상을 공격하면서 스냅샷을 수집하세요."
 L["Damage mode"] = "피해 모드"
+
+-- Profiles and welcome
+L["Default"] = "기본"
+L["Clean and minimal: numbers on your target in classic yellow. Every option at its default."] =
+    "깔끔하고 간단하게: 대상에 클래식 노란색 숫자를 표시합니다. 모든 옵션이 기본값입니다."
+L["Extended"] = "확장"
+L["Spell icons and short names, school colors, abbreviated numbers, combined rapid hits, fainter cleave on other enemies, and livelier motion."] =
+    "주문 아이콘과 짧은 이름, 피해 계열 색상, 축약 숫자, 빠른 적중 합치기, 다른 적에게 더 옅게 표시되는 광역 피해, 더 생동감 있는 움직임."
+L["Apply the %s profile? This replaces all PlateSCT settings except the language."] =
+    "%s 프로필을 적용할까요? 언어를 제외한 모든 PlateSCT 설정이 바뀝니다."
+L["Profiles"] = "프로필"
+L["Show welcome screen"] = "환영 화면 보기"
+L["Open the first-install welcome and profile choice again."] = "처음 설치할 때의 환영 화면과 프로필 선택을 다시 엽니다."
+L["A profile replaces all settings except the language. Default restores every setting; Extended adds spell icons and names, school colors, combined hits, and fainter cleave."] =
+    "프로필은 언어를 제외한 모든 설정을 바꿉니다. 기본은 모든 설정을 되돌리고, 확장은 주문 아이콘과 이름, 피해 계열 색상, 적중 합치기, 더 옅은 광역 피해를 추가합니다."
+L["Apply %s profile"] = "%s 프로필 적용"
+L["%s profile applied. Type /psct to customize it."] = "%s 프로필을 적용했습니다. /psct를 입력해 사용자 지정하세요."
+L["Welcome to PlateSCT"] = "PlateSCT에 오신 것을 환영합니다"
+L["PlateSCT puts your damage numbers on enemy nameplates, so every hit shows up right where it landed."] =
+    "PlateSCT는 적의 이름표에 피해 숫자를 표시해, 모든 적중이 맞은 자리에 바로 나타나게 합니다."
+L["It keeps busy fights readable: rapid hits combine, small hits fade back, and crits stand out."] =
+    "치열한 전투도 읽기 쉽게 유지합니다. 빠른 적중은 합쳐지고, 작은 적중은 뒤로 물러나며, 치명타는 돋보입니다."
+L["It works on Midnight and on Classic clients, within each game version's combat rules."] =
+    "Midnight와 클래식 클라이언트에서 각 게임 버전의 전투 규칙 안에서 작동합니다."
+L["Note: Blizzard's new addon rules hide who dealt each hit, so some numbers can be credited to the wrong source or missed."] =
+    "참고: 블리자드의 새 애드온 규칙으로 각 적중을 누가 냈는지 숨겨져, 일부 숫자는 잘못된 출처로 표시되거나 누락될 수 있습니다."
+L["Choose a starting profile. You can change every setting later."] =
+    "시작 프로필을 고르세요. 모든 설정은 나중에 바꿀 수 있습니다."
+L["Open settings instead"] = "대신 설정 열기"
+L["Keep the Default profile and open the settings window."] = "기본 프로필을 유지하고 설정 창을 엽니다."
+
 L["Damage threshold"] = "피해 기준값"
 L["Diagnostics"] = "진단"
 L["Enable Auto-switch by instance to edit the instance profiles."] = "인스턴스 프로필을 수정하려면 '인스턴스별 자동 전환'을 켜세요."
@@ -374,3 +531,15 @@ L["Your WoW API"] = "내 WoW API"
 -- Translation feedback
 L["This translation was generated with AI. If you find inconsistent terminology or incorrect wording, please report it through GitHub Issues. Thank you for your help! Translation contributors will be credited."] =
     "이 번역은 AI로 생성되었습니다. 용어가 일관되지 않거나 표현이 부정확한 부분을 발견하면 GitHub Issues에 알려 주세요. 도와주셔서 감사합니다! 번역에 기여하신 분의 이름을 명시해 감사의 뜻을 전하겠습니다."
+
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "같은 이름표에 빠르게 들어온 적중을 하나의 증가하는 숫자와 적중 횟수로 합칠 수 있습니다. 전투 → 적중 합치기에서 켜세요."
+
+-- Reduce clutter
+L["Reduce clutter"] = "화면 정리"
+
+-- Combine hits: merge pop
+L["Pop on each merge"] = "합칠 때마다 튀어나오기"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "다른 적중이 합쳐질 때마다 숫자를 잠깐 키웁니다. 더 차분하게 보려면 끄세요."

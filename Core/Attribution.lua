@@ -318,6 +318,62 @@ local function CanUseAutoAttackFallback(now, strict)
     return true
 end
 
+-- Splash (opt-in, personalSplash): UNIT_COMBAT has no source, so a hit on another enemy is
+-- credited to you only when it lands within SPLASH_WINDOW of a cast confirmed on its own
+-- target, has exactly that hit's damage school, and you are on the enemy's threat table.
+-- Each confirmed cast covers at most SPLASH_HITS such hits. Unreadable schools never match.
+local anchors = {}
+
+local function ReadableSchool(schoolMask)
+    if type(schoolMask) ~= "number" or BD.IsSecret(schoolMask) or not BD.CanAccessValue(schoolMask) then
+        return nil
+    end
+    return schoolMask
+end
+
+local function NoteSplashAnchor(unit, spellID, schoolMask, now)
+    local school = ReadableSchool(schoolMask)
+    if not school then
+        return
+    end
+    while anchors[1] and (now - anchors[1].at) > BD.SPLASH_WINDOW do
+        table.remove(anchors, 1)
+    end
+    anchors[#anchors + 1] = {
+        spellID = spellID,
+        school = school,
+        at = now,
+        splashLeft = BD.SPLASH_HITS,
+        plate = BD.GetNamePlateFrame(unit),
+    }
+end
+
+--- Returns the spellID of a recent confirmed cast this hit splashed from, or nil.
+function BD:MatchSplashHit(unit, schoolMask)
+    BD.API.AssertModern("Attribution.MatchSplashHit")
+    local school = ReadableSchool(schoolMask)
+    if not school then
+        return nil
+    end
+    local plate = BD.GetNamePlateFrame(unit)
+    local now = GetTime()
+    for index = #anchors, 1, -1 do
+        local anchor = anchors[index]
+        if (now - anchor.at) > BD.SPLASH_WINDOW then
+            break
+        end
+        -- The anchor's own plate is handled by normal matching, never as splash.
+        if anchor.splashLeft > 0 and anchor.school == school and anchor.plate ~= plate then
+            if not self:PlayerIsEngagedWith(unit) then
+                return nil
+            end
+            anchor.splashLeft = anchor.splashLeft - 1
+            return anchor.spellID
+        end
+    end
+    return nil
+end
+
 --- Returns spellID, usedAuto (or nil if no match).
 function BD:MatchOutgoingHit(unit, schoolMask)
     BD.API.AssertModern("Attribution.MatchOutgoingHit")
@@ -325,6 +381,7 @@ function BD:MatchOutgoingHit(unit, schoolMask)
     local strict = self:GetActiveStrictness()
     local spellID = TryMatchPending(unit, now, strict)
     if spellID then
+        NoteSplashAnchor(unit, spellID, schoolMask, now)
         return spellID, false
     end
 
@@ -353,7 +410,9 @@ function BD:PlayerIsEngagedWith(unit)
     if not ok then
         return true
     end
-    if not BD.CanAccessValue(status) then
+    -- A secret status cannot be read, so allow it. nil means you are not on the threat table:
+    -- check secrets first, since comparing a secret raises an error.
+    if BD.IsSecret(status) then
         return true
     end
     return status ~= nil
@@ -365,5 +424,6 @@ function BD:ClearAttributionState()
         pending[index] = nil
     end
     wipe(castMeta)
+    wipe(anchors)
     lastAutoAttackFallbackTime = 0
 end

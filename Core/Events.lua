@@ -1,6 +1,7 @@
 local _, BD = ...
 
-function BD:ResetToDefaults()
+-- overrides: settings applied on top of the defaults (a profile), before anything refreshes.
+function BD:ResetToDefaults(overrides)
     for key, value in pairs(self.DEFAULTS) do
         if type(value) == "table" then
             if type(self.db[key]) ~= "table" then
@@ -10,6 +11,9 @@ function BD:ResetToDefaults()
         else
             self.db[key] = value
         end
+    end
+    for key, value in pairs(overrides or {}) do
+        self.db[key] = value
     end
     self:ApplyLocale()
     self:RebuildThresholdCurve()
@@ -28,6 +32,28 @@ function BD:ResetToDefaults()
     if self.RefreshMinimapButton then
         self:RefreshMinimapButton()
     end
+end
+
+function BD.GetProfile(id)
+    for _, profile in ipairs(BD.PROFILES) do
+        if profile.id == id then
+            return profile
+        end
+    end
+    return nil
+end
+
+-- A profile is a full reset to defaults plus the profile's own settings.
+-- The language choice is a preference, not part of a look, so it is kept.
+function BD:ApplyProfile(id)
+    local profile = BD.GetProfile(id) or BD.PROFILES[1]
+    local overrides = { locale = self.db.locale }
+    for key, value in pairs(profile.settings) do
+        overrides[key] = value
+    end
+    self:ResetToDefaults(overrides)
+    self:DebugPrint("profile applied", profile.id)
+    return profile
 end
 
 local function ApplyLayoutMigrations()
@@ -148,11 +174,17 @@ end
 local eventFrame = CreateFrame("Frame")
 eventFrame:SetScript("OnEvent", function(_, event, ...)
     if event == "PLAYER_LOGIN" then
+        -- No saved settings at all (not even legacy BetterDamage ones): a fresh install.
+        local firstInstall = not PlateSCTDB and not BetterDamageDB
         if not PlateSCTDB and BetterDamageDB then
             PlateSCTDB = BetterDamageDB
         end
         PlateSCTDB = BD.CopyDefaults(PlateSCTDB or {}, BD.DEFAULTS)
         BD.db = PlateSCTDB
+        if firstInstall then
+            -- Cleared once the welcome screen is answered or closed, so a /reload keeps it pending.
+            BD.db.welcomePending = true
+        end
         ApplyLayoutMigrations()
         BD:ApplyLocale()
         BD:RebuildThresholdCurve()
@@ -182,6 +214,12 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
             C_Timer.After(0, function()
                 BD:ApplyBlizzardFCTSetting()
             end)
+            if BD.db.welcomePending and BD.ShowWelcomeWhenReady then
+                -- Give the loading screen a moment to clear.
+                C_Timer.After(2, function()
+                    BD:ShowWelcomeWhenReady()
+                end)
+            end
         end
         return
     end

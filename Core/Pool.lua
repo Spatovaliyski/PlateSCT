@@ -41,12 +41,9 @@ local function IsClassicStyleFrame(frame)
     return frame.usesClassicShove and frame.animMode == "classicPow" and frame.classicReady
 end
 
-local function PushDamageSample(amount)
-    if not amount or not BD.CanAccessValue(amount) or amount <= 0 then
-        return
-    end
+-- Average of the most recent readable hits; 0 once they have all aged out.
+local function RecentDamageAverage()
     local now = GetTime()
-    damageSamples[#damageSamples + 1] = { amount = amount, time = now }
     for index = #damageSamples, 1, -1 do
         if (now - damageSamples[index].time) > ROLLING_AVERAGE_MAX_AGE then
             table.remove(damageSamples, index)
@@ -58,17 +55,33 @@ local function PushDamageSample(amount)
         total = total + damageSamples[index].amount
         count = count + 1
     end
-    if count > 0 then
-        rollingDamageAverage = total / count
-    end
+    rollingDamageAverage = count > 0 and total / count or 0
+    return rollingDamageAverage
 end
 
-function BD.ComputeClassicAmountScale(amount)
+local function PushDamageSample(amount)
+    if not amount or not BD.CanAccessValue(amount) or amount <= 0 then
+        return
+    end
+    damageSamples[#damageSamples + 1] = { amount = amount, time = GetTime() }
+    RecentDamageAverage()
+end
+
+BD.PushDamageSample = PushDamageSample
+BD.GetRecentDamageAverage = RecentDamageAverage
+
+-- isPreview: settings-preview samples are scaled against real damage but never join the average.
+function BD.ComputeClassicAmountScale(amount, isPreview)
     if not amount or not BD.CanAccessValue(amount) or amount <= 0 then
         return 1
     end
-    PushDamageSample(amount)
-    local average = rollingDamageAverage
+    local average
+    if isPreview then
+        average = RecentDamageAverage()
+    else
+        PushDamageSample(amount)
+        average = rollingDamageAverage
+    end
     if not average or average <= 0 then
         return 1
     end
@@ -456,12 +469,18 @@ local function ReleaseFrame(frame)
     frame.icon:SetTexture(nil)
     frame.icon:Hide()
     frame.icon:ClearAllPoints()
+    frame.iconCount:SetText("")
+    frame.iconCount:Hide()
     if frame.critLabel then
         frame.critLabel:SetText("")
         frame.critLabel:SetAlpha(1)
         frame.critLabel:Hide()
         frame.critLabel:ClearAllPoints()
     end
+    frame.nameLabel:SetText("")
+    frame.nameLabel:Hide()
+    frame.nameLabel:ClearAllPoints()
+    frame.nameExtent = nil
     frame.isPreview = nil
     frame.anchor = nil
     frame.unitToken = nil
@@ -486,6 +505,15 @@ local function ReleaseFrame(frame)
     frame.lingerWorldX = nil
     frame.lingerWorldY = nil
     frame.anchorGuid = nil
+    frame.combineKey = nil
+    frame.combineTotal = nil
+    frame.combineCount = nil
+    frame.combineLayout = nil
+    frame.combinePulseAt = nil
+    frame.combineSources = nil
+    frame.combineTopIcon = nil
+    frame.combineSoundTier = nil
+    frame.labelName = nil
     if frame.lingerHost then
         ReleaseLingerHost(frame.lingerHost)
         frame.lingerHost = nil
@@ -964,6 +992,15 @@ end
 
 local function ApplyFrameMotion(frame)
     local x, y, scale, alpha = ComputeMotion(frame)
+    -- Combined hit landed: brief scale pulse so the growing total reads as new damage.
+    if frame.combinePulseAt then
+        local t = (frame.elapsed - frame.combinePulseAt) / BD.COMBINE_PULSE_DURATION
+        if t < 1 then
+            scale = scale * (1 + BD.COMBINE_PULSE_SCALE * (1 - t))
+        else
+            frame.combinePulseAt = nil
+        end
+    end
     if frame.classicReady or frame.animMode == "impactSlam" then
         -- Keep placement in logical pixels while text size changes.
         frame:SetScale(scale)
@@ -1035,9 +1072,22 @@ local function CreatePooledFrame()
     icon:Hide()
     frame.icon = icon
 
+    -- Combined hit count, drawn on the icon like an aura stack number.
+    local iconCount = frame:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+    iconCount:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", 2, -2)
+    iconCount:SetJustifyH("RIGHT")
+    iconCount:Hide()
+    frame.iconCount = iconCount
+
     local critLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
     critLabel:Hide()
     frame.critLabel = critLabel
+
+    -- Spell name label, sized and placed apart from the number.
+    local nameLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+    nameLabel:SetWordWrap(false)
+    nameLabel:Hide()
+    frame.nameLabel = nameLabel
 
     frame.elapsed = 0
     frame.duration = 1
