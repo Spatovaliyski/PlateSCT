@@ -259,6 +259,22 @@ L["Restore every PlateSCT setting to its default."] = "모든 PlateSCT 설정을
 
 -- Language
 L["Language"] = "언어"
+
+-- Killing blow sound
+L["Sound"] = "소리"
+L["PlateSCT crit sound"] = "PlateSCT 치명타 소리"
+L["PlateSCT huge crit sound"] = "PlateSCT 큰 치명타 소리"
+L["Raid warning"] = "공격대 경보"
+L["Ready check"] = "전투 준비"
+L["Quest complete"] = "퀘스트 완료"
+L["Killing blow sound"] = "결정타 소리"
+L["Enable killing blow sound"] = "결정타 소리 사용"
+L["Play a sound when you or your pet land the killing blow on an enemy."] =
+    "자신 또는 소환수가 적에게 결정타를 날리면 소리를 재생합니다."
+L["Enable killing blow sound to choose the sound and channel."] = "소리와 채널을 고르려면 결정타 소리를 켜세요."
+L["Which sound plays on a killing blow."] = "결정타 때 재생할 소리입니다."
+L["Play killing blow sound"] = "결정타 소리 재생"
+
 L["Choose the language used by PlateSCT panels and messages."] = "PlateSCT 패널과 메시지에 사용할 언어를 선택합니다."
 L["Auto"] = "자동"
 

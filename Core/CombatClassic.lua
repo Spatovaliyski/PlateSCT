@@ -424,6 +424,14 @@ function BD:HandleClassicCombatLog()
         return
     end
 
+    -- PARTY_KILL: sourceGUID landed the killing blow. Yours, or your pet's when pet damage is on.
+    if subEvent == "PARTY_KILL" then
+        if self.db.killSoundEnabled and IsAllowedSource(sourceGUID, sourceFlags) then
+            self:PlayKillSound()
+        end
+        return
+    end
+
     if SWING_SUBEVENTS[subEvent] then
         HandleSwing(subEvent, sourceGUID, sourceFlags, destGUID, arg12, arg13, arg14, arg15, arg16, arg17, arg18)
         return

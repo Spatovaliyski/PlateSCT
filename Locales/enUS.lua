@@ -295,6 +295,22 @@ L["Restore every PlateSCT setting to its default."] = "Restore every PlateSCT se
 
 -- Language
 L["Language"] = "Language"
+
+-- Killing blow sound
+L["Sound"] = "Sound"
+L["PlateSCT crit sound"] = "PlateSCT crit sound"
+L["PlateSCT huge crit sound"] = "PlateSCT huge crit sound"
+L["Raid warning"] = "Raid warning"
+L["Ready check"] = "Ready check"
+L["Quest complete"] = "Quest complete"
+L["Killing blow sound"] = "Killing blow sound"
+L["Enable killing blow sound"] = "Enable killing blow sound"
+L["Play a sound when you or your pet land the killing blow on an enemy."] =
+    "Play a sound when you or your pet land the killing blow on an enemy."
+L["Enable killing blow sound to choose the sound and channel."] = "Enable killing blow sound to choose the sound and channel."
+L["Which sound plays on a killing blow."] = "Which sound plays on a killing blow."
+L["Play killing blow sound"] = "Play killing blow sound"
+
 L["Choose the language used by PlateSCT panels and messages."] =
     "Choose the language used by PlateSCT panels and messages."
 L["Auto"] = "Auto"

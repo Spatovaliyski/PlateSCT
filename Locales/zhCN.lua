@@ -251,6 +251,22 @@ L["Restore every PlateSCT setting to its default."] = "将所有 PlateSCT 设置
 
 -- Language
 L["Language"] = "语言"
+
+-- Killing blow sound
+L["Sound"] = "音效"
+L["PlateSCT crit sound"] = "PlateSCT 暴击音效"
+L["PlateSCT huge crit sound"] = "PlateSCT 巨额暴击音效"
+L["Raid warning"] = "团队警告"
+L["Ready check"] = "就位确认"
+L["Quest complete"] = "任务完成"
+L["Killing blow sound"] = "击杀音效"
+L["Enable killing blow sound"] = "启用击杀音效"
+L["Play a sound when you or your pet land the killing blow on an enemy."] =
+    "当你或你的宠物对敌人造成击杀时播放音效。"
+L["Enable killing blow sound to choose the sound and channel."] = "启用击杀音效后才能选择音效和声道。"
+L["Which sound plays on a killing blow."] = "击杀时播放的音效。"
+L["Play killing blow sound"] = "播放击杀音效"
+
 L["Choose the language used by PlateSCT panels and messages."] = "选择 PlateSCT 面板和消息使用的语言。"
 L["Auto"] = "自动"
 

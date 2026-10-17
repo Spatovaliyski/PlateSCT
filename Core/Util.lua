@@ -313,6 +313,50 @@ function BD:PlayCritSoundPreview(kind)
     pcall(PlaySoundFile, path, ResolveSoundChannel(channel))
 end
 
+-- Killing-blow sounds (Classic API): the bundled crit sounds plus game sounds the client provides.
+BD.KILL_SOUNDS = {
+    { id = "critical", labelKey = "PlateSCT crit sound", file = CRIT_SOUND_PATH },
+    { id = "hugeCritical", labelKey = "PlateSCT huge crit sound", file = HUGE_CRIT_SOUND_PATH },
+    { id = "raidWarning", labelKey = "Raid warning", kit = "RAID_WARNING" },
+    { id = "readyCheck", labelKey = "Ready check", kit = "READY_CHECK" },
+    { id = "questComplete", labelKey = "Quest complete", kit = "IG_QUEST_LIST_COMPLETE" },
+}
+
+local function KillSoundAvailable(entry)
+    return entry.file ~= nil or (SOUNDKIT ~= nil and SOUNDKIT[entry.kit] ~= nil)
+end
+
+function BD.GetKillSoundOptions()
+    local options = {}
+    for _, entry in ipairs(BD.KILL_SOUNDS) do
+        if KillSoundAvailable(entry) then
+            options[#options + 1] = entry
+        end
+    end
+    return options
+end
+
+function BD:PlayKillSound()
+    local choice = self.db and self.db.killSound
+    local entry
+    for _, candidate in ipairs(BD.GetKillSoundOptions()) do
+        entry = entry or candidate
+        if candidate.id == choice then
+            entry = candidate
+            break
+        end
+    end
+    if not entry then
+        return
+    end
+    local channel = ResolveSoundChannel(self.db and self.db.killSoundChannel)
+    if entry.file then
+        pcall(PlaySoundFile, entry.file, channel)
+    else
+        pcall(PlaySound, SOUNDKIT[entry.kit], channel)
+    end
+end
+
 local THOUSAND_SEPARATOR_CHARS = {
     comma = ",",
     dot = ".",

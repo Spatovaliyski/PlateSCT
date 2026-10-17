@@ -188,6 +188,22 @@ L["Restore every PlateSCT setting to its default."] =
 
 -- Language
 L["Language"] = "Язык"
+
+-- Killing blow sound
+L["Sound"] = "Звук"
+L["PlateSCT crit sound"] = "Звук крита PlateSCT"
+L["PlateSCT huge crit sound"] = "Звук огромного крита PlateSCT"
+L["Raid warning"] = "Объявление рейда"
+L["Ready check"] = "Проверка готовности"
+L["Quest complete"] = "Задание выполнено"
+L["Killing blow sound"] = "Звук смертельного удара"
+L["Enable killing blow sound"] = "Включить звук смертельного удара"
+L["Play a sound when you or your pet land the killing blow on an enemy."] =
+    "Проигрывать звук, когда вы или ваш питомец наносите смертельный удар врагу."
+L["Enable killing blow sound to choose the sound and channel."] = "Включите звук смертельного удара, чтобы выбрать звук и канал."
+L["Which sound plays on a killing blow."] = "Какой звук играет при смертельном ударе."
+L["Play killing blow sound"] = "Проиграть звук смертельного удара"
+
 L["Choose the language used by PlateSCT panels and messages."] =
     "Выберите язык панелей и сообщений PlateSCT."
 L["Auto"] = "Авто"

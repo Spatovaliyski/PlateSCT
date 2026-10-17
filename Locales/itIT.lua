@@ -188,6 +188,22 @@ L["Restore every PlateSCT setting to its default."] =
 
 -- Language
 L["Language"] = "Lingua"
+
+-- Killing blow sound
+L["Sound"] = "Suono"
+L["PlateSCT crit sound"] = "Suono critico PlateSCT"
+L["PlateSCT huge crit sound"] = "Suono critico enorme PlateSCT"
+L["Raid warning"] = "Avviso dell'incursione"
+L["Ready check"] = "Appello"
+L["Quest complete"] = "Missione completata"
+L["Killing blow sound"] = "Suono del colpo di grazia"
+L["Enable killing blow sound"] = "Attiva suono del colpo di grazia"
+L["Play a sound when you or your pet land the killing blow on an enemy."] =
+    "Riproduce un suono quando tu o il tuo famiglio infliggete il colpo di grazia a un nemico."
+L["Enable killing blow sound to choose the sound and channel."] = "Attiva il suono del colpo di grazia per scegliere suono e canale."
+L["Which sound plays on a killing blow."] = "Quale suono viene riprodotto con un colpo di grazia."
+L["Play killing blow sound"] = "Riproduci suono del colpo di grazia"
+
 L["Choose the language used by PlateSCT panels and messages."] =
     "Scegli la lingua dei pannelli e dei messaggi di PlateSCT."
 L["Auto"] = "Auto"

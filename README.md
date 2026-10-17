@@ -14,6 +14,7 @@ PlateSCT displays outgoing combat numbers on nameplates and supports incoming pl
 - Configurable fonts, colors, critical-hit presentation, and damage thresholds.
 - Animation options, including fountain and rainfall motion, with settings previews.
 - Classic API client support for player and pet combat-log events, with spell icons taken from combat-log spell IDs.
+- An optional killing-blow sound on Classic API clients, for your kills and your pet's.
 - Modern API client attribution and school-filter settings.
 - English, French, German, Spanish, Russian, Italian, and Brazilian Portuguese localization.
 

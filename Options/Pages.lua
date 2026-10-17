@@ -265,6 +265,22 @@ local function BuildSounds(parent, root)
     layout:Action("playHugeCrit", L["Play huge crit sound"], L["Preview this sound effect."], function()
         BD:PlayCritSoundPreview("huge")
     end)
+
+    -- Classic API only: Modern combat data does not report who landed the killing blow.
+    if not IsModernAPI() then
+        layout:Heading(L["Killing blow sound"])
+        layout:Checkbox("killSoundEnabled", L["Enable killing blow sound"],
+            L["Play a sound when you or your pet land the killing blow on an enemy."])
+        local killEnabled = function() return BD.db.killSoundEnabled end
+        local killReason = L["Enable killing blow sound to choose the sound and channel."]
+        layout:Choice("killSound", L["Sound"], BD.GetKillSoundOptions,
+            L["Which sound plays on a killing blow."], killEnabled, nil, killReason)
+        layout:Choice("killSoundChannel", L["Channel"], BD.SOUND_CHANNELS,
+            L["Which game sound channel plays this effect."], killEnabled, nil, killReason)
+        layout:Action("playKill", L["Play killing blow sound"], L["Preview this sound effect."], function()
+            BD:PlayKillSound()
+        end)
+    end
     layout:Finish()
 end
 
