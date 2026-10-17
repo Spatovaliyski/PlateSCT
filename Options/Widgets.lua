@@ -403,7 +403,7 @@ local function ShowFontPreview(menu, entry)
     end
     local preset = BD:GetStylePreset()
     local size = (BD.db.fontSize or BD.DEFAULTS.fontSize) * preset.fontScale
-    BD.SafeSetFont(preview.number, BD.ResolveFontPath(entry.optionId), size, preset.fontFlags)
+    BD.SafeSetFont(preview.number, BD.ResolveFontPath(entry.optionId), size, BD:GetFontFlags(preset))
     local shadow = preset.shadowOffset
     preview.number:SetShadowOffset(shadow and shadow[1] or 0, shadow and shadow[2] or 0)
     preview.number:SetShadowColor(0, 0, 0, 1)
@@ -855,6 +855,57 @@ function W.NewLayout(parent, root, pageId, tabId, width)
         return control
     end
 
+    -- Color swatch bound to an "RRGGBB" setting; clicking opens the game's color picker.
+    function layout:Color(key, label, tip, enabledPredicate, onChanged, disabledReason)
+        local row, caption, reason, _, y = self:NewRow(label, 40, disabledReason)
+        local control = CreateFrame("Button", nil, row, "BackdropTemplate")
+        control:SetSize(48, 22)
+        control:SetPoint("TOPRIGHT", -10, -9)
+        W.Backdrop(control, "control")
+        local swatch = control:CreateTexture(nil, "OVERLAY")
+        swatch:SetPoint("TOPLEFT", 3, -3)
+        swatch:SetPoint("BOTTOMRIGHT", -3, 3)
+        control.layoutType = "color"
+        self:Register(control, key, row, caption, reason, y, tip, enabledPredicate, onChanged, disabledReason)
+        local function Pick(r, g, b)
+            local hex = BD.RGBToHex(r, g, b)
+            if hex ~= GetBinding(key) then Changed(root, key, hex, onChanged) end
+        end
+        control:SetScript("OnClick", function(self)
+            if not self:IsEnabled() then return end
+            root:DismissTransient()
+            local r, g, b = BD.HexToRGB(GetBinding(key))
+            local function Apply()
+                Pick(ColorPickerFrame:GetColorRGB())
+            end
+            local function Cancel()
+                Pick(r, g, b)
+            end
+            if ColorPickerFrame.SetupColorPickerAndShow then
+                ColorPickerFrame:SetupColorPickerAndShow({
+                    r = r, g = g, b = b, hasOpacity = false, swatchFunc = Apply, cancelFunc = Cancel,
+                })
+            else
+                -- Older clients: the pre-10.2.5 picker fields.
+                ColorPickerFrame.hasOpacity = false
+                ColorPickerFrame.previousValues = { r, g, b }
+                ColorPickerFrame.func, ColorPickerFrame.cancelFunc = Apply, Cancel
+                ColorPickerFrame:SetColorRGB(r, g, b)
+                ColorPickerFrame:Hide()
+                ColorPickerFrame:Show()
+            end
+            -- Same DIALOG strata as the settings window: bring the picker in front of it.
+            if ColorPickerFrame.Raise then ColorPickerFrame:Raise() end
+        end)
+        function control:Refresh()
+            swatch:SetColorTexture(BD.HexToRGB(GetBinding(key)))
+            SetAvailable(self)
+            swatch:SetAlpha(self:IsEnabled() and 1 or 0.35)
+        end
+        control:Refresh()
+        return control
+    end
+
     function layout:Reflow()
         local y = -16
         for _, row in ipairs(self.rows) do
@@ -891,7 +942,7 @@ function W.NewLayout(parent, root, pageId, tabId, width)
                         control:SetPoint("TOPRIGHT", -14, -15 - readoutHeight)
                         control:SetWidth(controlWidth - 8)
                         height = math.max(height, readoutHeight + 42)
-                    elseif control.layoutType then
+                    elseif control.layoutType and control.layoutType ~= "color" then
                         control:SetWidth(controlWidth)
                     end
                     if row.layoutReason then

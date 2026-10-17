@@ -175,6 +175,62 @@ L["Top"] = "上方"
 L["Bottom"] = "下方"
 L["Text style"] = "文字樣式"
 L["Abbreviate numbers"] = "縮寫數字"
+
+-- What's new: labels and colors
+L["Labels and colors"] = "標籤與顏色"
+L["Spell names next to numbers, a text outline choice, custom hit, crit, and miss colors, and a separate auto-attack motion."] =
+    "數字旁顯示法術名稱、可選文字描邊、自訂命中／致命一擊／未命中顏色，以及獨立的自動攻擊移動效果。"
+
+
+-- Auto-attack motion
+L["Same as normal hits"] = "與一般命中相同"
+L["Auto-attacks"] = "自動攻擊"
+L["Motion used for your normal auto-attack hits, so melee swings can move differently from spells. Auto-attack crits use the Critical hits motion."] =
+    "你的一般自動攻擊命中所使用的移動效果，讓近戰揮擊與法術區分開。自動攻擊致命一擊使用致命一擊的移動效果。"
+
+
+-- Spell label
+L["Label"] = "標籤"
+L["Name"] = "名稱"
+L["Icon"] = "圖示"
+L["Icon and name"] = "圖示和名稱"
+L["Spell label"] = "法術標籤"
+L["Show spell label"] = "顯示法術標籤"
+L["Show which spell dealt each hit. Uses the matched cast or auto-attack."] =
+    "顯示每次命中來自哪個法術。使用配對到的施法或自動攻擊。"
+L["Show which spell dealt each hit. Uses the spell from the combat log."] =
+    "顯示每次命中來自哪個法術。使用戰鬥紀錄中的法術。"
+L["Show the spell's icon, its name, or both."] = "顯示法術圖示、法術名稱，或兩者都顯示。"
+L["Enable Show spell label to choose the label."] = "開啟「顯示法術標籤」後才能選擇標籤。"
+L["Name position"] = "名稱位置"
+L["Where the spell name sits relative to the number."] = "法術名稱相對於數字的位置。"
+L["Name size"] = "名稱大小"
+L["Shorten long names"] = "縮短長名稱"
+L["After %d characters"] = "超過 %d 個字元"
+L["The Name label has no icon to place."] = "「名稱」標籤沒有可放置的圖示。"
+L["Enable Show spell label to choose its position."] = "開啟「顯示法術標籤」後才能選擇位置。"
+
+
+-- Custom colors
+L["Custom colors"] = "自訂顏色"
+L["Pick your own colors for normal hits, crits, and miss text instead of the default yellow."] =
+    "為一般命中、致命一擊和未命中文字選擇自己的顏色，取代預設黃色。"
+L["Turn off Color by damage school to pick custom colors."] = "關閉「依傷害類型著色」後才能選擇自訂顏色。"
+L["Color of normal damage numbers."] = "一般傷害數字的顏色。"
+L["Color of critical hit numbers."] = "致命一擊數字的顏色。"
+L["Miss text"] = "未命中文字"
+L["Color of Miss, Dodge, Immune, and similar text."] = "未命中、閃躲、免疫等文字的顏色。"
+
+
+-- Outline
+L["Outline"] = "描邊"
+L["Number style default"] = "數字樣式預設"
+L["None"] = "無"
+L["Thin"] = "細"
+L["Thick"] = "粗"
+L["Text outline. Number style default uses each style's own outline: thick for Classic, thin for Modern and Impact."] =
+    "文字描邊。「數字樣式預設」使用各樣式自帶的描邊：經典樣式為粗描邊，現代樣式和 Impact 為細描邊。"
+
 L["Display large numbers as 214k or 1.2M."] = "將大數字顯示為 214k 或 1.2M。"
 L["Display large numbers as 214k or 1.2M. Disables thousand separators."] = "將大數字顯示為 214k 或 1.2M。啟用後會關閉千位分隔符號。"
 L["Thousand separators"] = "千位分隔符號"
@@ -188,6 +244,7 @@ L["Font"] = "字型"
 L["Font size"] = "字型大小"
 L["Scroll offset"] = "捲動距離"
 L["Scroll speed"] = "捲動速度"
+L["%d%%"] = "%d%%"
 L["Display duration"] = "顯示時間"
 L["Game default"] = "遊戲預設"
 L["Friz Quadrata"] = "Friz Quadrata"
@@ -234,6 +291,26 @@ L["Hits below this amount are hidden. Type 50k or 2m. Set to 0 to show everythin
 L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be displayed."] = "支援 k/m 後綴，例如 20k 或 2m。低於此值的傷害不會顯示。"
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "在團隊副本和傳奇鑰石地城中，部分傷害數值受限，因此門檻篩選會在畫面上隱藏這些命中，而非跳過處理。"
+
+-- Combine hits
+L["Combine hits"] = "合併命中"
+L["Combine rapid hits"] = "合併快速命中"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "將短時間內連續落在同一名條上的命中合併為一個數字，而不是堆疊多個數字。"
+L["Combine"] = "合併方式"
+L["Same spell"] = "同一法術"
+L["All hits"] = "全部命中"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "「同一法術」會讓每個法術的數字分開顯示。「全部命中」會合併目標身上的所有命中，圖示顯示造成最多傷害的法術。"
+L["Combine window"] = "合併時間範圍"
+L["%.2fs"] = "%.2f秒"
+L["Show hit count"] = "顯示命中次數"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] =
+    "顯示合併了多少次命中，例如 37,200 (3)。開啟法術圖示時，次數會顯示在圖示上。"
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "致命一擊、一般命中和治療會分別合併。"
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "致命一擊、一般命中和治療會分別合併。部分數值受限，無法相加，因此這些命中仍會個別顯示。"
 
 -- Tools
 L["Preview"] = "預覽"
@@ -360,3 +437,15 @@ L["Your WoW API"] = "目前 WoW API"
 -- Translation feedback
 L["This translation was generated with AI. If you find inconsistent terminology or incorrect wording, please report it through GitHub Issues. Thank you for your help! Translation contributors will be credited."] =
     "此翻譯由 AI 產生。如果發現術語不一致或用詞不正確，請透過 GitHub Issues 回報。感謝你的協助！翻譯貢獻者將獲得署名致謝。"
+
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "同一名條上的快速命中可合併為一個持續增長的數字，並顯示命中次數。在「戰鬥」→「合併命中」中開啟。"
+
+-- Reduce clutter
+L["Reduce clutter"] = "減少雜亂"
+
+-- Combine hits: merge pop
+L["Pop on each merge"] = "每次合併時彈跳"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "每當有新的命中合併進來時短暫放大數字。關閉可獲得更平靜的顯示。"

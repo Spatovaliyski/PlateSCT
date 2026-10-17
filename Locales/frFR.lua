@@ -128,6 +128,68 @@ L["Uses your last spell in Only my damage mode. Left of the number."] =
     "Utilise votre dernier sort en mode « Uniquement mes dégâts ». À gauche du nombre."
 L["Text style"] = "Style du texte"
 L["Abbreviate numbers"] = "Abréger les nombres"
+
+-- What's new: labels and colors
+L["Labels and colors"] = "Étiquettes et couleurs"
+L["Spell names next to numbers, a text outline choice, custom hit, crit, and miss colors, and a separate auto-attack motion."] =
+    "Noms des sorts à côté des nombres, choix du contour du texte, couleurs personnalisées pour les coups, critiques et échecs, et mouvement distinct pour les attaques automatiques."
+
+
+-- Auto-attack motion
+L["Same as normal hits"] = "Comme les coups normaux"
+L["Auto-attacks"] = "Attaques automatiques"
+L["Motion used for your normal auto-attack hits, so melee swings can move differently from spells. Auto-attack crits use the Critical hits motion."] =
+    "Mouvement des coups normaux de votre attaque automatique, pour distinguer les coups de mêlée des sorts. Les critiques d'attaque automatique utilisent le mouvement des coups critiques."
+
+
+-- Spell label
+L["Label"] = "Étiquette"
+L["Top"] = "Haut"
+L["Bottom"] = "Bas"
+L["Name"] = "Nom"
+L["Left"] = "Gauche"
+L["Icon"] = "Icône"
+L["Right"] = "Droite"
+L["Icon and name"] = "Icône et nom"
+L["Spell label"] = "Étiquette du sort"
+L["Show spell label"] = "Afficher l'étiquette du sort"
+L["Show which spell dealt each hit. Uses the matched cast or auto-attack."] =
+    "Indique quel sort a infligé chaque coup. Utilise le sort associé ou l'attaque automatique."
+L["Show which spell dealt each hit. Uses the spell from the combat log."] =
+    "Indique quel sort a infligé chaque coup. Utilise le sort du journal de combat."
+L["Show the spell's icon, its name, or both."] = "Affiche l'icône du sort, son nom, ou les deux."
+L["Enable Show spell label to choose the label."] = "Activez Afficher l'étiquette du sort pour choisir l'étiquette."
+L["Name position"] = "Position du nom"
+L["Where the spell name sits relative to the number."] = "Position du nom du sort par rapport au nombre."
+L["Name size"] = "Taille du nom"
+L["Shorten long names"] = "Raccourcir les noms longs"
+L["After %d characters"] = "Après %d caractères"
+L["The Name label has no icon to place."] = "L'étiquette Nom n'a pas d'icône à placer."
+L["Enable Show spell label to choose its position."] = "Activez Afficher l'étiquette du sort pour choisir sa position."
+
+
+-- Custom colors
+L["Normal hits"] = "Coups normaux"
+L["Custom colors"] = "Couleurs personnalisées"
+L["Pick your own colors for normal hits, crits, and miss text instead of the default yellow."] =
+    "Choisissez vos propres couleurs pour les coups normaux, les critiques et les textes d'échec au lieu du jaune par défaut."
+L["Turn off Color by damage school to pick custom colors."] = "Désactivez Couleur selon l'école de dégâts pour choisir des couleurs personnalisées."
+L["Color of normal damage numbers."] = "Couleur des nombres de dégâts normaux."
+L["Critical hits"] = "Coups critiques"
+L["Color of critical hit numbers."] = "Couleur des nombres de coups critiques."
+L["Miss text"] = "Texte d'échec"
+L["Color of Miss, Dodge, Immune, and similar text."] = "Couleur des textes Raté, Esquive, Insensible et similaires."
+
+
+-- Outline
+L["Outline"] = "Contour"
+L["Number style default"] = "Défaut du style"
+L["None"] = "Aucun"
+L["Thin"] = "Fin"
+L["Thick"] = "Épais"
+L["Text outline. Number style default uses each style's own outline: thick for Classic, thin for Modern and Impact."] =
+    "Contour du texte. Le réglage par défaut du style utilise le contour propre à chaque style : épais pour Classic, fin pour Moderne et Impact."
+
 L["Display large numbers as 214k or 1.2M."] = "Affiche les grands nombres comme 214k ou 1,2M."
 L["Display large numbers as 214k or 1.2M. Disables thousand separators."] =
     "Affiche les grands nombres comme 214k ou 1,2M. Désactive les séparateurs de milliers."
@@ -142,6 +204,7 @@ L["Font"] = "Police"
 L["Font size"] = "Taille de police"
 L["Scroll offset"] = "Décalage du défilement"
 L["Scroll speed"] = "Vitesse de défilement"
+L["%d%%"] = "%d %%"
 L["Display duration"] = "Durée d'affichage"
 L["Game default"] = "Par défaut du jeu"
 L["Friz Quadrata"] = "Friz Quadrata"
@@ -168,6 +231,26 @@ L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be di
     "Prend en charge les suffixes k/m, par ex. 20k ou 2m. Les dégâts en dessous ne seront pas affichés."
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "En raids et Mythique+, certains montants sont secrets, donc le seuil masque ces coups visuellement au lieu de les ignorer."
+
+-- Combine hits
+L["Combine hits"] = "Regrouper les coups"
+L["Combine rapid hits"] = "Regrouper les coups rapides"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "Additionne les coups qui touchent la même barre de nom en succession rapide en un seul nombre au lieu d'en empiler plusieurs."
+L["Combine"] = "Regrouper"
+L["Same spell"] = "Même sort"
+L["All hits"] = "Tous les coups"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "Même sort garde un nombre séparé pour chaque sort. Tous les coups regroupe chaque coup sur la cible ; son icône montre le sort qui a infligé le plus de dégâts."
+L["Combine window"] = "Fenêtre de regroupement"
+L["%.2fs"] = "%.2fs"
+L["Show hit count"] = "Afficher le nombre de coups"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] =
+    "Indique combien de coups ont été regroupés, par ex. 37 200 (3). Avec les icônes de sort, le nombre s'affiche sur l'icône."
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "Les critiques, les coups normaux et les soins sont regroupés séparément."
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "Les critiques, les coups normaux et les soins sont regroupés séparément. Les montants secrets ne peuvent pas être additionnés, ces coups restent donc affichés individuellement."
 
 L["Preview"] = "Aperçu"
 L["Updates live as you change options."] = "Se met à jour en direct quand vous changez les options."
@@ -285,3 +368,15 @@ L["This client does not expose the damage meter API. A snapshot can still report
 L["Turn off Auto-switch by instance to choose manual strictness."] = "Désactivez le changement automatique par instance pour choisir la rigueur manuellement."
 L["Unreadable amounts cannot trigger threshold sounds. Unreadable damage schools are always allowed by the school filter."] = "Les montants illisibles ne déclenchent pas les sons à seuil. Les écoles illisibles sont toujours autorisées par le filtre."
 L["Use gentle fades and row reveals in this settings window. Combat animation is unaffected."] = "Anime discrètement cette fenêtre de réglages. L'animation des nombres en combat n'est pas modifiée."
+
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "Les coups rapides sur la même barre de nom peuvent se regrouper en un seul nombre croissant avec le nombre de coups. Activez-le dans Combat → Regrouper les coups."
+
+-- Reduce clutter
+L["Reduce clutter"] = "Réduire l'encombrement"
+
+-- Combine hits: merge pop
+L["Pop on each merge"] = "Effet de rebond à chaque regroupement"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "Agrandit brièvement le nombre chaque fois qu'un coup s'y ajoute. Désactivez pour un affichage plus calme."

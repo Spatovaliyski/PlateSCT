@@ -6,18 +6,28 @@ BD.DEFAULTS = {
     abbreviate = false,
     thousandSeparator = "none", -- "none" | "comma" | "dot"
     showSpellIcon = false,
+    spellLabel = "icon", -- "icon" | "name" | "both"
+    spellNamePosition = "left", -- "above" | "below" | "left" | "right"
+    spellNameScale = 0.7, -- name size relative to the number
+    spellNameMaxLength = 0, -- characters before a name is shortened; 0 = never
     iconPosition = "left",
     fontSize = 14,
     duration = 1.0,
     floatDistance = 20,
     scrollSpeed = 1.0,
     fontFace = "game",
+    fontOutline = "style", -- "style" | "none" | "thin" | "thick"
     hideBlizzardFCT = true,
     onlyMyDamage = true,
     allNameplates = false,
     includePetDamage = true,
     showHealing = false,
     showIncoming = false,
+    combineHits = false,
+    combineWindow = 0.5,
+    combineMode = "spell", -- "spell" | "target"
+    combineShowCount = true,
+    combinePulse = true, -- pop the number again each time a hit merges in
     incomingOffsetX = 0,
     incomingOffsetY = -100,
     debug = false,
@@ -30,9 +40,14 @@ BD.DEFAULTS = {
     impactOffsetY = 0,
     impactPosition = "side",
     useSchoolColors = false,
+    useCustomColors = false,
+    hitColor = "FFED00",
+    critColor = "FF8C1A",
+    missColor = "D9D9D9",
     animHit = "platesct",
     animCrit = "platesct",
     animMiss = "platesct",
+    animAuto = "same", -- "same" follows animHit
     showCritLabel = false,
     showImpactCritLabel = true,
     showOptionsPreview = true,
@@ -84,6 +99,15 @@ BD.ANIM_STYLES = {
     { id = "verticalDown", labelKey = "Vertical Down" },
 }
 
+-- Auto-attack dropdown: follow normal hits, or pick its own motion.
+BD.ANIM_STYLES_AUTO = {
+    { id = "same", labelKey = "Same as normal hits", recommended = true },
+    { id = "platesct", labelKey = "Vertical Up" },
+    { id = "fountain", labelKey = "Fountain" },
+    { id = "rainfall", labelKey = "Rainfall" },
+    { id = "verticalDown", labelKey = "Vertical Down" },
+}
+
 -- Crit dropdown includes Classic Slap (Classic grow-and-settle pow on Modern).
 BD.ANIM_STYLES_CRIT = {
     { id = "platesct", labelKey = "Vertical Up", recommended = true },
@@ -98,6 +122,35 @@ BD.ICON_POSITIONS = {
     { id = "right", labelKey = "Right" },
     { id = "top", labelKey = "Top" },
     { id = "bottom", labelKey = "Bottom" },
+}
+
+-- Scale pulse when a hit merges into a live number.
+BD.COMBINE_PULSE_DURATION = 0.15
+BD.COMBINE_PULSE_SCALE = 0.2
+
+BD.COMBINE_MODES = {
+    { id = "spell", labelKey = "Same spell" },
+    { id = "target", labelKey = "All hits" },
+}
+
+BD.SPELL_LABEL_OPTIONS = {
+    { id = "icon", labelKey = "Icon" },
+    { id = "name", labelKey = "Name" },
+    { id = "both", labelKey = "Icon and name" },
+}
+
+BD.SPELL_NAME_POSITIONS = {
+    { id = "above", labelKey = "Top" },
+    { id = "below", labelKey = "Bottom" },
+    { id = "left", labelKey = "Left", recommended = true },
+    { id = "right", labelKey = "Right" },
+}
+
+BD.OUTLINE_OPTIONS = {
+    { id = "style", labelKey = "Number style default" },
+    { id = "none", labelKey = "None" },
+    { id = "thin", labelKey = "Thin" },
+    { id = "thick", labelKey = "Thick" },
 }
 
 BD.THOUSAND_SEPARATORS = {

@@ -182,6 +182,62 @@ L["Top"] = "위"
 L["Bottom"] = "아래"
 L["Text style"] = "글자 스타일"
 L["Abbreviate numbers"] = "숫자 축약"
+
+-- What's new: labels and colors
+L["Labels and colors"] = "표시와 색상"
+L["Spell names next to numbers, a text outline choice, custom hit, crit, and miss colors, and a separate auto-attack motion."] =
+    "숫자 옆 주문 이름, 글자 외곽선 선택, 적중·치명타·빗나감 사용자 지정 색상, 그리고 자동 공격 전용 움직임을 추가했습니다."
+
+
+-- Auto-attack motion
+L["Same as normal hits"] = "일반 적중과 동일"
+L["Auto-attacks"] = "자동 공격"
+L["Motion used for your normal auto-attack hits, so melee swings can move differently from spells. Auto-attack crits use the Critical hits motion."] =
+    "일반 자동 공격 적중에 쓰는 움직임으로, 근접 공격을 주문과 다르게 움직이게 합니다. 자동 공격 치명타는 치명타 움직임을 사용합니다."
+
+
+-- Spell label
+L["Label"] = "표시 방식"
+L["Name"] = "이름"
+L["Icon"] = "아이콘"
+L["Icon and name"] = "아이콘과 이름"
+L["Spell label"] = "주문 표시"
+L["Show spell label"] = "주문 표시 사용"
+L["Show which spell dealt each hit. Uses the matched cast or auto-attack."] =
+    "각 적중을 어떤 주문이 냈는지 표시합니다. 연결된 시전이나 자동 공격을 사용합니다."
+L["Show which spell dealt each hit. Uses the spell from the combat log."] =
+    "각 적중을 어떤 주문이 냈는지 표시합니다. 전투 기록의 주문을 사용합니다."
+L["Show the spell's icon, its name, or both."] = "주문 아이콘, 주문 이름 또는 둘 다를 표시합니다."
+L["Enable Show spell label to choose the label."] = "표시 방식을 고르려면 주문 표시 사용을 켜세요."
+L["Name position"] = "이름 위치"
+L["Where the spell name sits relative to the number."] = "숫자를 기준으로 한 주문 이름의 위치입니다."
+L["Name size"] = "이름 크기"
+L["Shorten long names"] = "긴 이름 줄이기"
+L["After %d characters"] = "%d자 이후"
+L["The Name label has no icon to place."] = "이름 표시에는 배치할 아이콘이 없습니다."
+L["Enable Show spell label to choose its position."] = "위치를 고르려면 주문 표시 사용을 켜세요."
+
+
+-- Custom colors
+L["Custom colors"] = "사용자 지정 색상"
+L["Pick your own colors for normal hits, crits, and miss text instead of the default yellow."] =
+    "기본 노란색 대신 일반 적중, 치명타, 빗나감 문구의 색상을 직접 고릅니다."
+L["Turn off Color by damage school to pick custom colors."] = "사용자 지정 색상을 고르려면 피해 계열별 색상을 끄세요."
+L["Color of normal damage numbers."] = "일반 피해 숫자의 색상입니다."
+L["Color of critical hit numbers."] = "치명타 숫자의 색상입니다."
+L["Miss text"] = "빗나감 문구"
+L["Color of Miss, Dodge, Immune, and similar text."] = "빗나감, 회피, 면역 등 문구의 색상입니다."
+
+
+-- Outline
+L["Outline"] = "외곽선"
+L["Number style default"] = "숫자 스타일 기본값"
+L["None"] = "없음"
+L["Thin"] = "얇게"
+L["Thick"] = "두껍게"
+L["Text outline. Number style default uses each style's own outline: thick for Classic, thin for Modern and Impact."] =
+    "글자 외곽선입니다. 숫자 스타일 기본값은 각 스타일의 외곽선을 사용합니다. 클래식 스타일은 두껍게, 모던 스타일과 Impact는 얇게 표시됩니다."
+
 L["Display large numbers as 214k or 1.2M."] = "큰 숫자를 214k 또는 1.2M으로 표시합니다."
 L["Display large numbers as 214k or 1.2M. Disables thousand separators."] = "큰 숫자를 214k 또는 1.2M으로 표시합니다. 사용하면 천 단위 구분 기호는 꺼집니다."
 L["Thousand separators"] = "천 단위 구분 기호"
@@ -195,6 +251,7 @@ L["Font"] = "글꼴"
 L["Font size"] = "글꼴 크기"
 L["Scroll offset"] = "스크롤 거리"
 L["Scroll speed"] = "스크롤 속도"
+L["%d%%"] = "%d%%"
 L["Display duration"] = "표시 시간"
 L["Game default"] = "게임 기본값"
 L["Friz Quadrata"] = "Friz Quadrata"
@@ -242,6 +299,26 @@ L["Hits below this amount are hidden. Type 50k or 2m. Set to 0 to show everythin
 L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be displayed."] = "k/m 접미사를 사용할 수 있습니다. 예: 20k 또는 2m. 이 값보다 작은 피해는 표시하지 않습니다."
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "공격대와 신화 쐐기돌 던전에서는 일부 피해량의 읽기가 제한됩니다. 이런 피해는 처리를 건너뛰는 대신 화면에서 숨기는 방식으로 기준값을 적용합니다."
+
+-- Combine hits
+L["Combine hits"] = "적중 합치기"
+L["Combine rapid hits"] = "빠른 적중 합치기"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "같은 이름표에 짧은 간격으로 들어온 적중을 여러 개 쌓는 대신 하나의 숫자로 합칩니다."
+L["Combine"] = "합치기 방식"
+L["Same spell"] = "같은 주문"
+L["All hits"] = "모든 적중"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "같은 주문은 주문별 숫자를 따로 표시합니다. 모든 적중은 대상에 대한 모든 적중을 합치며, 아이콘은 가장 많은 피해를 준 주문을 표시합니다."
+L["Combine window"] = "합치기 시간"
+L["%.2fs"] = "%.2f초"
+L["Show hit count"] = "적중 횟수 표시"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] =
+    "합쳐진 적중 횟수를 표시합니다. 예: 37,200 (3). 주문 아이콘을 켜면 횟수가 아이콘 위에 표시됩니다."
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "치명타, 일반 적중, 치유는 각각 따로 합쳐집니다."
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "치명타, 일반 적중, 치유는 각각 따로 합쳐집니다. 일부 피해량은 읽기가 제한되어 더할 수 없으므로 해당 적중은 계속 따로 표시됩니다."
 
 -- Tools
 L["Preview"] = "미리 보기"
@@ -374,3 +451,15 @@ L["Your WoW API"] = "내 WoW API"
 -- Translation feedback
 L["This translation was generated with AI. If you find inconsistent terminology or incorrect wording, please report it through GitHub Issues. Thank you for your help! Translation contributors will be credited."] =
     "이 번역은 AI로 생성되었습니다. 용어가 일관되지 않거나 표현이 부정확한 부분을 발견하면 GitHub Issues에 알려 주세요. 도와주셔서 감사합니다! 번역에 기여하신 분의 이름을 명시해 감사의 뜻을 전하겠습니다."
+
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "같은 이름표에 빠르게 들어온 적중을 하나의 증가하는 숫자와 적중 횟수로 합칠 수 있습니다. 전투 → 적중 합치기에서 켜세요."
+
+-- Reduce clutter
+L["Reduce clutter"] = "화면 정리"
+
+-- Combine hits: merge pop
+L["Pop on each merge"] = "합칠 때마다 튀어나오기"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "다른 적중이 합쳐질 때마다 숫자를 잠깐 키웁니다. 더 차분하게 보려면 끄세요."

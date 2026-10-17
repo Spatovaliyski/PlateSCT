@@ -128,6 +128,68 @@ L["Uses your last spell in Only my damage mode. Left of the number."] =
     "Использует ваше последнее заклинание в режиме «Только мой урон». Слева от числа."
 L["Text style"] = "Стиль текста"
 L["Abbreviate numbers"] = "Сокращать числа"
+
+-- What's new: labels and colors
+L["Labels and colors"] = "Подписи и цвета"
+L["Spell names next to numbers, a text outline choice, custom hit, crit, and miss colors, and a separate auto-attack motion."] =
+    "Названия заклинаний рядом с числами, выбор обводки текста, свои цвета для ударов, критов и промахов и отдельное движение для автоатак."
+
+
+-- Auto-attack motion
+L["Same as normal hits"] = "Как обычные удары"
+L["Auto-attacks"] = "Автоатаки"
+L["Motion used for your normal auto-attack hits, so melee swings can move differently from spells. Auto-attack crits use the Critical hits motion."] =
+    "Движение обычных ударов вашей автоатаки, чтобы удары в ближнем бою отличались от заклинаний. Критические автоатаки используют движение критических ударов."
+
+
+-- Spell label
+L["Label"] = "Подпись"
+L["Top"] = "Сверху"
+L["Bottom"] = "Снизу"
+L["Name"] = "Название"
+L["Left"] = "Слева"
+L["Icon"] = "Иконка"
+L["Right"] = "Справа"
+L["Icon and name"] = "Иконка и название"
+L["Spell label"] = "Подпись заклинания"
+L["Show spell label"] = "Показывать подпись заклинания"
+L["Show which spell dealt each hit. Uses the matched cast or auto-attack."] =
+    "Показывает, какое заклинание нанесло каждый удар. Использует сопоставленное применение или автоатаку."
+L["Show which spell dealt each hit. Uses the spell from the combat log."] =
+    "Показывает, какое заклинание нанесло каждый удар. Использует заклинание из журнала боя."
+L["Show the spell's icon, its name, or both."] = "Показывать иконку заклинания, его название или и то и другое."
+L["Enable Show spell label to choose the label."] = "Включите «Показывать подпись заклинания», чтобы выбрать подпись."
+L["Name position"] = "Положение названия"
+L["Where the spell name sits relative to the number."] = "Где находится название заклинания относительно числа."
+L["Name size"] = "Размер названия"
+L["Shorten long names"] = "Сокращать длинные названия"
+L["After %d characters"] = "После %d символов"
+L["The Name label has no icon to place."] = "У подписи «Название» нет иконки для размещения."
+L["Enable Show spell label to choose its position."] = "Включите «Показывать подпись заклинания», чтобы выбрать положение."
+
+
+-- Custom colors
+L["Normal hits"] = "Обычные удары"
+L["Custom colors"] = "Свои цвета"
+L["Pick your own colors for normal hits, crits, and miss text instead of the default yellow."] =
+    "Выберите свои цвета для обычных ударов, критов и текстов промахов вместо стандартного жёлтого."
+L["Turn off Color by damage school to pick custom colors."] = "Отключите «Цвет по школе урона», чтобы выбрать свои цвета."
+L["Color of normal damage numbers."] = "Цвет обычных чисел урона."
+L["Critical hits"] = "Критические удары"
+L["Color of critical hit numbers."] = "Цвет чисел критических ударов."
+L["Miss text"] = "Текст промаха"
+L["Color of Miss, Dodge, Immune, and similar text."] = "Цвет текстов «Промах», «Уклонение», «Невосприимчив» и подобных."
+
+
+-- Outline
+L["Outline"] = "Обводка"
+L["Number style default"] = "По стилю чисел"
+L["None"] = "Нет"
+L["Thin"] = "Тонкая"
+L["Thick"] = "Толстая"
+L["Text outline. Number style default uses each style's own outline: thick for Classic, thin for Modern and Impact."] =
+    "Обводка текста. Вариант стиля по умолчанию использует обводку каждого стиля: толстую для Classic, тонкую для Современного и Impact."
+
 L["Display large numbers as 214k or 1.2M."] = "Показывает большие числа как 214k или 1.2M."
 L["Display large numbers as 214k or 1.2M. Disables thousand separators."] =
     "Показывает большие числа как 214k или 1.2M. Отключает разделители тысяч."
@@ -142,6 +204,7 @@ L["Font"] = "Шрифт"
 L["Font size"] = "Размер шрифта"
 L["Scroll offset"] = "Смещение прокрутки"
 L["Scroll speed"] = "Скорость прокрутки"
+L["%d%%"] = "%d%%"
 L["Display duration"] = "Длительность показа"
 L["Game default"] = "Игровой по умолчанию"
 L["Friz Quadrata"] = "Friz Quadrata"
@@ -168,6 +231,26 @@ L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be di
     "Поддерживает суффиксы k/m, напр. 20k или 2m. Урон ниже не отображается."
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "В рейдах и Эпохальном+ некоторые значения секретны, поэтому порог скрывает эти удары визуально, а не пропускает их."
+
+-- Combine hits
+L["Combine hits"] = "Объединение ударов"
+L["Combine rapid hits"] = "Объединять быстрые удары"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "Складывает удары, быстро попадающие по одному индикатору, в одно число вместо множества отдельных."
+L["Combine"] = "Объединять"
+L["Same spell"] = "Одно заклинание"
+L["All hits"] = "Все удары"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "«Одно заклинание» показывает число каждого заклинания отдельно. «Все удары» объединяет все удары по цели; иконка показывает заклинание, нанёсшее больше всего урона."
+L["Combine window"] = "Окно объединения"
+L["%.2fs"] = "%.2fс"
+L["Show hit count"] = "Показывать число ударов"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] =
+    "Показывает, сколько ударов объединено, например 37 200 (3). С иконками заклинаний число отображается на иконке."
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "Критические удары, обычные удары и исцеление объединяются отдельно."
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "Критические удары, обычные удары и исцеление объединяются отдельно. Секретные значения нельзя сложить, поэтому такие удары по-прежнему показываются по отдельности."
 
 L["Preview"] = "Просмотр"
 L["Updates live as you change options."] = "Обновляется сразу при изменении настроек."
@@ -285,3 +368,15 @@ L["This client does not expose the damage meter API. A snapshot can still report
 L["Turn off Auto-switch by instance to choose manual strictness."] = "Отключите автоматическое переключение по подземелью для ручного выбора строгости."
 L["Unreadable amounts cannot trigger threshold sounds. Unreadable damage schools are always allowed by the school filter."] = "Недоступные значения не вызывают звуки по порогу. Урон с недоступной школой всегда проходит фильтр."
 L["Use gentle fades and row reveals in this settings window. Combat animation is unaffected."] = "Плавное появление окна и строк настроек. Анимация боевых чисел не меняется."
+
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "Быстрые удары по одному индикатору можно объединять в одно растущее число со счётчиком ударов. Включите в разделе «Бой» → «Объединение ударов»."
+
+-- Reduce clutter
+L["Reduce clutter"] = "Меньше лишнего"
+
+-- Combine hits: merge pop
+L["Pop on each merge"] = "Всплеск при каждом объединении"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "Ненадолго увеличивать число каждый раз, когда к нему добавляется удар. Отключите для более спокойного отображения."

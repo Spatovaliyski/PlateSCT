@@ -203,6 +203,62 @@ L["Top"] = "Top"
 L["Bottom"] = "Bottom"
 L["Text style"] = "Text style"
 L["Abbreviate numbers"] = "Abbreviate numbers"
+
+-- What's new: labels and colors
+L["Labels and colors"] = "Labels and colors"
+L["Spell names next to numbers, a text outline choice, custom hit, crit, and miss colors, and a separate auto-attack motion."] =
+    "Spell names next to numbers, a text outline choice, custom hit, crit, and miss colors, and a separate auto-attack motion."
+
+
+-- Auto-attack motion
+L["Same as normal hits"] = "Same as normal hits"
+L["Auto-attacks"] = "Auto-attacks"
+L["Motion used for your normal auto-attack hits, so melee swings can move differently from spells. Auto-attack crits use the Critical hits motion."] =
+    "Motion used for your normal auto-attack hits, so melee swings can move differently from spells. Auto-attack crits use the Critical hits motion."
+
+
+-- Spell label
+L["Label"] = "Label"
+L["Name"] = "Name"
+L["Icon"] = "Icon"
+L["Icon and name"] = "Icon and name"
+L["Spell label"] = "Spell label"
+L["Show spell label"] = "Show spell label"
+L["Show which spell dealt each hit. Uses the matched cast or auto-attack."] =
+    "Show which spell dealt each hit. Uses the matched cast or auto-attack."
+L["Show which spell dealt each hit. Uses the spell from the combat log."] =
+    "Show which spell dealt each hit. Uses the spell from the combat log."
+L["Show the spell's icon, its name, or both."] = "Show the spell's icon, its name, or both."
+L["Enable Show spell label to choose the label."] = "Enable Show spell label to choose the label."
+L["Name position"] = "Name position"
+L["Where the spell name sits relative to the number."] = "Where the spell name sits relative to the number."
+L["Name size"] = "Name size"
+L["Shorten long names"] = "Shorten long names"
+L["After %d characters"] = "After %d characters"
+L["The Name label has no icon to place."] = "The Name label has no icon to place."
+L["Enable Show spell label to choose its position."] = "Enable Show spell label to choose its position."
+
+
+-- Custom colors
+L["Custom colors"] = "Custom colors"
+L["Pick your own colors for normal hits, crits, and miss text instead of the default yellow."] =
+    "Pick your own colors for normal hits, crits, and miss text instead of the default yellow."
+L["Turn off Color by damage school to pick custom colors."] = "Turn off Color by damage school to pick custom colors."
+L["Color of normal damage numbers."] = "Color of normal damage numbers."
+L["Color of critical hit numbers."] = "Color of critical hit numbers."
+L["Miss text"] = "Miss text"
+L["Color of Miss, Dodge, Immune, and similar text."] = "Color of Miss, Dodge, Immune, and similar text."
+
+
+-- Outline
+L["Outline"] = "Outline"
+L["Number style default"] = "Number style default"
+L["None"] = "None"
+L["Thin"] = "Thin"
+L["Thick"] = "Thick"
+L["Text outline. Number style default uses each style's own outline: thick for Classic, thin for Modern and Impact."] =
+    "Text outline. Number style default uses each style's own outline: thick for Classic, thin for Modern and Impact."
+
 L["Display large numbers as 214k or 1.2M."] = "Display large numbers as 214k or 1.2M."
 L["Display large numbers as 214k or 1.2M. Disables thousand separators."] =
     "Display large numbers as 214k or 1.2M. Disables thousand separators."
@@ -217,6 +273,7 @@ L["Font"] = "Font"
 L["Font size"] = "Font size"
 L["Scroll offset"] = "Scroll offset"
 L["Scroll speed"] = "Scroll speed"
+L["%d%%"] = "%d%%"
 L["Display duration"] = "Display duration"
 L["Game default"] = "Game default"
 L["Friz Quadrata"] = "Friz Quadrata"
@@ -276,6 +333,25 @@ L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be di
     "Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be displayed."
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."
+
+-- Combine hits
+L["Combine hits"] = "Combine hits"
+L["Combine rapid hits"] = "Combine rapid hits"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "Add hits that land in quick succession on the same nameplate into one number instead of stacking many."
+L["Combine"] = "Combine"
+L["Same spell"] = "Same spell"
+L["All hits"] = "All hits"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."
+L["Combine window"] = "Combine window"
+L["%.2fs"] = "%.2fs"
+L["Show hit count"] = "Show hit count"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] = "Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "Crits, normal hits, and heals combine separately."
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."
 
 -- Tools
 L["Preview"] = "Preview"
@@ -391,3 +467,15 @@ L["Unreadable amounts cannot trigger threshold sounds. Unreadable damage schools
 L["Unsupported client - combat text unavailable"] = "Unsupported client - combat text unavailable"
 L["Use gentle fades and row reveals in this settings window. Combat animation is unaffected."] = "Use gentle fades and row reveals in this settings window. Combat animation is unaffected."
 L["Your WoW API"] = "Your WoW API"
+
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."
+
+-- Reduce clutter
+L["Reduce clutter"] = "Reduce clutter"
+
+-- Combine hits: merge pop
+L["Pop on each merge"] = "Pop on each merge"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."

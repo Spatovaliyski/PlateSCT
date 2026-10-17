@@ -10,6 +10,45 @@ function BD:GetStylePreset(styleOverride)
     return self.STYLE_PRESETS[style], style
 end
 
+-- Colors are saved as "RRGGBB" hex strings: scalars reset cleanly with the other defaults.
+function BD.HexToRGB(hex)
+    hex = tostring(hex or ""):gsub("^#", "")
+    local r, g, b = hex:match("^(%x%x)(%x%x)(%x%x)$")
+    if not r then
+        return 1, 1, 1
+    end
+    return tonumber(r, 16) / 255, tonumber(g, 16) / 255, tonumber(b, 16) / 255
+end
+
+function BD.RGBToHex(r, g, b)
+    local function channel(value)
+        return math.max(0, math.min(255, math.floor((tonumber(value) or 0) * 255 + 0.5)))
+    end
+    return string.format("%02X%02X%02X", channel(r), channel(g), channel(b))
+end
+
+-- Number color for outgoing damage text when school colors are off.
+function BD:GetNumberColor(kind, preset)
+    if self.db and self.db.useCustomColors then
+        local key = kind == "crit" and "critColor" or kind == "miss" and "missColor" or "hitColor"
+        return BD.HexToRGB(self.db[key] or self.DEFAULTS[key])
+    end
+    local color = preset.defaultColor
+    return color[1], color[2], color[3]
+end
+
+local OUTLINE_FLAGS = { none = "", thin = "OUTLINE", thick = "THICKOUTLINE" }
+
+-- Font flags for a style preset: the player's outline choice, or the style's own outline.
+function BD:GetFontFlags(preset)
+    local choice = self.db and self.db.fontOutline
+    local flags = OUTLINE_FLAGS[choice]
+    if flags then
+        return flags
+    end
+    return preset and preset.fontFlags or "OUTLINE"
+end
+
 function BD:GetNumberStyleOffsets(styleOverride)
     local _, style = self:GetStylePreset(styleOverride)
     local xKey, yKey = style .. "OffsetX", style .. "OffsetY"
@@ -284,22 +323,36 @@ local function ResolveSoundChannel(channel)
     return "Dialog"
 end
 
-function BD:PlayOutgoingCritSound(amount, isCrit)
-    if not isCrit then
-        return
-    end
+-- Crit sound tiers: 0 none, 1 critical, 2 huge critical.
+function BD:GetCritSoundTier(amount)
     if not self.db then
-        return
+        return 0
     end
-
     if self.db.hugeCritSoundEnabled and BD.AmountExceeds(amount, self.db.hugeCritSoundThreshold) then
-        pcall(PlaySoundFile, HUGE_CRIT_SOUND_PATH, ResolveSoundChannel(self.db.hugeCritSoundChannel))
-        return
+        return 2
     end
-
     if self.db.critSoundEnabled and BD.AmountExceeds(amount, self.db.critSoundThreshold) then
+        return 1
+    end
+    return 0
+end
+
+function BD:PlayCritSoundTier(tier)
+    if tier == 2 then
+        pcall(PlaySoundFile, HUGE_CRIT_SOUND_PATH, ResolveSoundChannel(self.db.hugeCritSoundChannel))
+    elseif tier == 1 then
         pcall(PlaySoundFile, CRIT_SOUND_PATH, ResolveSoundChannel(self.db.critSoundChannel))
     end
+end
+
+-- Returns the tier played so combined crits only replay on a higher tier.
+function BD:PlayOutgoingCritSound(amount, isCrit)
+    if not isCrit then
+        return 0
+    end
+    local tier = self:GetCritSoundTier(amount)
+    self:PlayCritSoundTier(tier)
+    return tier
 end
 
 function BD:PlayCritSoundPreview(kind)
@@ -359,6 +412,37 @@ function BD.FormatAmount(amount, abbreviate)
         return BreakUpAmount(amount, sep)
     end
     return amount
+end
+
+-- Spell names never change during a session, so they are cached by ID.
+local spellNameCache = {}
+
+local function ReadableSpellID(spellID)
+    return type(spellID) == "number" and not BD.IsSecret(spellID) and BD.CanAccessValue(spellID)
+end
+
+function BD.GetSpellName(spellID)
+    if not ReadableSpellID(spellID) then
+        return nil
+    end
+    local cached = spellNameCache[spellID]
+    if cached ~= nil then
+        return cached or nil
+    end
+    local name
+    if C_Spell and type(C_Spell.GetSpellName) == "function" then
+        local ok, result = pcall(C_Spell.GetSpellName, spellID)
+        name = ok and result or nil
+    end
+    if not name and GetSpellInfo then
+        local ok, result = pcall(GetSpellInfo, spellID)
+        name = ok and result or nil
+    end
+    if type(name) ~= "string" or BD.IsSecret(name) or name == "" then
+        name = nil
+    end
+    spellNameCache[spellID] = name or false
+    return name
 end
 
 function BD.GetSpellIconTexture(spellID)
@@ -456,8 +540,39 @@ function BD.GetPetIconTexture(sourceGUID)
     return BD.GENERIC_PET_ICON
 end
 
-function BD:ResolveOutgoingSpellIcon(spellIcon, spellId)
+-- Spell label shown with each number: "icon", "name", or "both"; nil when labels are off.
+function BD:GetSpellLabelMode()
     if not self.db.showSpellIcon then
+        return nil
+    end
+    return self.db.spellLabel or "icon"
+end
+
+-- Cut a name to maxChars characters. UTF-8 aware: multibyte names are never split mid-character.
+function BD.ShortenName(name, maxChars)
+    if not name or not maxChars or maxChars <= 0 then
+        return name
+    end
+    local count = 0
+    for start in name:gmatch("()[%z\1-\127\194-\244][\128-\191]*") do
+        count = count + 1
+        if count > maxChars then
+            return name:sub(1, start - 1) .. "..."
+        end
+    end
+    return name
+end
+
+function BD:ResolveOutgoingSpellName(spellId)
+    local mode = self:GetSpellLabelMode()
+    if mode ~= "name" and mode ~= "both" then
+        return nil
+    end
+    return BD.ShortenName(BD.GetSpellName(spellId), self.db.spellNameMaxLength)
+end
+
+function BD:ResolveOutgoingSpellIcon(spellIcon, spellId)
+    if not self.db.showSpellIcon or self.db.spellLabel == "name" then
         return nil
     end
     if spellIcon and BD.ValuePresent(spellIcon) then
@@ -601,7 +716,8 @@ function BD:ShouldUseSchoolColors()
     return self:GetStylePreset().useSchoolColors and true or false
 end
 
-function BD:ResolveMotionStyle(hitKind, styleOverride)
+-- isAutoAttack: a normal auto-attack hit, which may use its own motion (animAuto).
+function BD:ResolveMotionStyle(hitKind, styleOverride, isAutoAttack)
     local numberStyle = styleOverride or self.db.numberStyle or "retail"
     if numberStyle == "impact" then
         return "impact"
@@ -614,6 +730,8 @@ function BD:ResolveMotionStyle(hitKind, styleOverride)
         key = "animCrit"
     elseif hitKind == "miss" then
         key = "animMiss"
+    elseif isAutoAttack and self.db.animAuto and self.db.animAuto ~= "same" then
+        key = "animAuto"
     end
     local style = self.db[key] or "platesct"
     if style == "fountain" or style == "rainfall" or style == "verticalDown" then
