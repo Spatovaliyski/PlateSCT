@@ -311,6 +311,15 @@ BD.CLASS_SCHOOL_MASKS = {
 BD.AUTO_ATTACK_SPELL_ID = 6603
 BD.GENERIC_PET_ICON = "Interface\\Icons\\Ability_Hunter_BeastTaming"
 BD.POOL_SIZE = 24
+-- Live numbers at most per enemy, on your target, and in total (Cap.lua).
+BD.MAX_NUMBERS_PER_PLATE = 3
+BD.MAX_NUMBERS_TARGET = 15
+BD.MAX_NUMBERS = 40
+-- Seconds between checks that a number's plate still shows the same unit (Classic reuse signal).
+BD.GUID_CHECK_INTERVAL = 0.1
+-- Seconds between reads of a number's world position (kept for when its enemy dies; a fresh
+-- one is also taken when its nameplate is removed).
+BD.SNAPSHOT_INTERVAL = 0.25
 BD.METER_PROBE_MAX_SPELLS = 6
 BD.PENDING_CAP = 8
 

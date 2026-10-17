@@ -37,11 +37,13 @@ Core/Animation.lua
 Core/Util.lua
 Core/Pool.lua
 Core/Display.lua
+Core/Cap.lua
 Core/Attribution.lua
 Core/Combat.lua
 Core/CombatClassic.lua
 Core/Probe.lua
 Core/Events.lua
+Core/Perf.lua
 Options/Widgets.lua
 Options/Pages.lua
 Options/Options.lua

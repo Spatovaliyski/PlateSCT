@@ -653,6 +653,10 @@ init:SetScript("OnEvent", function() BD:RegisterOptionsPanel() end)
 SLASH_PLATESCT1, SLASH_PLATESCT2 = "/platesct", "/psct"
 SlashCmdList["PLATESCT"] = function(message)
     message = string.lower(strtrim(message or ""))
+    if message == "perf" then
+        BD:TogglePerf()
+        return
+    end
     if message == "probe" or message == "meter" then
         if BD.API.IsModern() then BD:DumpDamageMeterProbe()
         else print("|cffff6600PlateSCT:|r " .. L["Meter probe requires Modern API - Midnight & Forever."]) end

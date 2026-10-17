@@ -3,6 +3,7 @@ local _, BD = ...
 local Anim = BD.Anim
 local pool = {}
 local active = {}
+local activeCount = 0
 
 local DEFAULT_SPAWN_LANES = {
     { 0, 0 },
@@ -245,6 +246,7 @@ local function ReleaseLingerHost(host)
     if not host then
         return
     end
+    host.boundPlate = nil
     host:Hide()
     host:ClearAllPoints()
     host:SetParent(WorldFrame)
@@ -363,6 +365,7 @@ local function PinLingerHostWorld(frame)
     if not host or x == nil or y == nil then
         return false
     end
+    host.boundPlate = nil
     host:SetParent(WorldFrame)
     host:ClearAllPoints()
     return SafeSetPoint(host, "CENTER", WorldFrame, "BOTTOMLEFT", x, y) and true or false
@@ -379,8 +382,11 @@ local function BindLingerHostToPlate(frame, plate)
     host:ClearAllPoints()
     local relPoint = frame.anchorRelPoint or "TOP"
     if not SafeSetPoint(host, "CENTER", plate, relPoint, 0, 0) then
+        host.boundPlate = nil
         return false
     end
+    -- A relative point follows the plate by itself: rebinding is only needed when it changes.
+    host.boundPlate, host.boundRelPoint = plate, relPoint
     return true
 end
 
@@ -408,13 +414,15 @@ local function FreezeLingerHost(frame)
     return true
 end
 
+local function ReadPlateToken(plate)
+    return plate.namePlateUnitToken
+end
+
 local function GetPlateUnitToken(plate)
     if not plate then
         return nil
     end
-    local ok, token = pcall(function()
-        return plate.namePlateUnitToken
-    end)
+    local ok, token = pcall(ReadPlateToken, plate)
     if ok and type(token) == "string" then
         return token
     end
@@ -428,6 +436,12 @@ local function AnchorGuidChanged(frame)
     if not frame.anchorGuid then
         return false
     end
+    -- Every frame for every number is costly in big pulls; a tenth of a second is soon enough.
+    local now = GetTime()
+    if frame.guidCheckAt and now < frame.guidCheckAt then
+        return false
+    end
+    frame.guidCheckAt = now + BD.GUID_CHECK_INTERVAL
     local token = GetPlateUnitToken(frame.anchor) or frame.unitToken
     if not token then
         return false
@@ -494,6 +508,10 @@ local function ReleaseFrame(frame)
     frame:SetParent(UIParent)
     frame:SetFrameLevel(0)
     frame:SetIgnoreParentScale(false)
+    if active[frame] then
+        activeCount = activeCount - 1
+    end
+    frame.guidCheckAt, frame.snapshotAt = nil, nil
     active[frame] = nil
     table.insert(pool, frame)
 end
@@ -982,7 +1000,15 @@ local function ApplyFrameMotion(frame)
     end
 end
 
+-- /psct perf: time spent in number updates (Perf.lua), only while it is on.
+local perfTimes
+local function SetPerfTimes(times)
+    perfTimes = times
+end
+
 local function FrameOnUpdate(frame, elapsed)
+    local clock = perfTimes and debugprofilestop
+    local t0 = clock and clock()
     if IsClassicStyleFrame(frame) then
         frame.elapsed = math.max(0, GetTime() - frame.spawnTime)
     else
@@ -1003,7 +1029,8 @@ local function FrameOnUpdate(frame, elapsed)
         -- ride a recycled plate. GUID check before rebind.
         if AnchorGuidChanged(frame) or not frame.anchor or not AnchorIsShown(frame.anchor) then
             FreezeLingerHost(frame)
-        else
+        elseif not frame.lingerHost or frame.lingerHost.boundPlate ~= frame.anchor
+            or frame.lingerHost.boundRelPoint ~= (frame.anchorRelPoint or "TOP") then
             -- Previous bind is still laid out - snapshot before we ClearAllPoints.
             SnapshotLingerHost(frame, true)
             BindLingerHostToPlate(frame, frame.anchor)
@@ -1014,8 +1041,19 @@ local function FrameOnUpdate(frame, elapsed)
 
     ApplyFrameMotion(frame)
 
-    if not frame.incoming and not frame.isPreview and not frame.lingerFrozen then
+    -- The world position is kept so the number stays put when its enemy dies. Reading it forces a
+    -- layout pass, so it is read every SNAPSHOT_INTERVAL (and fresh when the plate is removed).
+    local t1 = clock and clock()
+    local now = GetTime()
+    if not frame.incoming and not frame.isPreview and not frame.lingerFrozen
+        and (not frame.snapshotAt or now - frame.snapshotAt >= BD.SNAPSHOT_INTERVAL) then
+        frame.snapshotAt = now
         SnapshotLingerHost(frame, true)
+    end
+    if clock then
+        local t2 = clock()
+        perfTimes.numbers = perfTimes.numbers + (t2 - t0)
+        perfTimes.snapshot = perfTimes.snapshot + (t2 - t1)
     end
 end
 
@@ -1053,6 +1091,9 @@ local function AcquireFrame()
     if not frame then
         frame = CreatePooledFrame()
     end
+    if not active[frame] then
+        activeCount = activeCount + 1
+    end
     active[frame] = true
     spawnOrder = spawnOrder + 1
     frame.spawnOrder = spawnOrder
@@ -1085,6 +1126,10 @@ BD.Pool = {
     ReleasePreviewFrames = ReleasePreviewFrames,
     AttachLingerHost = AttachLingerHost,
     SnapshotLingerHost = SnapshotLingerHost,
+    SetPerfTimes = SetPerfTimes,
+    ActiveCount = function()
+        return activeCount
+    end,
 }
 
 function BD:OrphanFramesForUnit(unit)
@@ -1095,6 +1140,9 @@ function BD:OrphanFramesForUnit(unit)
                 matches = GetPlateUnitToken(frame.anchor) == unit
             end
             if matches then
+                -- Positions are read only now and then: take a fresh one while the plate still
+                -- shows this unit (its own helper frame, never the plate itself).
+                SnapshotLingerHost(frame, false)
                 FreezeLingerHost(frame)
             end
         end
