@@ -168,6 +168,12 @@ L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the
 L["Modern"] = "모던 스타일"
 L["Classic"] = "클래식 스타일"
 L["Show live preview"] = "실시간 미리 보기 표시"
+
+-- Spread overlapping numbers
+L["Spread overlapping numbers"] = "겹치는 숫자 분산"
+L["Gently push numbers apart when they overlap, including numbers on neighbouring nameplates from cleave and AoE."] =
+    "숫자가 겹치면 부드럽게 밀어 떨어뜨립니다. 광역 피해로 인접한 이름표에 뜬 숫자도 포함됩니다."
+
 L["Show sample hits, crits, and misses beside this window."] = "이 창 옆에 일반 적중, 치명타, 빗나감 예시를 표시합니다."
 L["Hide live preview"] = "실시간 미리 보기 숨기기"
 L["Color by damage school"] = "피해 계열별 색상"

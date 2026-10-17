@@ -161,6 +161,12 @@ L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the
 L["Modern"] = "现代样式"
 L["Classic"] = "经典样式"
 L["Show live preview"] = "显示实时预览"
+
+-- Spread overlapping numbers
+L["Spread overlapping numbers"] = "分开重叠的数字"
+L["Gently push numbers apart when they overlap, including numbers on neighbouring nameplates from cleave and AoE."] =
+    "数字重叠时将其轻轻推开，包括顺劈和范围伤害在相邻姓名板上的数字。"
+
 L["Show sample hits, crits, and misses beside this window."] = "在此窗口旁显示普通命中、暴击和未命中示例。"
 L["Hide live preview"] = "隐藏实时预览"
 L["Color by damage school"] = "按伤害类型着色"

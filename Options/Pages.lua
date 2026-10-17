@@ -214,6 +214,8 @@ local function BuildAnimation(parent, root)
         function(value) return string.format(L["%.1fs"], value) end)
     layout:Slider("scrollSpeed", L["Scroll speed"], 0.5, 3, 0.1,
         function(value) return string.format(L["%.1fx"], value) end)
+    layout:Checkbox("spreadNumbers", L["Spread overlapping numbers"],
+        L["Gently push numbers apart when they overlap, including numbers on neighbouring nameplates from cleave and AoE."])
 
     layout:When(ModernNumberStyle, function()
         layout:Heading(L["Modern number style motion"])

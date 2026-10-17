@@ -115,6 +115,12 @@ L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the
 L["Modern"] = "Moderno"
 L["Classic"] = "Classic"
 L["Show live preview"] = "Mostra anteprima in tempo reale"
+
+-- Spread overlapping numbers
+L["Spread overlapping numbers"] = "Separa i numeri sovrapposti"
+L["Gently push numbers apart when they overlap, including numbers on neighbouring nameplates from cleave and AoE."] =
+    "Allontana delicatamente i numeri che si sovrappongono, compresi quelli sulle barre del nome vicine per i danni ad area."
+
 L["Show sample hits, crits, and misses beside this window."] =
     "Mostra esempi di colpi, critici e mancati accanto a questa finestra."
 L["Hide live preview"] = "Nascondi anteprima in tempo reale"

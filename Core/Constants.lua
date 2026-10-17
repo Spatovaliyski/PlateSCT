@@ -11,6 +11,7 @@ BD.DEFAULTS = {
     duration = 1.0,
     floatDistance = 20,
     scrollSpeed = 1.0,
+    spreadNumbers = true, -- push overlapping numbers apart, also across nameplates
     fontFace = "game",
     hideBlizzardFCT = true,
     onlyMyDamage = true,

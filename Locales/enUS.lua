@@ -185,6 +185,12 @@ L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the
 L["Modern"] = "Modern"
 L["Classic"] = "Classic"
 L["Show live preview"] = "Show live preview"
+
+-- Spread overlapping numbers
+L["Spread overlapping numbers"] = "Spread overlapping numbers"
+L["Gently push numbers apart when they overlap, including numbers on neighbouring nameplates from cleave and AoE."] =
+    "Gently push numbers apart when they overlap, including numbers on neighbouring nameplates from cleave and AoE."
+
 L["Show sample hits, crits, and misses beside this window."] =
     "Show sample hits, crits, and misses beside this window."
 L["Hide live preview"] = "Hide live preview"

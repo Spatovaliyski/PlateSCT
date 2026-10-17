@@ -481,6 +481,10 @@ local function ReleaseFrame(frame)
     frame.classicBaseY = nil
     frame.amountScale = nil
     frame.spawnOrder = nil
+    frame.spreadX, frame.spreadY = nil, nil
+    frame.spreadHalfW, frame.spreadHalfH, frame.spreadMeasuredAt = nil, nil, nil
+    frame.spreadSeeded = nil
+    frame.spreadTX, frame.spreadTY = nil, nil
     frame.spawnTime = nil
     frame.lingerFrozen = nil
     frame.lingerWorldX = nil
@@ -962,12 +966,283 @@ local function RelayerImpact(parent)
     end
 end
 
+-- Spread overlapping numbers (boids-style separation) ------------------------------------
+-- Each live number is a measured box in screen pixels (number, icon, CRITICAL, spell name),
+-- so numbers on neighbouring nameplates (cleave, AoE) push apart as well. Each overlapping
+-- pair is pushed apart along the axis of least overlap, and the pushes build a smoothed
+-- offset on top of the normal motion. Classic-style crits keep their own grid and Impact
+-- keeps its deliberate stacking, so neither is moved; others move around them.
+--
+-- Cost control: runs at most SPREAD_RATE times a second, re-measures a box at most every
+-- SPREAD_MEASURE_INTERVAL, compares only neighbours (sorted by left edge), skips nearly
+-- faded numbers, and allocates nothing per pass.
+local SPREAD_GAP = 4                -- screen px kept between boxes
+local SPREAD_SPEED = 24             -- share of an overlap resolved per second (targets)
+local SPREAD_EASE = 12              -- how quickly the shown offset follows its target
+local SPREAD_GLIDE = 300            -- fastest the shown offset moves, screen px per second
+local SPREAD_MAX = 80               -- furthest a number is pushed from its own path, screen px
+local SPREAD_RATE = 30              -- passes per second at most
+local SPREAD_MEASURE_INTERVAL = 0.2 -- seconds between text re-measures of one number
+local SPREAD_MIN_ALPHA = 0.08       -- fainter numbers neither push nor get pushed
+local SPREAD_ICON_GAP = 4
+local SPREAD_SEED_OFFSETS = {
+    { 0, 0 }, { 0, 1 }, { 0, -1 }, { 0, 2 }, { 0, -2 }, { 1, 0 }, { -1, 0 },
+    { 1, 1 }, { -1, 1 }, { 1, -1 }, { -1, -1 }, { 0, 3 }, { 0, -3 },
+}
+local spreadNextAt, spreadLastAt = 0, nil
+local spreadItems, spreadCount = {}, 0
+
+local function MeasureRegion(region, fallbackW, fallbackH)
+    local ok, w = pcall(region.GetStringWidth, region)
+    -- Never inspect secret text metrics; a fixed box is close enough.
+    if not ok or type(w) ~= "number" or BD.IsSecret(w) then
+        w = fallbackW
+    end
+    local okH, h = pcall(region.GetStringHeight, region)
+    if not okH or type(h) ~= "number" or BD.IsSecret(h) then
+        h = fallbackH
+    end
+    return w, h
+end
+
+-- Half width and height of a number's visible group, in its own (unscaled) units.
+-- Cached per frame: text only changes when a hit merges in, so a short refresh interval is enough.
+local function SpreadBox(frame, now)
+    if frame.spreadMeasuredAt and now - frame.spreadMeasuredAt < SPREAD_MEASURE_INTERVAL then
+        return frame.spreadHalfW, frame.spreadHalfH
+    end
+    local w, h = MeasureRegion(frame.text, 60, 16)
+    local icon = frame.icon
+    if icon and icon:IsShown() then
+        local size = icon:GetWidth() or 0
+        local point = icon:GetPoint(1)
+        if point == "TOP" or point == "BOTTOM" then
+            w, h = math.max(w, size), h + size + SPREAD_ICON_GAP
+        else
+            w, h = w + size + SPREAD_ICON_GAP, math.max(h, size)
+        end
+    end
+    local crit = frame.critLabel
+    if crit and crit:IsShown() then
+        local cw, ch = MeasureRegion(crit, 0, 0)
+        if frame.animMode == "impactSlam" then
+            w, h = math.max(w, cw), h + ch + 3
+        else
+            w = w + cw + 3
+        end
+    end
+    -- Spell name labels record their span here when that feature is present.
+    local extent = frame.nameExtent
+    if extent then
+        if extent.pos == "left" or extent.pos == "right" then
+            w = w + extent.w
+        else
+            w, h = math.max(w, extent.w), h + extent.h
+        end
+    end
+    frame.spreadHalfW, frame.spreadHalfH, frame.spreadMeasuredAt = w * 0.5, h * 0.5, now
+    return frame.spreadHalfW, frame.spreadHalfH
+end
+
+-- How readily a number moves: 0 never (it keeps its own layout), crits less than hits.
+local function SpreadWeight(frame)
+    if frame.animMode == "impactSlam" or IsClassicShoveFrame(frame) then
+        return 0
+    end
+    return frame.isCrit and 0.4 or 1
+end
+
+local function SpreadDirection(delta, a, b)
+    if delta > 0 then
+        return 1
+    elseif delta < 0 then
+        return -1
+    end
+    -- Exactly on top of each other: the newer number goes up / right.
+    return (a.frame.spawnOrder or 0) < (b.frame.spawnOrder or 0) and 1 or -1
+end
+
+-- A new number starts in the first free nearby spot instead of on top of others: stacking
+-- above or below first (numbers are wide), then sideways, within the cap. Runs in the
+-- number's first update, before it is ever drawn, so the choice is never visible as a jump.
+-- Numbers seeded since the last pass, which its item list does not include yet (reused tables).
+local seedFresh, seedFreshCount = {}, 0
+
+local function SpotTaken(x, y, hw, hh)
+    for index = 1, spreadCount do
+        local o = spreadItems[index]
+        if o.frame and math.abs(o.x - x) < o.hw + hw and math.abs(o.y - y) < o.hh + hh then
+            return true
+        end
+    end
+    for index = 1, seedFreshCount do
+        local o = seedFresh[index]
+        if math.abs(o.x - x) < o.hw + hw and math.abs(o.y - y) < o.hh + hh then
+            return true
+        end
+    end
+    return false
+end
+
+-- Checks candidate spots against the boxes the last pass collected (at most 1/SPREAD_RATE old)
+-- plus numbers seeded since then, so it reads no other frame's position.
+local function SeedSpread(frame, now)
+    frame.spreadSeeded = true
+    if not (BD.db and BD.db.spreadNumbers) or frame.isPreview or SpreadWeight(frame) == 0 then
+        return
+    end
+    local cx, cy = frame:GetCenter()
+    if not cx then
+        return
+    end
+    local eff = frame:GetEffectiveScale()
+    local hw, hh = SpreadBox(frame, now)
+    hw, hh = hw * eff + SPREAD_GAP * 0.5, hh * eff + SPREAD_GAP * 0.5
+    local x0, y0 = cx * eff, cy * eff
+    local chosenX, chosenY = 0, 0
+    for _, c in ipairs(SPREAD_SEED_OFFSETS) do
+        local ox, oy = c[1] * hw * 2, c[2] * hh * 2
+        if ox * ox + oy * oy <= SPREAD_MAX * SPREAD_MAX and not SpotTaken(x0 + ox, y0 + oy, hw, hh) then
+            chosenX, chosenY = ox, oy
+            break
+        end
+    end
+    frame.spreadX, frame.spreadY, frame.spreadTX, frame.spreadTY = chosenX, chosenY, chosenX, chosenY
+    seedFreshCount = seedFreshCount + 1
+    local fresh = seedFresh[seedFreshCount]
+    if not fresh then
+        fresh = {}
+        seedFresh[seedFreshCount] = fresh
+    end
+    fresh.x, fresh.y, fresh.hw, fresh.hh = x0 + chosenX, y0 + chosenY, hw, hh
+end
+
+local function ByLeftEdge(a, b)
+    return a.left < b.left
+end
+
+local function RunSpread(now)
+    if not (BD.db and BD.db.spreadNumbers) or now < spreadNextAt then
+        return
+    end
+    local dt = spreadLastAt and math.min(0.1, now - spreadLastAt) or (1 / SPREAD_RATE)
+    spreadNextAt, spreadLastAt = now + 1 / SPREAD_RATE, now
+    seedFreshCount = 0
+
+    local count = 0
+    for frame in pairs(active) do
+        if frame:IsShown() and not frame.isPreview and frame.spreadSeeded
+            and frame:GetAlpha() >= SPREAD_MIN_ALPHA then
+            local cx, cy = frame:GetCenter()
+            if cx and cy then
+                local eff = frame:GetEffectiveScale()
+                local hw, hh = SpreadBox(frame, now)
+                count = count + 1
+                local item = spreadItems[count]
+                if not item then
+                    item = {}
+                    spreadItems[count] = item
+                end
+                item.frame = frame
+                item.x = cx * eff + (frame.spreadTX or 0) - (frame.spreadX or 0)
+                item.y = cy * eff + (frame.spreadTY or 0) - (frame.spreadY or 0)
+                item.hw, item.hh = hw * eff + SPREAD_GAP * 0.5, hh * eff + SPREAD_GAP * 0.5
+                item.left = item.x - item.hw
+                item.weight, item.px, item.py = SpreadWeight(frame), 0, 0
+            end
+        end
+    end
+    -- Unused tail items: drop frame references and sort them last.
+    for index = count + 1, math.max(spreadCount, #spreadItems) do
+        local item = spreadItems[index]
+        if item then
+            item.frame, item.left = nil, math.huge
+        end
+    end
+    spreadCount = count
+    if count < 2 then
+        return
+    end
+
+    -- Sweep: sorted by left edge, a pair can only overlap while the next box starts
+    -- before this one's right edge, so most pairs are never compared.
+    table.sort(spreadItems, ByLeftEdge)
+    for i = 1, count - 1 do
+        local a = spreadItems[i]
+        local right = a.x + a.hw
+        for j = i + 1, count do
+            local b = spreadItems[j]
+            if b.left >= right then
+                break
+            end
+            local total = a.weight + b.weight
+            if total > 0 then
+                local dx, dy = b.x - a.x, b.y - a.y
+                local overlapX = a.hw + b.hw - math.abs(dx)
+                local overlapY = a.hh + b.hh - math.abs(dy)
+                if overlapX > 0 and overlapY > 0 then
+                    local shareA, shareB = a.weight / total, b.weight / total
+                    if overlapY <= overlapX then
+                        local dir = SpreadDirection(dy, a, b)
+                        a.py, b.py = a.py - dir * overlapY * shareA, b.py + dir * overlapY * shareB
+                    else
+                        local dir = SpreadDirection(dx, a, b)
+                        a.px, b.px = a.px - dir * overlapX * shareA, b.px + dir * overlapX * shareB
+                    end
+                end
+            end
+        end
+    end
+
+    local rate = math.min(1, dt * SPREAD_SPEED)
+    for index = 1, count do
+        local item = spreadItems[index]
+        if item.px ~= 0 or item.py ~= 0 then
+            local frame = item.frame
+            local sx = (frame.spreadTX or 0) + item.px * rate
+            local sy = (frame.spreadTY or 0) + item.py * rate
+            local length = math.sqrt(sx * sx + sy * sy)
+            if length > SPREAD_MAX then
+                sx, sy = sx * SPREAD_MAX / length, sy * SPREAD_MAX / length
+            end
+            frame.spreadTX, frame.spreadTY = sx, sy
+            frame.spreadX, frame.spreadY = frame.spreadX or 0, frame.spreadY or 0
+        end
+    end
+end
+
+-- Glide a number's shown spread offset toward its target, at most SPREAD_GLIDE px per second.
+local function GlideSpread(frame, elapsed)
+    local tx, ty = frame.spreadTX, frame.spreadTY
+    if not tx then
+        return
+    end
+    local dx, dy = tx - frame.spreadX, ty - frame.spreadY
+    if dx == 0 and dy == 0 then
+        return
+    end
+    local share = math.min(1, elapsed * SPREAD_EASE)
+    local mx, my = dx * share, dy * share
+    local step = math.sqrt(mx * mx + my * my)
+    local limit = SPREAD_GLIDE * elapsed
+    if step > limit then
+        mx, my = mx * limit / step, my * limit / step
+    end
+    frame.spreadX, frame.spreadY = frame.spreadX + mx, frame.spreadY + my
+end
+
 local function ApplyFrameMotion(frame)
     local x, y, scale, alpha = ComputeMotion(frame)
     if frame.classicReady or frame.animMode == "impactSlam" then
         -- Keep placement in logical pixels while text size changes.
         frame:SetScale(scale)
         x, y = x / scale, y / scale
+    end
+    if frame.spreadX then
+        -- The spread offset is in screen pixels; anchor offsets are scaled by the frame.
+        local parentScale = frame:GetEffectiveScale() / math.max(0.01, frame:GetScale())
+        local units = scale * parentScale
+        x, y = x + frame.spreadX / units, y + frame.spreadY / units
     end
     local motionAnchor = frame.lingerHost or frame.anchor
     if motionAnchor then
@@ -1011,6 +1286,14 @@ local function FrameOnUpdate(frame, elapsed)
     end
 
     MaybeRelayoutClassic()
+
+    -- Separation is shared by every live number and rate-limited inside.
+    local now = GetTime()
+    if not frame.spreadSeeded then
+        SeedSpread(frame, now)
+    end
+    RunSpread(now)
+    GlideSpread(frame, elapsed)
 
     ApplyFrameMotion(frame)
 
