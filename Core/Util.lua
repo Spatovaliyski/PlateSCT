@@ -284,22 +284,36 @@ local function ResolveSoundChannel(channel)
     return "Dialog"
 end
 
-function BD:PlayOutgoingCritSound(amount, isCrit)
-    if not isCrit then
-        return
-    end
+-- Crit sound tiers: 0 none, 1 critical, 2 huge critical.
+function BD:GetCritSoundTier(amount)
     if not self.db then
-        return
+        return 0
     end
-
     if self.db.hugeCritSoundEnabled and BD.AmountExceeds(amount, self.db.hugeCritSoundThreshold) then
-        pcall(PlaySoundFile, HUGE_CRIT_SOUND_PATH, ResolveSoundChannel(self.db.hugeCritSoundChannel))
-        return
+        return 2
     end
-
     if self.db.critSoundEnabled and BD.AmountExceeds(amount, self.db.critSoundThreshold) then
+        return 1
+    end
+    return 0
+end
+
+function BD:PlayCritSoundTier(tier)
+    if tier == 2 then
+        pcall(PlaySoundFile, HUGE_CRIT_SOUND_PATH, ResolveSoundChannel(self.db.hugeCritSoundChannel))
+    elseif tier == 1 then
         pcall(PlaySoundFile, CRIT_SOUND_PATH, ResolveSoundChannel(self.db.critSoundChannel))
     end
+end
+
+-- Returns the tier played so combined crits only replay on a higher tier.
+function BD:PlayOutgoingCritSound(amount, isCrit)
+    if not isCrit then
+        return 0
+    end
+    local tier = self:GetCritSoundTier(amount)
+    self:PlayCritSoundTier(tier)
+    return tier
 end
 
 function BD:PlayCritSoundPreview(kind)

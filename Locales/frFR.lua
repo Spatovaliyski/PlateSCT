@@ -169,6 +169,26 @@ L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be di
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "En raids et Mythique+, certains montants sont secrets, donc le seuil masque ces coups visuellement au lieu de les ignorer."
 
+-- Combine hits
+L["Combine hits"] = "Regrouper les coups"
+L["Combine rapid hits"] = "Regrouper les coups rapides"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "Additionne les coups qui touchent la même barre de nom en succession rapide en un seul nombre au lieu d'en empiler plusieurs."
+L["Combine"] = "Regrouper"
+L["Same spell"] = "Même sort"
+L["All hits"] = "Tous les coups"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "Même sort garde un nombre séparé pour chaque sort. Tous les coups regroupe chaque coup sur la cible ; son icône montre le sort qui a infligé le plus de dégâts."
+L["Combine window"] = "Fenêtre de regroupement"
+L["%.2fs"] = "%.2fs"
+L["Show hit count"] = "Afficher le nombre de coups"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] =
+    "Indique combien de coups ont été regroupés, par ex. 37 200 (3). Avec les icônes de sort, le nombre s'affiche sur l'icône."
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "Les critiques, les coups normaux et les soins sont regroupés séparément."
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "Les critiques, les coups normaux et les soins sont regroupés séparément. Les montants secrets ne peuvent pas être additionnés, ces coups restent donc affichés individuellement."
+
 L["Preview"] = "Aperçu"
 L["Updates live as you change options."] = "Se met à jour en direct quand vous changez les options."
 L["Target an enemy, then spawn sample numbers on its nameplate."] =
@@ -285,3 +305,15 @@ L["This client does not expose the damage meter API. A snapshot can still report
 L["Turn off Auto-switch by instance to choose manual strictness."] = "Désactivez le changement automatique par instance pour choisir la rigueur manuellement."
 L["Unreadable amounts cannot trigger threshold sounds. Unreadable damage schools are always allowed by the school filter."] = "Les montants illisibles ne déclenchent pas les sons à seuil. Les écoles illisibles sont toujours autorisées par le filtre."
 L["Use gentle fades and row reveals in this settings window. Combat animation is unaffected."] = "Anime discrètement cette fenêtre de réglages. L'animation des nombres en combat n'est pas modifiée."
+
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "Les coups rapides sur la même barre de nom peuvent se regrouper en un seul nombre croissant avec le nombre de coups. Activez-le dans Combat → Regrouper les coups."
+
+-- Reduce clutter
+L["Reduce clutter"] = "Réduire l'encombrement"
+
+-- Combine hits: merge pop
+L["Pop on each merge"] = "Effet de rebond à chaque regroupement"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "Agrandit brièvement le nombre chaque fois qu'un coup s'y ajoute. Désactivez pour un affichage plus calme."

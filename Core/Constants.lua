@@ -18,6 +18,11 @@ BD.DEFAULTS = {
     includePetDamage = true,
     showHealing = false,
     showIncoming = false,
+    combineHits = false,
+    combineWindow = 0.5,
+    combineMode = "spell", -- "spell" | "target"
+    combineShowCount = true,
+    combinePulse = true, -- pop the number again each time a hit merges in
     incomingOffsetX = 0,
     incomingOffsetY = -100,
     debug = false,
@@ -98,6 +103,15 @@ BD.ICON_POSITIONS = {
     { id = "right", labelKey = "Right" },
     { id = "top", labelKey = "Top" },
     { id = "bottom", labelKey = "Bottom" },
+}
+
+-- Scale pulse when a hit merges into a live number.
+BD.COMBINE_PULSE_DURATION = 0.15
+BD.COMBINE_PULSE_SCALE = 0.2
+
+BD.COMBINE_MODES = {
+    { id = "spell", labelKey = "Same spell" },
+    { id = "target", labelKey = "All hits" },
 }
 
 BD.THOUSAND_SEPARATORS = {

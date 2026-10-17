@@ -243,6 +243,26 @@ L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be di
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "공격대와 신화 쐐기돌 던전에서는 일부 피해량의 읽기가 제한됩니다. 이런 피해는 처리를 건너뛰는 대신 화면에서 숨기는 방식으로 기준값을 적용합니다."
 
+-- Combine hits
+L["Combine hits"] = "적중 합치기"
+L["Combine rapid hits"] = "빠른 적중 합치기"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "같은 이름표에 짧은 간격으로 들어온 적중을 여러 개 쌓는 대신 하나의 숫자로 합칩니다."
+L["Combine"] = "합치기 방식"
+L["Same spell"] = "같은 주문"
+L["All hits"] = "모든 적중"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "같은 주문은 주문별 숫자를 따로 표시합니다. 모든 적중은 대상에 대한 모든 적중을 합치며, 아이콘은 가장 많은 피해를 준 주문을 표시합니다."
+L["Combine window"] = "합치기 시간"
+L["%.2fs"] = "%.2f초"
+L["Show hit count"] = "적중 횟수 표시"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] =
+    "합쳐진 적중 횟수를 표시합니다. 예: 37,200 (3). 주문 아이콘을 켜면 횟수가 아이콘 위에 표시됩니다."
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "치명타, 일반 적중, 치유는 각각 따로 합쳐집니다."
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "치명타, 일반 적중, 치유는 각각 따로 합쳐집니다. 일부 피해량은 읽기가 제한되어 더할 수 없으므로 해당 적중은 계속 따로 표시됩니다."
+
 -- Tools
 L["Preview"] = "미리 보기"
 L["Updates live as you change options."] = "옵션을 변경하면 즉시 갱신됩니다."
@@ -374,3 +394,15 @@ L["Your WoW API"] = "내 WoW API"
 -- Translation feedback
 L["This translation was generated with AI. If you find inconsistent terminology or incorrect wording, please report it through GitHub Issues. Thank you for your help! Translation contributors will be credited."] =
     "이 번역은 AI로 생성되었습니다. 용어가 일관되지 않거나 표현이 부정확한 부분을 발견하면 GitHub Issues에 알려 주세요. 도와주셔서 감사합니다! 번역에 기여하신 분의 이름을 명시해 감사의 뜻을 전하겠습니다."
+
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "같은 이름표에 빠르게 들어온 적중을 하나의 증가하는 숫자와 적중 횟수로 합칠 수 있습니다. 전투 → 적중 합치기에서 켜세요."
+
+-- Reduce clutter
+L["Reduce clutter"] = "화면 정리"
+
+-- Combine hits: merge pop
+L["Pop on each merge"] = "합칠 때마다 튀어나오기"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "다른 적중이 합쳐질 때마다 숫자를 잠깐 키웁니다. 더 차분하게 보려면 끄세요."

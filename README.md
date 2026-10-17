@@ -13,9 +13,10 @@ PlateSCT displays outgoing combat numbers on nameplates and supports incoming pl
 - Classic style with a grow-and-settle animation and Modern style with a pop animation.
 - Configurable fonts, colors, critical-hit presentation, and damage thresholds.
 - Animation options, including fountain and rainfall motion, with settings previews.
+- Optional hit combining: rapid hits on the same nameplate merge into one growing number with a hit count, grouped by spell or by target.
 - Classic API client support for player and pet combat-log events, with spell icons taken from combat-log spell IDs.
 - Modern API client attribution and school-filter settings.
-- English, French, German, Spanish, Russian, Italian, and Brazilian Portuguese localization.
+- English, French, German, Spanish, Russian, Italian, Brazilian Portuguese, Simplified Chinese, Traditional Chinese, and Korean localization.
 
 ## Supported clients and number styles
 
@@ -47,7 +48,9 @@ Enable the nameplates you want to see outgoing numbers on in the game's settings
 
 Use the minimap button or addon compartment entry to access PlateSCT's options.
 
-The settings cover combat text, appearance, animations, critical-hit sounds, and Modern API client behavior. Use the number and motion previews to check changes. Preferences and diagnostics are available in the Help page.
+The settings cover combat text, appearance, animations, critical-hit sounds, and Modern API client behavior.
+
+Hit combining is off by default. Turn on **Combat → Combine hits → Combine rapid hits** to merge hits that land on the same nameplate within the combine window (0.5 seconds by default). **Same spell** keeps each spell separate; **All hits** merges everything on the target and shows the icon of the spell that dealt the most damage. The hit count appears as `37,200 (3)`, or on the spell icon when icons are on. Crits, normal hits, and heals combine separately, and each hit must still pass the damage threshold. On Modern API clients, secret amounts cannot be added together, so those hits still show individually. Use the number and motion previews to check changes. Preferences and diagnostics are available in the Help page.
 
 The locale preference can follow the game client automatically or select a supported language. Missing translations fall back to English.
 
