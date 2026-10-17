@@ -98,6 +98,49 @@ L["Click to open settings."] = "点击打开设置。"
 L["Enemy nameplates are turned off. PlateSCT needs them to show numbers.\nPress V (default) or enable them under Interface → Game → Names."] =
     "敌方姓名板已关闭。PlateSCT 需要姓名板才能显示数字。\n按 V（默认按键），或在“界面 → 游戏 → 名称”中启用。"
 L["Who to show"] = "显示来源"
+
+-- What's new: less clutter
+L["Less clutter"] = "更少杂乱"
+L["Dim or hide numbers on enemies you are not targeting, show crits only, shrink small hits, and ignore chosen spells. Find them on the Combat page."] =
+    "淡化或隐藏非目标敌人身上的数字、仅显示暴击、缩小小额命中并忽略指定法术。见“战斗”页面。"
+
+
+-- Ignored spells
+L["Ignored spells"] = "忽略的法术"
+L["Ignore these spells"] = "忽略这些法术"
+L["Spell names or IDs, separated by commas. Their hits, crits, and misses are not shown."] =
+    "法术名称或 ID，用逗号分隔。这些法术的命中、暴击和未命中都不会显示。"
+L["Example: Auto Attack, 133."] = "示例：自动攻击, 133。"
+L["Example: Auto Attack, 133. Modern API knows the spell only in Personal - experimental mode."] =
+    "示例：自动攻击, 133。现代 API 仅在“个人伤害 - 实验性”模式下能识别法术。"
+
+
+-- Shrink small hits
+L["Shrink small hits"] = "缩小小额命中"
+L["Show hits well below your recent average smaller instead of hiding them."] =
+    "将明显低于你近期平均值的命中缩小显示，而不是隐藏。"
+L["Small hit below"] = "小额命中阈值"
+L["%s of average"] = "平均值的 %s"
+
+
+-- Crits only
+L["Crits only"] = "仅显示暴击"
+L["Show only critical hits. Normal hits and heals are hidden; miss text such as Immune still shows."] =
+    "仅显示暴击。普通命中和治疗会被隐藏；“免疫”等未命中文字仍会显示。"
+
+
+-- Off-target numbers
+L["Show"] = "显示"
+L["Dim"] = "淡化"
+L["Hide"] = "隐藏"
+L["Other nameplates"] = "其他姓名板"
+L["How numbers look on enemies you are not targeting. Dim makes them smaller and fainter so your target stands out."] =
+    "非当前目标敌人身上的数字显示方式。“淡化”会让它们更小更淡，使当前目标更突出。"
+L["Only Engaged nameplates mode shows numbers on enemies you are not targeting. Change it under Modern API → Damage mode."] =
+    "只有“交战中的姓名板”模式会在非目标敌人身上显示数字。请在“现代 API”→“伤害模式”中更改。"
+L["Off-target size"] = "非目标大小"
+L["Off-target opacity"] = "非目标不透明度"
+
 L["Only my damage"] = "仅显示我的伤害"
 L["Show hits when a recent cast or auto-attack matches the nameplate. Midnight cannot prove who dealt the hit in a group."] =
     "近期施法或自动攻击与姓名板匹配时，显示该次命中。Midnight 在队伍中无法确认是谁造成了伤害。"
@@ -188,6 +231,7 @@ L["Font"] = "字体"
 L["Font size"] = "字号"
 L["Scroll offset"] = "滚动距离"
 L["Scroll speed"] = "滚动速度"
+L["%d%%"] = "%d%%"
 L["Display duration"] = "显示时长"
 L["Game default"] = "游戏默认"
 L["Friz Quadrata"] = "Friz Quadrata"
@@ -234,6 +278,26 @@ L["Hits below this amount are hidden. Type 50k or 2m. Set to 0 to show everythin
 L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be displayed."] = "支持 k/m 后缀，例如 20k 或 2m。低于此值的伤害不会显示。"
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "在团队副本和史诗钥石地下城中，部分伤害数值受限，因此阈值过滤会从视觉上隐藏这些命中，而不是跳过处理。"
+
+-- Combine hits
+L["Combine hits"] = "合并命中"
+L["Combine rapid hits"] = "合并快速命中"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "将短时间内连续落在同一姓名板上的命中合并为一个数字，而不是堆叠多个数字。"
+L["Combine"] = "合并方式"
+L["Same spell"] = "同一法术"
+L["All hits"] = "全部命中"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "“同一法术”会让每个法术的数字分开显示。“全部命中”会合并目标身上的所有命中，图标显示造成伤害最多的法术。"
+L["Combine window"] = "合并时间窗口"
+L["%.2fs"] = "%.2f秒"
+L["Show hit count"] = "显示命中次数"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] =
+    "显示合并了多少次命中，例如 37,200 (3)。开启法术图标时，次数显示在图标上。"
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "暴击、普通命中和治疗会分别合并。"
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "暴击、普通命中和治疗会分别合并。部分数值受限，无法相加，因此这些命中仍会单独显示。"
 
 -- Tools
 L["Preview"] = "预览"
@@ -360,3 +424,15 @@ L["Your WoW API"] = "当前 WoW API"
 -- Translation feedback
 L["This translation was generated with AI. If you find inconsistent terminology or incorrect wording, please report it through GitHub Issues. Thank you for your help! Translation contributors will be credited."] =
     "此翻译由 AI 生成。如果发现术语不一致或措辞不准确，请通过 GitHub Issues 反馈。感谢你的帮助！翻译贡献者将获得署名致谢。"
+
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "同一姓名板上的快速命中可合并为一个不断增长的数字，并显示命中次数。在“战斗”→“合并命中”中开启。"
+
+-- Reduce clutter
+L["Reduce clutter"] = "减少杂乱"
+
+-- Combine hits: merge pop
+L["Pop on each merge"] = "每次合并时弹跳"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "每当有新的命中合并进来时短暂放大数字。关闭可获得更平静的显示。"

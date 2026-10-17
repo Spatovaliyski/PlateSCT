@@ -3,6 +3,10 @@ local _, BD = ...
 BD.DEFAULTS = {
     enabled = true,
     minDamage = 0,
+    critsOnly = false,
+    shrinkSmallHits = false,
+    smallHitPercent = 0.5, -- share of the recent average below which a hit is small
+    ignoredSpells = "", -- comma-separated spell IDs or names
     abbreviate = false,
     thousandSeparator = "none", -- "none" | "comma" | "dot"
     showSpellIcon = false,
@@ -16,8 +20,16 @@ BD.DEFAULTS = {
     onlyMyDamage = true,
     allNameplates = false,
     includePetDamage = true,
+    offTargetMode = "show", -- "show" | "dim" | "hide"
+    offTargetScale = 0.75,
+    offTargetAlpha = 0.5,
     showHealing = false,
     showIncoming = false,
+    combineHits = false,
+    combineWindow = 0.5,
+    combineMode = "spell", -- "spell" | "target"
+    combineShowCount = true,
+    combinePulse = true, -- pop the number again each time a hit merges in
     incomingOffsetX = 0,
     incomingOffsetY = -100,
     debug = false,
@@ -98,6 +110,24 @@ BD.ICON_POSITIONS = {
     { id = "right", labelKey = "Right" },
     { id = "top", labelKey = "Top" },
     { id = "bottom", labelKey = "Bottom" },
+}
+
+BD.OFF_TARGET_MODES = {
+    { id = "show", labelKey = "Show" },
+    { id = "dim", labelKey = "Dim" },
+    { id = "hide", labelKey = "Hide" },
+}
+
+-- Size of a shrunk small hit, relative to a normal one.
+BD.SMALL_HIT_SCALE = 0.7
+
+-- Scale pulse when a hit merges into a live number.
+BD.COMBINE_PULSE_DURATION = 0.15
+BD.COMBINE_PULSE_SCALE = 0.2
+
+BD.COMBINE_MODES = {
+    { id = "spell", labelKey = "Same spell" },
+    { id = "target", labelKey = "All hits" },
 }
 
 BD.THOUSAND_SEPARATORS = {

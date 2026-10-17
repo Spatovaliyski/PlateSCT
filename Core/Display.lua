@@ -357,6 +357,144 @@ local function ConfigureFrameCommon(self, frame, preset, isCrit, hitKind, isInco
     end
 end
 
+-- Combine hits: a new hit folds into a live number on the same plate when it
+-- shares the combine key and lands inside the window since that number spawned.
+-- Secret amounts cannot be summed, so they always spawn their own number.
+local combineTargets = setmetatable({}, { __mode = "k" })
+
+local function CombinableAmount(amount)
+    return type(amount) == "number" and not BD.IsSecret(amount) and BD.CanAccessValue(amount)
+end
+
+local function CombineKey(self, kind, isHeal, spellIcon, spellId)
+    local source = "any"
+    if self.db.combineMode ~= "target" then
+        if spellId and BD.CanAccessValue(spellId) and not BD.IsSecret(spellId) then
+            source = tostring(spellId)
+        elseif type(spellIcon) == "number" or type(spellIcon) == "string" then
+            source = "icon:" .. tostring(spellIcon)
+        end
+    end
+    return (isHeal and "heal:" or "dmg:") .. kind .. ":" .. source
+end
+
+-- With a spell icon showing, the count sits on the icon like an aura stack;
+-- otherwise it follows the total in parentheses.
+local function CombinedText(self, total, count, onIcon)
+    local display = BD.FormatAmount(total, self.db.abbreviate)
+    if count > 1 and self.db.combineShowCount and not onIcon then
+        return string.format(L["%s (%d)"], display, count)
+    end
+    return display
+end
+
+local function UpdateIconCount(self, frame, onIcon)
+    local label = frame.iconCount
+    if not onIcon or frame.combineCount < 2 or not self.db.combineShowCount then
+        label:SetText("")
+        label:Hide()
+        return
+    end
+    local layout = frame.combineLayout
+    local size = math.max(9, math.floor((layout.opts.iconSize or 12) * 0.63 + 0.5))
+    BD.SafeSetFont(label, layout.fontPath, size, "OUTLINE")
+    label:SetText(frame.combineCount)
+    label:Show()
+end
+
+-- All hits mode merges different spells: keep the icon on whichever spell has
+-- contributed the most damage so far.
+local function NoteCombineSource(frame, icon, amount)
+    local sources = frame.combineSources
+    if not sources or not icon or BD.IsSecret(icon) then
+        return
+    end
+    sources[icon] = (sources[icon] or 0) + amount
+    local top = frame.combineTopIcon
+    if not top or sources[icon] > (sources[top] or 0) then
+        frame.combineTopIcon = icon
+        local opts = frame.combineLayout.opts
+        opts.iconTexture = icon
+        opts.showIcon = true
+    end
+end
+
+-- Fold one more hit into a live number: new total, relaid text, and a pulse.
+local function ApplyCombine(self, frame, amount, icon)
+    frame.combineTotal = frame.combineTotal + amount
+    frame.combineCount = frame.combineCount + 1
+    NoteCombineSource(frame, icon, amount)
+    local layout = frame.combineLayout
+    local onIcon = layout.opts.showIcon and layout.opts.iconTexture ~= nil
+    frame.text:SetText(CombinedText(self, frame.combineTotal, frame.combineCount, onIcon))
+    ApplyTextLayout(frame, layout.fontSize, layout.fontPath, layout.fontFlags, layout.preset, layout.opts)
+    UpdateIconCount(self, frame, onIcon and frame.icon:IsShown())
+    if frame.usesClassicShove then
+        BD.Pool.RelayoutClassic(frame.anchor)
+    end
+    if self.db.combinePulse then
+        frame.combinePulseAt = frame.elapsed
+    end
+end
+
+local function TryCombine(self, plate, key, amount, icon)
+    local byKey = combineTargets[plate]
+    local frame = byKey and byKey[key]
+    if not frame then
+        return false
+    end
+    local window = self.db.combineWindow or self.DEFAULTS.combineWindow
+    if frame.combineKey ~= key or frame.anchor ~= plate or frame.lingerFrozen
+        or not frame:IsShown() or (GetTime() - (frame.spawnTime or 0)) > window then
+        byKey[key] = nil
+        return false
+    end
+    ApplyCombine(self, frame, amount, icon)
+    -- Combined crits replay the crit sound only when the total reaches a higher tier.
+    if frame.combineSoundTier and frame.isCrit then
+        local tier = self:GetCritSoundTier(frame.combineTotal)
+        if tier > frame.combineSoundTier then
+            self:PlayCritSoundTier(tier)
+            frame.combineSoundTier = tier
+        end
+    end
+    self:DebugPrint("combined", key, frame.combineCount, frame.combineTotal)
+    return true
+end
+
+-- Preview bursts: each damage sample is followed by these extra hits, merged
+-- into it at these fractions of the combine window.
+local PREVIEW_COMBINE_HITS = {
+    { at = 0.4, factor = 0.85 },
+    { at = 0.8, factor = 1.1 },
+}
+
+local previewCombineSerial = 0
+
+local function PreviewCombineActive(self, sample)
+    return self.db.combineHits and sample.amount and sample.hitKind ~= "miss"
+end
+
+local function PreviewPulseScale(self, sample)
+    return PreviewCombineActive(self, sample) and self.db.combinePulse and (1 + BD.COMBINE_PULSE_SCALE) or 1
+end
+
+-- Text the sample ends on, so preview bounds fit the combined number.
+local function PreviewSampleText(self, sample)
+    if sample.text then
+        return sample.text
+    end
+    if not PreviewCombineActive(self, sample) then
+        return BD.FormatAmount(sample.amount, self.db.abbreviate)
+    end
+    local total = sample.amount
+    for _, extra in ipairs(PREVIEW_COMBINE_HITS) do
+        total = total + math.floor(sample.amount * extra.factor + 0.5)
+    end
+    -- Preview samples always resolve an icon when spell icons are on.
+    return CombinedText(self, total, #PREVIEW_COMBINE_HITS + 1, self.db.showSpellIcon)
+end
+
 local function PreviewSpawnY(motionStyle)
     if motionStyle == "verticalDown" or motionStyle == "rainfall" then
         return 18
@@ -411,7 +549,7 @@ local function ClassicPreviewSamples(self, sampleKind)
             local frame = { elapsed = 0 }
             local isCrit = sample.hitKind == "crit"
             ConfigureFrameCommon(self, frame, preset, isCrit, sample.hitKind, false, true)
-            local text = sample.text or BD.FormatAmount(sample.amount, self.db.abbreviate)
+            local text = PreviewSampleText(self, sample)
             local width, height = MeasurePreviewText(text, fontPath, fontSize, preset.fontFlags)
             local labelW, labelH = 0, 0
             if isCrit and self:GetCritLabelSetting("classic") then
@@ -424,7 +562,7 @@ local function ClassicPreviewSamples(self, sampleKind)
             local iconSize = icon and math.max(12, math.floor(fontSize * 1.1 + 0.5)) or nil
             frame.classicBounds = ClassicTextBounds(width, height, labelW, labelH, iconSize,
                 self.db.iconPosition or "left")
-            frame.classicReady, frame.amountScale = true, 1.3
+            frame.classicReady, frame.amountScale = true, 1.3 * PreviewPulseScale(self, sample)
             frame.classicBaseY = PreviewSpawnY(frame.motionStyle)
             if not (isCrit and frame.critsHold) then
                 frame.classicBaseY = frame.classicBaseY
@@ -488,7 +626,7 @@ local function ImpactPreviewBounds(self, sampleKind)
     local left, right, bottom, top = 0, 0, 0, 0
     for _, sample in ipairs(PREVIEW_SAMPLES) do
         if sample.hitKind ~= "miss" and MatchesPreviewKind(sample, sampleKind) then
-            local text = BD.FormatAmount(sample.amount, self.db.abbreviate)
+            local text = PreviewSampleText(self, sample)
             local width, height = MeasurePreviewText(text, fontPath, fontSize, preset.fontFlags)
             local labelW, labelH = 0, 0
             if sample.hitKind == "crit" and self:GetCritLabelSetting("impact") then
@@ -499,7 +637,7 @@ local function ImpactPreviewBounds(self, sampleKind)
             local l, r, b, t = ImpactTextBounds(width, height, labelW, labelH, iconSize, self.db.iconPosition)
             local textX = ImpactTextOffset(self, iconSize, self.db.iconPosition)
             l, r = l + textX, r + textX
-            local scale = sample.hitKind == "crit" and preset.critSlapScale or 1
+            local scale = (sample.hitKind == "crit" and preset.critSlapScale or 1) * PreviewPulseScale(self, sample)
             left = math.min(left, x + dx1 - jitter + l * scale - 4)
             right = math.max(right, x + dx2 + jitter + r * scale + 4)
             bottom = math.min(bottom, y + dy1 - jitter + b * scale - 4)
@@ -546,7 +684,7 @@ function BD:GetOptionsPreviewBounds(sampleKind, styleOverride)
                 end
             end
 
-            local text = sample.text or BD.FormatAmount(sample.amount, self.db.abbreviate)
+            local text = PreviewSampleText(self, sample)
             local width, height = MeasurePreviewText(text, fontPath, fontSize, preset.fontFlags)
             local critLabelWidth = 0
             local iconYOffset = 0
@@ -572,6 +710,7 @@ function BD:GetOptionsPreviewBounds(sampleKind, styleOverride)
                     end
                 end
             end
+            peakScale = peakScale * PreviewPulseScale(self, sample)
             local halfWidth = width * peakScale * 0.5 + 4
             local halfHeight = height * peakScale * 0.5 + 4
             local spawnY = PreviewSpawnY(motionStyle)
@@ -674,7 +813,7 @@ local function SpawnMotionPreviewFrame(anchor, sample)
 
     local iconSize = math.max(12, math.floor((fontSize * 1.1) + 0.5))
     local showCritLabel = isCrit and BD:GetCritLabelSetting(numberStyle) and true or false
-    ApplyTextLayout(frame, fontSize, fontPath, preset.fontFlags, preset, {
+    local layoutOpts = {
         showIcon = resolvedIcon ~= nil,
         iconSize = iconSize,
         iconTexture = resolvedIcon,
@@ -683,13 +822,40 @@ local function SpawnMotionPreviewFrame(anchor, sample)
         r = r,
         g = g,
         b = b,
-    })
+    }
+    ApplyTextLayout(frame, fontSize, fontPath, preset.fontFlags, preset, layoutOpts)
 
     frame.text:SetTextColor(r, g, b, 1)
     frame.baseAlpha = 1
     if frame.usesClassicShove then
-        frame.amountScale = BD.ComputeClassicAmountScale(sample.amount)
+        frame.amountScale = BD.ComputeClassicAmountScale(sample.amount, true)
     end
+
+    if PreviewCombineActive(BD, sample) then
+        previewCombineSerial = previewCombineSerial + 1
+        local token = "preview:" .. previewCombineSerial
+        frame.combineKey = token
+        frame.combineTotal = sample.amount
+        frame.combineCount = 1
+        frame.combineLayout = {
+            fontSize = fontSize,
+            fontPath = fontPath,
+            fontFlags = preset.fontFlags,
+            preset = preset,
+            opts = layoutOpts,
+        }
+        local window = BD.db.combineWindow or BD.DEFAULTS.combineWindow
+        for _, extra in ipairs(PREVIEW_COMBINE_HITS) do
+            local amount = math.floor(sample.amount * extra.factor + 0.5)
+            C_Timer.After(window * extra.at, function()
+                -- The pooled frame may have been released and reused since.
+                if frame.combineKey == token and frame:IsShown() then
+                    ApplyCombine(BD, frame, amount)
+                end
+            end)
+        end
+    end
+
     PlaceFrame(frame, anchor, spawnX, spawnY)
     frame:SetAlpha(1)
     if frame.isCrit then
@@ -841,6 +1007,27 @@ function BD:ReleaseMotionPreviews()
     BD.Pool.ReleasePreviewFrames()
 end
 
+-- Off-target: a plate other than your current target's. With no target, nothing is off-target.
+-- Compares nameplate frames, which works on both APIs (UnitIsUnit is unreliable on Modern).
+local function IsOffTargetPlate(self, plate)
+    if (self.db.offTargetMode or "show") == "show" then
+        return false
+    end
+    local targetPlate = BD.GetNamePlateFrame("target")
+    return targetPlate ~= nil and targetPlate ~= plate
+end
+
+-- Small hit: a readable normal damage hit below a share of the recent average.
+-- Must be checked before this hit joins the average.
+local function IsSmallHit(self, amount, kind, isHeal)
+    if not self.db.shrinkSmallHits or isHeal or kind ~= "hit" or not CombinableAmount(amount) then
+        return false
+    end
+    local average = BD.GetRecentDamageAverage()
+    local share = self.db.smallHitPercent or self.DEFAULTS.smallHitPercent
+    return average > 0 and amount < average * share
+end
+
 function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isHeal, spellIcon, hitKind, spellId)
     local plate = BD.GetNamePlateFrame(unit)
     if not plate then
@@ -851,6 +1038,29 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
     local kind = hitKind
     if not kind then
         kind = isCrit and "crit" or "hit"
+    end
+
+    if self:IsSpellIgnored(spellId) then
+        return
+    end
+
+    -- Crits only keeps crits and miss text (Immune, Dodge, ...); normal hits and heals are dropped.
+    if self.db.critsOnly and kind == "hit" then
+        return
+    end
+
+    local offTarget = IsOffTargetPlate(self, plate)
+    if offTarget and self.db.offTargetMode == "hide" then
+        return
+    end
+
+    local combineKey
+    if self.db.combineHits and kind ~= "miss" and CombinableAmount(amountForThreshold) then
+        combineKey = CombineKey(self, kind, isHeal, spellIcon, spellId)
+        local icon = self.db.combineMode == "target" and self:ResolveOutgoingSpellIcon(spellIcon, spellId) or nil
+        if TryCombine(self, plate, combineKey, amountForThreshold, icon) then
+            return
+        end
     end
 
     local preset, numberStyle = GetFrameStyle(self, kind, false, isHeal)
@@ -889,6 +1099,12 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
     end
 
     local fontSize = (self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale
+    if offTarget then
+        fontSize = fontSize * (self.db.offTargetScale or self.DEFAULTS.offTargetScale)
+    end
+    if IsSmallHit(self, amountForThreshold, kind, isHeal) then
+        fontSize = fontSize * BD.SMALL_HIT_SCALE
+    end
     local fontPath = BD.ResolveFontPath(self.db.fontFace)
     fontPath = BD.SafeSetFont(frame.text, fontPath, fontSize, preset.fontFlags)
     if preset.shadowOffset then
@@ -920,7 +1136,7 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
         r, g, b = preset.defaultColor[1], preset.defaultColor[2], preset.defaultColor[3]
     end
 
-    ApplyTextLayout(frame, fontSize, fontPath, preset.fontFlags, preset, {
+    local layoutOpts = {
         showIcon = resolvedIcon ~= nil,
         iconSize = iconSize,
         iconTexture = resolvedIcon,
@@ -929,7 +1145,8 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
         r = r,
         g = g,
         b = b,
-    })
+    }
+    ApplyTextLayout(frame, fontSize, fontPath, preset.fontFlags, preset, layoutOpts)
 
     frame.text:SetTextColor(r, g, b, 1)
 
@@ -943,6 +1160,9 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
             frame.baseAlpha = 1
         end
     end
+    if offTarget then
+        frame.baseAlpha = frame.baseAlpha * (self.db.offTargetAlpha or self.DEFAULTS.offTargetAlpha)
+    end
 
     if frame.baseAlpha <= 0 then
         BD.Pool.Release(frame)
@@ -951,6 +1171,35 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
 
     if frame.usesClassicShove then
         frame.amountScale = BD.ComputeClassicAmountScale(amountForThreshold)
+    elseif self.db.shrinkSmallHits and not isHeal then
+        -- Classic style feeds the average itself; other styles feed it for small-hit shrinking.
+        BD.PushDamageSample(amountForThreshold)
+    end
+
+    if combineKey then
+        frame.combineKey = combineKey
+        frame.combineTotal = amountForThreshold
+        frame.combineCount = 1
+        frame.combineLayout = {
+            fontSize = fontSize,
+            fontPath = fontPath,
+            fontFlags = preset.fontFlags,
+            preset = preset,
+            opts = layoutOpts,
+        }
+        if self.db.combineMode == "target" then
+            frame.combineSources = {}
+            if resolvedIcon and not BD.IsSecret(resolvedIcon) then
+                frame.combineSources[resolvedIcon] = amountForThreshold
+                frame.combineTopIcon = resolvedIcon
+            end
+        end
+        local byKey = combineTargets[plate]
+        if not byKey then
+            byKey = {}
+            combineTargets[plate] = byKey
+        end
+        byKey[combineKey] = frame
     end
 
     PlaceFrame(frame, plate, baseX, baseY)
@@ -973,7 +1222,10 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
     BD.Pool.SnapshotLingerHost(frame, true)
 
     if not isHeal and kind ~= "miss" then
-        self:PlayOutgoingCritSound(amountForThreshold, frame.isCrit)
+        local tier = self:PlayOutgoingCritSound(amountForThreshold, frame.isCrit)
+        if combineKey then
+            frame.combineSoundTier = tier
+        end
     end
 end
 

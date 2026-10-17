@@ -104,6 +104,49 @@ L["Click to open settings."] = "클릭하면 설정을 엽니다."
 L["Enemy nameplates are turned off. PlateSCT needs them to show numbers.\nPress V (default) or enable them under Interface → Game → Names."] =
     "적 이름표가 꺼져 있습니다. PlateSCT가 숫자를 표시하려면 이름표가 필요합니다.\nV 키(기본값)를 누르거나 인터페이스 → 게임 → 이름에서 켜세요."
 L["Who to show"] = "표시할 피해 출처"
+
+-- What's new: less clutter
+L["Less clutter"] = "더 깔끔한 화면"
+L["Dim or hide numbers on enemies you are not targeting, show crits only, shrink small hits, and ignore chosen spells. Find them on the Combat page."] =
+    "대상이 아닌 적의 숫자를 흐리게 하거나 숨기고, 치명타만 표시하고, 작은 적중을 축소하고, 선택한 주문을 무시할 수 있습니다. 전투 페이지에서 설정하세요."
+
+
+-- Ignored spells
+L["Ignored spells"] = "무시할 주문"
+L["Ignore these spells"] = "이 주문 무시"
+L["Spell names or IDs, separated by commas. Their hits, crits, and misses are not shown."] =
+    "주문 이름 또는 ID를 쉼표로 구분해 입력합니다. 해당 주문의 적중, 치명타, 빗나감은 표시되지 않습니다."
+L["Example: Auto Attack, 133."] = "예: 자동 공격, 133."
+L["Example: Auto Attack, 133. Modern API knows the spell only in Personal - experimental mode."] =
+    "예: 자동 공격, 133. 모던 API는 개인 피해 - 실험 기능 모드에서만 주문을 알 수 있습니다."
+
+
+-- Shrink small hits
+L["Shrink small hits"] = "작은 적중 축소"
+L["Show hits well below your recent average smaller instead of hiding them."] =
+    "최근 평균보다 훨씬 낮은 적중을 숨기는 대신 작게 표시합니다."
+L["Small hit below"] = "작은 적중 기준"
+L["%s of average"] = "평균의 %s"
+
+
+-- Crits only
+L["Crits only"] = "치명타만"
+L["Show only critical hits. Normal hits and heals are hidden; miss text such as Immune still shows."] =
+    "치명타만 표시합니다. 일반 적중과 치유는 숨겨지며, 면역 같은 빗나감 문구는 계속 표시됩니다."
+
+
+-- Off-target numbers
+L["Show"] = "표시"
+L["Dim"] = "흐리게"
+L["Hide"] = "숨기기"
+L["Other nameplates"] = "다른 이름표"
+L["How numbers look on enemies you are not targeting. Dim makes them smaller and fainter so your target stands out."] =
+    "대상으로 지정하지 않은 적에게 표시되는 숫자의 모양입니다. 흐리게는 숫자를 더 작고 옅게 만들어 현재 대상이 돋보이게 합니다."
+L["Only Engaged nameplates mode shows numbers on enemies you are not targeting. Change it under Modern API → Damage mode."] =
+    "대상이 아닌 적에게 숫자를 표시하는 것은 교전 중인 적의 이름표 모드뿐입니다. 모던 API → 피해 모드에서 변경하세요."
+L["Off-target size"] = "대상 외 크기"
+L["Off-target opacity"] = "대상 외 불투명도"
+
 L["Only my damage"] = "내가 준 피해만 표시"
 L["Show hits when a recent cast or auto-attack matches the nameplate. Midnight cannot prove who dealt the hit in a group."] =
     "최근 시전이나 자동 공격이 해당 이름표와 일치하면 피해를 표시합니다. Midnight에서는 파티 내 피해를 누가 주었는지 확인할 수 없습니다."
@@ -195,6 +238,7 @@ L["Font"] = "글꼴"
 L["Font size"] = "글꼴 크기"
 L["Scroll offset"] = "스크롤 거리"
 L["Scroll speed"] = "스크롤 속도"
+L["%d%%"] = "%d%%"
 L["Display duration"] = "표시 시간"
 L["Game default"] = "게임 기본값"
 L["Friz Quadrata"] = "Friz Quadrata"
@@ -242,6 +286,26 @@ L["Hits below this amount are hidden. Type 50k or 2m. Set to 0 to show everythin
 L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be displayed."] = "k/m 접미사를 사용할 수 있습니다. 예: 20k 또는 2m. 이 값보다 작은 피해는 표시하지 않습니다."
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "공격대와 신화 쐐기돌 던전에서는 일부 피해량의 읽기가 제한됩니다. 이런 피해는 처리를 건너뛰는 대신 화면에서 숨기는 방식으로 기준값을 적용합니다."
+
+-- Combine hits
+L["Combine hits"] = "적중 합치기"
+L["Combine rapid hits"] = "빠른 적중 합치기"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "같은 이름표에 짧은 간격으로 들어온 적중을 여러 개 쌓는 대신 하나의 숫자로 합칩니다."
+L["Combine"] = "합치기 방식"
+L["Same spell"] = "같은 주문"
+L["All hits"] = "모든 적중"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "같은 주문은 주문별 숫자를 따로 표시합니다. 모든 적중은 대상에 대한 모든 적중을 합치며, 아이콘은 가장 많은 피해를 준 주문을 표시합니다."
+L["Combine window"] = "합치기 시간"
+L["%.2fs"] = "%.2f초"
+L["Show hit count"] = "적중 횟수 표시"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] =
+    "합쳐진 적중 횟수를 표시합니다. 예: 37,200 (3). 주문 아이콘을 켜면 횟수가 아이콘 위에 표시됩니다."
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "치명타, 일반 적중, 치유는 각각 따로 합쳐집니다."
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "치명타, 일반 적중, 치유는 각각 따로 합쳐집니다. 일부 피해량은 읽기가 제한되어 더할 수 없으므로 해당 적중은 계속 따로 표시됩니다."
 
 -- Tools
 L["Preview"] = "미리 보기"
@@ -374,3 +438,15 @@ L["Your WoW API"] = "내 WoW API"
 -- Translation feedback
 L["This translation was generated with AI. If you find inconsistent terminology or incorrect wording, please report it through GitHub Issues. Thank you for your help! Translation contributors will be credited."] =
     "이 번역은 AI로 생성되었습니다. 용어가 일관되지 않거나 표현이 부정확한 부분을 발견하면 GitHub Issues에 알려 주세요. 도와주셔서 감사합니다! 번역에 기여하신 분의 이름을 명시해 감사의 뜻을 전하겠습니다."
+
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "같은 이름표에 빠르게 들어온 적중을 하나의 증가하는 숫자와 적중 횟수로 합칠 수 있습니다. 전투 → 적중 합치기에서 켜세요."
+
+-- Reduce clutter
+L["Reduce clutter"] = "화면 정리"
+
+-- Combine hits: merge pop
+L["Pop on each merge"] = "합칠 때마다 튀어나오기"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "다른 적중이 합쳐질 때마다 숫자를 잠깐 키웁니다. 더 차분하게 보려면 끄세요."

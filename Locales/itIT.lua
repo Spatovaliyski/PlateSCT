@@ -88,6 +88,49 @@ L["Click to open settings."] = "Clicca per aprire le impostazioni."
 L["Enemy nameplates are turned off. PlateSCT needs them to show numbers.\nPress V (default) or enable them under Interface → Game → Names."] =
     "Le barre del nome nemiche sono disattivate. PlateSCT ne ha bisogno per mostrare i numeri.\nPremi V (predefinito) o attivale in Interfaccia → Gioco → Nomi."
 L["Who to show"] = "Cosa mostrare"
+
+-- What's new: less clutter
+L["Less clutter"] = "Meno disordine"
+L["Dim or hide numbers on enemies you are not targeting, show crits only, shrink small hits, and ignore chosen spells. Find them on the Combat page."] =
+    "Attenua o nascondi i numeri sui nemici non bersagliati, mostra solo i critici, rimpicciolisci i colpi piccoli e ignora incantesimi scelti. Nella pagina Combattimento."
+
+
+-- Ignored spells
+L["Ignored spells"] = "Incantesimi ignorati"
+L["Ignore these spells"] = "Ignora questi incantesimi"
+L["Spell names or IDs, separated by commas. Their hits, crits, and misses are not shown."] =
+    "Nomi o ID degli incantesimi, separati da virgole. I loro colpi, critici e mancati non vengono mostrati."
+L["Example: Auto Attack, 133."] = "Esempio: Attacco automatico, 133."
+L["Example: Auto Attack, 133. Modern API knows the spell only in Personal - experimental mode."] =
+    "Esempio: Attacco automatico, 133. L'API Modern conosce l'incantesimo solo in modalità Personale - sperimentale."
+
+
+-- Shrink small hits
+L["Shrink small hits"] = "Rimpicciolisci i colpi piccoli"
+L["Show hits well below your recent average smaller instead of hiding them."] =
+    "Mostra più piccoli i colpi molto sotto la tua media recente invece di nasconderli."
+L["Small hit below"] = "Colpo piccolo sotto"
+L["%s of average"] = "%s della media"
+
+
+-- Crits only
+L["Crits only"] = "Solo critici"
+L["Show only critical hits. Normal hits and heals are hidden; miss text such as Immune still shows."] =
+    "Mostra solo i colpi critici. Colpi normali e cure vengono nascosti; i testi di mancato come Immune restano visibili."
+
+
+-- Off-target numbers
+L["Show"] = "Mostra"
+L["Dim"] = "Attenua"
+L["Hide"] = "Nascondi"
+L["Other nameplates"] = "Altre barre del nome"
+L["How numbers look on enemies you are not targeting. Dim makes them smaller and fainter so your target stands out."] =
+    "Aspetto dei numeri sui nemici che non stai bersagliando. Attenua li rende più piccoli e tenui, così il tuo bersaglio risalta."
+L["Only Engaged nameplates mode shows numbers on enemies you are not targeting. Change it under Modern API → Damage mode."] =
+    "Solo la modalità Barre in combattimento mostra numeri sui nemici che non stai bersagliando. Cambiala in API moderna → Modalità danni."
+L["Off-target size"] = "Dimensione fuori bersaglio"
+L["Off-target opacity"] = "Opacità fuori bersaglio"
+
 L["Only my damage"] = "Solo i miei danni"
 L["Show hits on your current target when you recently cast or auto-attacked. Midnight cannot prove who dealt the hit in a group."] =
     "Mostra i colpi sul bersaglio attuale quando hai lanciato o auto-attaccato di recente. Midnight non può dimostrare chi ha inflitto il colpo in gruppo."
@@ -142,6 +185,7 @@ L["Font"] = "Carattere"
 L["Font size"] = "Dimensione carattere"
 L["Scroll offset"] = "Scostamento scorrimento"
 L["Scroll speed"] = "Velocità scorrimento"
+L["%d%%"] = "%d%%"
 L["Display duration"] = "Durata visualizzazione"
 L["Game default"] = "Predefinito del gioco"
 L["Friz Quadrata"] = "Friz Quadrata"
@@ -168,6 +212,26 @@ L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be di
     "Supporta i suffissi k/m, es. 20k o 2m. Il danno sotto questo valore non verrà mostrato."
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "In incursioni e Mitica+ alcuni valori sono segreti, quindi la soglia nasconde quei colpi visivamente invece di saltarli."
+
+-- Combine hits
+L["Combine hits"] = "Unisci colpi"
+L["Combine rapid hits"] = "Unisci colpi rapidi"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "Somma i colpi che arrivano in rapida successione sulla stessa barra del nome in un unico numero invece di impilarne molti."
+L["Combine"] = "Unisci"
+L["Same spell"] = "Stesso incantesimo"
+L["All hits"] = "Tutti i colpi"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "Stesso incantesimo tiene separato il numero di ogni incantesimo. Tutti i colpi unisce ogni colpo sul bersaglio; la sua icona mostra l'incantesimo che ha inflitto più danni."
+L["Combine window"] = "Finestra di unione"
+L["%.2fs"] = "%.2fs"
+L["Show hit count"] = "Mostra numero di colpi"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] =
+    "Mostra quanti colpi sono stati uniti, ad es. 37.200 (3). Con le icone degli incantesimi attive, il numero appare sull'icona."
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "Critici, colpi normali e cure vengono uniti separatamente."
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "Critici, colpi normali e cure vengono uniti separatamente. I valori segreti non possono essere sommati, quindi quei colpi vengono ancora mostrati singolarmente."
 
 L["Preview"] = "Anteprima"
 L["Updates live as you change options."] = "Si aggiorna in tempo reale quando cambi le opzioni."
@@ -285,3 +349,15 @@ L["This client does not expose the damage meter API. A snapshot can still report
 L["Turn off Auto-switch by instance to choose manual strictness."] = "Disattiva il cambio automatico per istanza per scegliere manualmente la severità."
 L["Unreadable amounts cannot trigger threshold sounds. Unreadable damage schools are always allowed by the school filter."] = "I valori illeggibili non attivano i suoni a soglia. Le scuole illeggibili sono sempre consentite dal filtro."
 L["Use gentle fades and row reveals in this settings window. Combat animation is unaffected."] = "Usa dissolvenze leggere e comparsa delle righe nelle impostazioni. L'animazione in combattimento resta invariata."
+
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "I colpi rapidi sulla stessa barra del nome possono unirsi in un unico numero crescente con il conteggio dei colpi. Attivalo in Combattimento → Unisci colpi."
+
+-- Reduce clutter
+L["Reduce clutter"] = "Riduci il disordine"
+
+-- Combine hits: merge pop
+L["Pop on each merge"] = "Rimbalzo a ogni unione"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "Ingrandisce brevemente il numero ogni volta che vi si unisce un altro colpo. Disattiva per una visualizzazione più calma."

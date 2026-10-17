@@ -112,6 +112,49 @@ L["Click to open settings."] = "Click to open settings."
 L["Enemy nameplates are turned off. PlateSCT needs them to show numbers.\nPress V (default) or enable them under Interface → Game → Names."] =
     "Enemy nameplates are turned off. PlateSCT needs them to show numbers.\nPress V (default) or enable them under Interface → Game → Names."
 L["Who to show"] = "Who to show"
+
+-- What's new: less clutter
+L["Less clutter"] = "Less clutter"
+L["Dim or hide numbers on enemies you are not targeting, show crits only, shrink small hits, and ignore chosen spells. Find them on the Combat page."] =
+    "Dim or hide numbers on enemies you are not targeting, show crits only, shrink small hits, and ignore chosen spells. Find them on the Combat page."
+
+
+-- Ignored spells
+L["Ignored spells"] = "Ignored spells"
+L["Ignore these spells"] = "Ignore these spells"
+L["Spell names or IDs, separated by commas. Their hits, crits, and misses are not shown."] =
+    "Spell names or IDs, separated by commas. Their hits, crits, and misses are not shown."
+L["Example: Auto Attack, 133."] = "Example: Auto Attack, 133."
+L["Example: Auto Attack, 133. Modern API knows the spell only in Personal - experimental mode."] =
+    "Example: Auto Attack, 133. Modern API knows the spell only in Personal - experimental mode."
+
+
+-- Shrink small hits
+L["Shrink small hits"] = "Shrink small hits"
+L["Show hits well below your recent average smaller instead of hiding them."] =
+    "Show hits well below your recent average smaller instead of hiding them."
+L["Small hit below"] = "Small hit below"
+L["%s of average"] = "%s of average"
+
+
+-- Crits only
+L["Crits only"] = "Crits only"
+L["Show only critical hits. Normal hits and heals are hidden; miss text such as Immune still shows."] =
+    "Show only critical hits. Normal hits and heals are hidden; miss text such as Immune still shows."
+
+
+-- Off-target numbers
+L["Show"] = "Show"
+L["Dim"] = "Dim"
+L["Hide"] = "Hide"
+L["Other nameplates"] = "Other nameplates"
+L["How numbers look on enemies you are not targeting. Dim makes them smaller and fainter so your target stands out."] =
+    "How numbers look on enemies you are not targeting. Dim makes them smaller and fainter so your target stands out."
+L["Only Engaged nameplates mode shows numbers on enemies you are not targeting. Change it under Modern API → Damage mode."] =
+    "Only Engaged nameplates mode shows numbers on enemies you are not targeting. Change it under Modern API → Damage mode."
+L["Off-target size"] = "Off-target size"
+L["Off-target opacity"] = "Off-target opacity"
+
 L["Only my damage"] = "Only my damage"
 L["Show hits when a recent cast or auto-attack matches the nameplate. Midnight cannot prove who dealt the hit in a group."] =
     "Show hits when a recent cast or auto-attack matches the nameplate. Midnight cannot prove who dealt the hit in a group."
@@ -217,6 +260,7 @@ L["Font"] = "Font"
 L["Font size"] = "Font size"
 L["Scroll offset"] = "Scroll offset"
 L["Scroll speed"] = "Scroll speed"
+L["%d%%"] = "%d%%"
 L["Display duration"] = "Display duration"
 L["Game default"] = "Game default"
 L["Friz Quadrata"] = "Friz Quadrata"
@@ -276,6 +320,25 @@ L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be di
     "Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be displayed."
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."
+
+-- Combine hits
+L["Combine hits"] = "Combine hits"
+L["Combine rapid hits"] = "Combine rapid hits"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "Add hits that land in quick succession on the same nameplate into one number instead of stacking many."
+L["Combine"] = "Combine"
+L["Same spell"] = "Same spell"
+L["All hits"] = "All hits"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."
+L["Combine window"] = "Combine window"
+L["%.2fs"] = "%.2fs"
+L["Show hit count"] = "Show hit count"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] = "Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "Crits, normal hits, and heals combine separately."
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."
 
 -- Tools
 L["Preview"] = "Preview"
@@ -391,3 +454,15 @@ L["Unreadable amounts cannot trigger threshold sounds. Unreadable damage schools
 L["Unsupported client - combat text unavailable"] = "Unsupported client - combat text unavailable"
 L["Use gentle fades and row reveals in this settings window. Combat animation is unaffected."] = "Use gentle fades and row reveals in this settings window. Combat animation is unaffected."
 L["Your WoW API"] = "Your WoW API"
+
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."
+
+-- Reduce clutter
+L["Reduce clutter"] = "Reduce clutter"
+
+-- Combine hits: merge pop
+L["Pop on each merge"] = "Pop on each merge"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."

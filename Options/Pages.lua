@@ -47,6 +47,10 @@ local function PixelValue(value)
     return string.format(L["%d px"], value)
 end
 
+local function PercentValue(value)
+    return string.format(L["%d%%"], math.floor(value * 100 + 0.5))
+end
+
 local function RefreshScenario()
     if BD.RefreshScenario then
         BD:RefreshScenario()
@@ -60,6 +64,12 @@ local function EnemyNameplatesEnabled()
     end
     local ok, enabled = pcall(reader, "nameplateShowEnemies")
     return not ok or enabled == nil or (enabled ~= false and enabled ~= "0" and enabled ~= 0)
+end
+
+-- On Modern only Engaged nameplates shows other enemies: Current target never does, and Personal
+-- attributes hits only to the cast's target, so off-target styling would have nothing to style.
+local function OffTargetAvailable()
+    return not IsModernAPI() or (not BD.db.onlyMyDamage and BD.db.allNameplates)
 end
 
 local function BuildCombat(parent, root)
@@ -99,6 +109,13 @@ local function BuildCombat(parent, root)
             or L["Also show damage from your pet and guardians on nameplates."],
         PersonalModeAvailable, nil,
         L["Choose Personal - experimental under Modern API → Damage mode to use pet matching."])
+    layout:Choice("offTargetMode", L["Other nameplates"], BD.OFF_TARGET_MODES,
+        L["How numbers look on enemies you are not targeting. Dim makes them smaller and fainter so your target stands out."],
+        OffTargetAvailable, nil, L["Only Engaged nameplates mode shows numbers on enemies you are not targeting. Change it under Modern API → Damage mode."])
+    layout:When(function() return BD.db.offTargetMode == "dim" and OffTargetAvailable() end, function()
+        layout:Slider("offTargetScale", L["Off-target size"], 0.4, 1, 0.05, PercentValue)
+        layout:Slider("offTargetAlpha", L["Off-target opacity"], 0.1, 1, 0.05, PercentValue)
+    end)
 
     layout:Heading(L["Healing"])
     layout:Checkbox("showHealing", L["Show healing"],
@@ -116,7 +133,8 @@ local function BuildCombat(parent, root)
     layout:Slider("incomingOffsetY", L["Incoming Y"], -200, 200, 2, PixelValue,
         incomingEnabled, nil, incomingReason)
 
-    layout:Heading(L["Minimum damage threshold"])
+    -- Everything that limits how many numbers appear lives under one heading.
+    layout:Heading(L["Reduce clutter"])
     layout:Input("minDamage", L["Minimum damage threshold"],
         L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be displayed."], function()
             BD:RebuildThresholdCurve()
@@ -125,6 +143,38 @@ local function BuildCombat(parent, root)
     if IsModernAPI() then
         layout:Note(L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."])
     end
+    layout:Checkbox("critsOnly", L["Crits only"],
+        L["Show only critical hits. Normal hits and heals are hidden; miss text such as Immune still shows."])
+    layout:Checkbox("shrinkSmallHits", L["Shrink small hits"],
+        L["Show hits well below your recent average smaller instead of hiding them."])
+    layout:When(function() return BD.db.shrinkSmallHits end, function()
+        layout:Slider("smallHitPercent", L["Small hit below"], 0.1, 0.9, 0.05, function(value)
+            return string.format(L["%s of average"], PercentValue(value))
+        end)
+    end)
+
+    layout:Checkbox("combineHits", L["Combine rapid hits"],
+        L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."])
+    layout:When(function() return BD.db.combineHits end, function()
+        layout:Slider("combineWindow", L["Combine window"], 0.1, 1, 0.05,
+            function(value) return string.format(L["%.2fs"], value) end)
+        layout:Choice("combineMode", L["Combine"], BD.COMBINE_MODES,
+            L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."])
+        layout:Checkbox("combineShowCount", L["Show hit count"],
+            L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."])
+        layout:Checkbox("combinePulse", L["Pop on each merge"],
+            L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."])
+        layout:Note(IsModernAPI()
+            and L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."]
+            or L["Crits, normal hits, and heals combine separately."])
+    end)
+
+    layout:Heading(L["Ignored spells"])
+    layout:TextInput("ignoredSpells", L["Ignore these spells"],
+        L["Spell names or IDs, separated by commas. Their hits, crits, and misses are not shown."])
+    layout:Note(IsModernAPI()
+        and L["Example: Auto Attack, 133. Modern API knows the spell only in Personal - experimental mode."]
+        or L["Example: Auto Attack, 133."])
     layout:Finish()
 end
 
@@ -441,6 +491,10 @@ local function BuildDiagnostics(layout)
 end
 
 local function BuildWhatsNew(layout)
+    layout:Heading(L["Less clutter"])
+    layout:Note(L["Dim or hide numbers on enemies you are not targeting, show crits only, shrink small hits, and ignore chosen spells. Find them on the Combat page."])
+    layout:Heading(L["Combine hits"])
+    layout:Note(L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."])
     layout:Heading(L["Impact number style"])
     layout:Note(L["Impact slams outgoing damage beside or above the nameplate, then floats up. New hits layer in front; crits amplify and CRITICAL flashes above when enabled."])
     layout:Note(L["Impact uses Modern for incoming damage, healing, and miss text, preserving saved Modern motions."])
