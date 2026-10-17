@@ -353,7 +353,9 @@ function BD:PlayerIsEngagedWith(unit)
     if not ok then
         return true
     end
-    if not BD.CanAccessValue(status) then
+    -- A secret status cannot be read, so allow it. nil means you are not on the threat table:
+    -- check secrets first, since comparing a secret raises an error.
+    if BD.IsSecret(status) then
         return true
     end
     return status ~= nil

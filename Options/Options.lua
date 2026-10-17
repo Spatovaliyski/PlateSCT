@@ -296,7 +296,10 @@ local function BuildConfigFrame()
     local frame = CreateFrame("Frame", "PlateSCTConfigFrame", UIParent, "BackdropTemplate")
     frame:Hide(); frame:SetSize(WINDOW_WIDTH, WINDOW_HEIGHT); frame:SetPoint("CENTER")
     frame:SetFrameStrata("DIALOG"); frame:SetToplevel(true); frame:SetClampedToScreen(true)
-    frame:EnableMouse(true); frame:SetMovable(true); frame:EnableKeyboard(true)
+    frame:EnableMouse(true); frame:SetMovable(true)
+    -- ESC closes the window through the game's special-frames list. Capturing the keyboard
+    -- instead needs SetPropagateKeyboardInput, which is blocked in combat and could swallow keys.
+    tinsert(UISpecialFrames, "PlateSCTConfigFrame")
     W.Backdrop(frame, "window")
     frame.controls, frame.searchIndex, frame.refreshers = {}, {}, {}
     frame.views, frame.pages, frame.navButtons = {}, {}, {}
@@ -558,12 +561,6 @@ local function BuildConfigFrame()
         W.Backdrop(search, "control")
     end)
     frame:SetScript("OnMouseDown", function() frame:DismissTransient(); search:ClearFocus() end)
-    frame:SetScript("OnKeyDown", function(self, key)
-        if key == "ESCAPE" then
-            if not self:DismissTransient() then self:Hide() end
-            self:SetPropagateKeyboardInput(false)
-        else self:SetPropagateKeyboardInput(true) end
-    end)
     function frame:FitToScreen()
         local availableWidth, availableHeight = UIParent:GetWidth() * 0.94, UIParent:GetHeight() * 0.94
         self:SetScale(math.min(1, availableWidth / WINDOW_WIDTH, availableHeight / WINDOW_HEIGHT))
