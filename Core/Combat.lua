@@ -56,6 +56,11 @@ local function ShowPersonalDamage(unit, amount, isCrit, schoolMask)
         return false
     end
 
+    -- Open world: wait a moment for the damage meter to confirm whose hit this is (Meter.lua).
+    if BD.HoldForMeter and BD:HoldForMeter(unit, plate, amount, isCrit, schoolMask) then
+        return false
+    end
+
     local spellID, usedAuto = BD:MatchOutgoingHit(unit, schoolMask)
     if not spellID then
         BD:DebugPrint("personal skip, no outgoing match")
@@ -99,7 +104,7 @@ local function ShowPersonalHeal(unit, amount, isCrit, schoolMask)
         return false
     end
 
-    local spellID, usedAuto = BD:MatchOutgoingHit(unit, schoolMask)
+    local spellID, usedAuto = BD:MatchOutgoingHit(unit, schoolMask, true)
     -- Heals must match a cast; auto-attack fallback is damage-only.
     if not spellID or usedAuto then
         BD:DebugPrint("personal heal skip, no outgoing match")
@@ -143,7 +148,10 @@ function BD:HandleUnitCombat(unit, action, flagText, amount, schoolMask)
     if not self.db.enabled then
         return
     end
-    if not BD.SafeUnitBoolean(InCombatLockdown) then
+    -- The pull's first hits can arrive before InCombatLockdown is true: accept them when the
+    -- server already flags you in combat or one of your casts just went out.
+    if not BD.SafeUnitBoolean(InCombatLockdown) and not BD.SafeUnitBoolean(UnitAffectingCombat, "player")
+        and not self:HasRecentOutgoingCast() then
         return
     end
 
@@ -233,3 +241,6 @@ function BD:HandleUnitCombat(unit, action, flagText, amount, schoolMask)
         self:ShowOnNameplate(unit, action, 1, 0.85, 0.2, nil, false, false, nil, "miss")
     end
 end
+
+-- Meter.lua shows held hits through the same path once the damage meter decided.
+BD.ShowPersonalDamageNow = ShowPersonalDamage

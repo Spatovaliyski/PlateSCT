@@ -39,6 +39,7 @@ Core/Pool.lua
 Core/Display.lua
 Core/Attribution.lua
 Core/Combat.lua
+Core/Meter.lua
 Core/CombatClassic.lua
 Core/Probe.lua
 Core/Events.lua
