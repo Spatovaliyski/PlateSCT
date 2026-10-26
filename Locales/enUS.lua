@@ -455,3 +455,26 @@ L["Reduce clutter"] = "Reduce clutter"
 L["Pop on each merge"] = "Pop on each merge"
 L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
     "Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."
+
+-- Welcome screen
+L["Welcome to PlateSCT"] = "Welcome to PlateSCT"
+L["Damage numbers, right on enemy nameplates. Choose a number style to get started, or open settings to make it your own."] = "Damage numbers, right on enemy nameplates. Choose a number style to get started, or open settings to make it your own."
+L["Modern API: Secrets & restrictions"] = "Modern API: Secrets & restrictions"
+L["WoW hides some combat data as Secret values. Addons cannot reliably identify every damage source or spell. Personal mode estimates ownership; unreadable data limits filters, hit combining, icons, and sounds."] = "WoW hides some combat data as Secret values. Addons cannot reliably identify every damage source or spell. Personal mode estimates ownership; unreadable data limits filters, hit combining, icons, and sounds."
+L["Choose your number style"] = "Choose your number style"
+L["Smooth upward motion with a small critical pop."] = "Smooth upward motion with a small critical pop."
+L["Grow-and-settle numbers with bold critical hits."] = "Grow-and-settle numbers with bold critical hits."
+L["A quick slam followed by upward motion."] = "A quick slam followed by upward motion."
+L["Apply"] = "Apply"
+L["Open settings"] = "Open settings"
+L["Open settings anytime from the minimap icon or by typing /psct. Reopen this screen with /psct welcome."] = "Open settings anytime from the minimap icon or by typing /psct. Reopen this screen with /psct welcome."
+L["I want to customize instead"] = "I want to customize instead"
+
+-- 1.2.4: settings sharing and recent changes
+L["Import & Export"] = "Import & Export"
+L["Back up, share, or restore your settings."] = "Back up, share, or restore your settings."
+L["Export a settings string to keep a backup or share your setup. Import a string to preview changes before applying them."] = "Export a settings string to keep a backup or share your setup. Import a string to preview changes before applying them."
+L["Choose Modern, Classic, or Impact from an animated welcome screen, or customize your settings. Open it anytime with /psct welcome."] = "Choose Modern, Classic, or Impact from an animated welcome screen, or customize your settings. Open it anytime with /psct welcome."
+L["Style cards and Apply now have clear hover, selection, and disabled states."] = "Style cards and Apply now have clear hover, selection, and disabled states."
+L["Slider values stay aligned when resizing. Modern and Impact previews use 70% scale; Classic uses 60%. The nameplate marker has been removed."] = "Slider values stay aligned when resizing. Modern and Impact previews use 70% scale; Classic uses 60%. The nameplate marker has been removed."
+L["Import and export now have their own page above Help & Settings."] = "Import and export now have their own page above Help & Settings."

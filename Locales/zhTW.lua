@@ -425,3 +425,26 @@ L["Reduce clutter"] = "減少雜亂"
 L["Pop on each merge"] = "每次合併時彈跳"
 L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
     "每當有新的命中合併進來時短暫放大數字。關閉可獲得更平靜的顯示。"
+
+-- Welcome screen
+L["Welcome to PlateSCT"] = "歡迎使用 PlateSCT"
+L["Damage numbers, right on enemy nameplates. Choose a number style to get started, or open settings to make it your own."] = "在敵方名條上顯示傷害數字。選擇一種數字樣式即可開始，也可直接開啟設定進行自訂。"
+L["Modern API: Secrets & restrictions"] = "現代 API：秘密值與插件限制"
+L["WoW hides some combat data as Secret values. Addons cannot reliably identify every damage source or spell. Personal mode estimates ownership; unreadable data limits filters, hit combining, icons, and sounds."] = "WoW 將部分戰鬥資料隱藏為秘密值。插件無法可靠辨識每次傷害的來源或法術。個人模式只能估算傷害歸屬；無法讀取的資料會限制篩選、傷害合併、圖示和音效功能。"
+L["Choose your number style"] = "選擇數字樣式"
+L["Smooth upward motion with a small critical pop."] = "平滑向上飄動，致命一擊時略微放大。"
+L["Grow-and-settle numbers with bold critical hits."] = "數字放大後回落，突顯致命一擊。"
+L["A quick slam followed by upward motion."] = "快速衝擊後向上飄動。"
+L["Apply"] = "套用"
+L["Open settings"] = "開啟設定"
+L["Open settings anytime from the minimap icon or by typing /psct. Reopen this screen with /psct welcome."] = "隨時點擊小地圖圖示或輸入 /psct 開啟設定。輸入 /psct welcome 可再次開啟此頁面。"
+L["I want to customize instead"] = "我想自行設定"
+
+-- 1.2.4: settings sharing and recent changes
+L["Import & Export"] = "匯入與匯出"
+L["Back up, share, or restore your settings."] = "備份、分享或還原設定。"
+L["Export a settings string to keep a backup or share your setup. Import a string to preview changes before applying them."] = "匯出設定字串以保留備份或分享配置。匯入字串後，可先預覽變更，再決定是否套用。"
+L["Choose Modern, Classic, or Impact from an animated welcome screen, or customize your settings. Open it anytime with /psct welcome."] = "在含有動畫的歡迎畫面中選擇現代、經典或 Impact 數字樣式，也可自行調整設定。隨時輸入 /psct welcome 開啟。"
+L["Style cards and Apply now have clear hover, selection, and disabled states."] = "樣式卡片與「套用」按鈕現在會清楚顯示游標停留、選取和停用狀態。"
+L["Slider values stay aligned when resizing. Modern and Impact previews use 70% scale; Classic uses 60%. The nameplate marker has been removed."] = "調整視窗寬度時，滑桿數值保持對齊。現代和 Impact 樣式預覽固定縮放為 70%，經典樣式為 60%。名條標記已移除。"
+L["Import and export now have their own page above Help & Settings."] = "匯入與匯出現在有獨立頁面，位於「說明與設定」上方。"

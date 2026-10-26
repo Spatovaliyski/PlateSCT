@@ -119,10 +119,10 @@ local function RecordClassicBounds(frame, fontSize, iconSize, iconPosition)
     frame.classicBounds = ClassicTextBounds(width, height, labelW, labelH, iconSize, iconPosition)
 end
 
-local function PlaceFrame(frame, anchor, baseX, baseY)
+local function PlaceFrame(frame, anchor, baseX, baseY, owner)
     if not frame.incoming then
         -- Placement follows the selected style, including Impact's Modern-motion fallback.
-        local offsetX, offsetY = BD:GetNumberStyleOffsets()
+        local offsetX, offsetY = (owner or BD):GetNumberStyleOffsets()
         baseX, baseY = baseX + offsetX, baseY + offsetY
     end
     frame.startX, frame.startY = BD.Pool.PickClearSpawn(anchor, frame, baseX, baseY,
@@ -508,12 +508,11 @@ end
 local previewGeneration = 0
 local previewReplayGeneration = 0
 local previewReplayPending = false
-local PREVIEW_STAGGER = 0.45
 local PREVIEW_SAMPLES = {
     { hitKind = "hit", amount = 12400, spellID = 6603, school = 1, fallbackIcon = "Interface\\Icons\\INV_Sword_04" },
-    { hitKind = "crit", amount = 214200, spellID = 133, school = 4, fallbackIcon = "Interface\\Icons\\Spell_Fire_FlameBolt" },
+    { hitKind = "crit", amount = 24800, spellID = 133, school = 4, fallbackIcon = "Interface\\Icons\\Spell_Fire_FlameBolt" },
     { hitKind = "hit", amount = 18650, spellID = 116, school = 16, fallbackIcon = "Interface\\Icons\\Spell_Frost_FrostBolt02" },
-    { hitKind = "crit", amount = 1800000, spellID = 686, school = 32, fallbackIcon = "Interface\\Icons\\Spell_Shadow_ShadowBolt" },
+    { hitKind = "crit", amount = 58600, spellID = 686, school = 32, fallbackIcon = "Interface\\Icons\\Spell_Shadow_ShadowBolt" },
     { hitKind = "miss", text = "MISS" },
     { hitKind = "miss", text = "DODGE" },
     { hitKind = "miss", text = "IMMUNE" },
@@ -544,7 +543,7 @@ local function ClassicPreviewSamples(self, sampleKind)
     local preset = self:GetStylePreset()
     local fontSize = (self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale
     local fontPath = BD.ResolveFontPath(self.db.fontFace)
-    for _, sample in ipairs(PREVIEW_SAMPLES) do
+    for _, sample in ipairs(self.previewSamples or PREVIEW_SAMPLES) do
         if MatchesPreviewKind(sample, sampleKind) then
             local frame = { elapsed = 0 }
             local isCrit = sample.hitKind == "crit"
@@ -586,6 +585,20 @@ local function ClassicPreviewSamples(self, sampleKind)
     return samples
 end
 
+local function PreviewStagger(self, sampleKind)
+    local duration = 0
+    for _, sample in ipairs(self.previewSamples or PREVIEW_SAMPLES) do
+        if MatchesPreviewKind(sample, sampleKind) then
+            local preset, style = GetFrameStyle(self, sample.hitKind, false, false)
+            local timing = {}
+            ConfigureFrameCommon(self, timing, preset, sample.hitKind == "crit", sample.hitKind, false, true, style)
+            duration = math.max(duration, timing.duration)
+        end
+    end
+    -- Two overlapping lifetimes, with a small margin for frame/timer ordering.
+    return duration * 0.5 + 0.01
+end
+
 local function ImpactTextBounds(textW, textH, labelW, labelH, iconSize, iconPosition)
     local left, right, bottom, top = -textW * 0.5, textW * 0.5, -textH * 0.5, textH * 0.5
     local labelBottom = top + CRIT_LABEL_GAP
@@ -624,7 +637,7 @@ local function ImpactPreviewBounds(self, sampleKind)
     local jitter = preset.spawnJitter * spacing
     local x, y = GetImpactPlacement(self, spacing)
     local left, right, bottom, top = 0, 0, 0, 0
-    for _, sample in ipairs(PREVIEW_SAMPLES) do
+    for _, sample in ipairs(self.previewSamples or PREVIEW_SAMPLES) do
         if sample.hitKind ~= "miss" and MatchesPreviewKind(sample, sampleKind) then
             local text = PreviewSampleText(self, sample)
             local width, height = MeasurePreviewText(text, fontPath, fontSize, preset.fontFlags)
@@ -644,7 +657,7 @@ local function ImpactPreviewBounds(self, sampleKind)
             top = math.max(top, y + dy2 + jitter + t * scale + 4)
         end
     end
-    if not sampleKind or sampleKind == "mixed" or sampleKind == "miss" then
+    if not self.previewSamples and (not sampleKind or sampleKind == "mixed" or sampleKind == "miss") then
         local l, r, b, t = self:GetOptionsPreviewBounds("miss", "retail")
         left, right, bottom, top = math.min(left, l), math.max(right, r), math.min(bottom, b), math.max(top, t)
     end
@@ -658,14 +671,15 @@ function BD:GetOptionsPreviewBounds(sampleKind, styleOverride)
     end
     local classicStyle = numberStyle == "classic"
     if classicStyle then
-        return BD.Pool.GetClassicPreviewBounds(ClassicPreviewSamples(self, sampleKind), PREVIEW_STAGGER / 0.75)
+        local samples = ClassicPreviewSamples(self, sampleKind)
+        return BD.Pool.GetClassicPreviewBounds(samples, self.previewStagger or PreviewStagger(self, sampleKind))
     end
     local baseFontSize = self.db.fontSize or self.DEFAULTS.fontSize
     local fontSize = baseFontSize * preset.fontScale
     local fontPath = BD.ResolveFontPath(self.db.fontFace)
     local spacingScale = baseFontSize / math.max(1, self.DEFAULTS.fontSize or 14)
     local left, right, bottom, top = 0, 0, 0, 0
-    for _, sample in ipairs(PREVIEW_SAMPLES) do
+    for _, sample in ipairs(self.previewSamples or PREVIEW_SAMPLES) do
         if MatchesPreviewKind(sample, sampleKind) then
             local isCrit = sample.hitKind == "crit"
             local motionStyle = self:ResolveMotionStyle(sample.hitKind, numberStyle)
@@ -750,17 +764,19 @@ function BD:GetOptionsPreviewBounds(sampleKind, styleOverride)
     return left, right, bottom, top
 end
 
-local function SpawnMotionPreviewFrame(anchor, sample)
+local function SpawnMotionPreviewFrame(anchor, sample, owner)
+    local self = owner or BD
     sample = sample or PREVIEW_SAMPLES[1]
     local kind = sample.hitKind or "hit"
     local isCrit = kind == "crit"
     local isMiss = kind == "miss"
 
-    local preset, numberStyle = GetFrameStyle(BD, kind, false, false)
+    local preset, numberStyle = GetFrameStyle(self, kind, false, false)
     local frame = BD.Pool.Acquire()
-    ConfigureFrameCommon(BD, frame, preset, isCrit, kind, false, nil, numberStyle)
+    ConfigureFrameCommon(self, frame, preset, isCrit, kind, false, nil, numberStyle)
 
     frame.isPreview = true
+    frame.previewSpeed = self.previewSpeed
     frame.anchor = anchor
     -- The preview origin represents the selected live plate anchor.
     frame.anchorRelPoint = "CENTER"
@@ -773,7 +789,7 @@ local function SpawnMotionPreviewFrame(anchor, sample)
     local spawnY = PreviewSpawnY(frame.motionStyle)
     local spawnX = 0
     if frame.animMode == "impactSlam" then
-        spawnX, spawnY = GetImpactPlacement(BD, frame.impactSpacingScale)
+        spawnX, spawnY = GetImpactPlacement(self, frame.impactSpacingScale)
     end
     if frame.usesClassicShove then
         if not (frame.isCrit and frame.critsHold) then
@@ -783,8 +799,8 @@ local function SpawnMotionPreviewFrame(anchor, sample)
         end
     end
 
-    local fontSize = (BD.db.fontSize or BD.DEFAULTS.fontSize) * preset.fontScale
-    local fontPath = BD.ResolveFontPath(BD.db.fontFace)
+    local fontSize = (self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale
+    local fontPath = BD.ResolveFontPath(self.db.fontFace)
     fontPath = BD.SafeSetFont(frame.text, fontPath, fontSize, preset.fontFlags)
     if preset.shadowOffset then
         frame.text:SetShadowOffset(preset.shadowOffset[1], preset.shadowOffset[2])
@@ -799,25 +815,25 @@ local function SpawnMotionPreviewFrame(anchor, sample)
         frame.text:SetText(sample.text or "MISS")
         r, g, b = 1, 0.85, 0.2
     else
-        frame.text:SetText(BD.FormatAmount(sample.amount, BD.db.abbreviate))
-        if BD:ShouldUseSchoolColors() then
+        frame.text:SetText(BD.FormatAmount(sample.amount, self.db.abbreviate))
+        if self:ShouldUseSchoolColors() then
             r, g, b = BD.GetSchoolColor(sample.school)
         else
             r, g, b = preset.defaultColor[1], preset.defaultColor[2], preset.defaultColor[3]
         end
-        resolvedIcon = BD:ResolveOutgoingSpellIcon(nil, sample.spellID)
+        resolvedIcon = self:ResolveOutgoingSpellIcon(nil, sample.spellID)
         if not resolvedIcon then
-            resolvedIcon = BD:ResolveOutgoingSpellIcon(sample.fallbackIcon, nil)
+            resolvedIcon = self:ResolveOutgoingSpellIcon(sample.fallbackIcon, nil)
         end
     end
 
     local iconSize = math.max(12, math.floor((fontSize * 1.1) + 0.5))
-    local showCritLabel = isCrit and BD:GetCritLabelSetting(numberStyle) and true or false
+    local showCritLabel = isCrit and self:GetCritLabelSetting(numberStyle) and true or false
     local layoutOpts = {
         showIcon = resolvedIcon ~= nil,
         iconSize = iconSize,
         iconTexture = resolvedIcon,
-        iconPosition = BD.db.iconPosition or "left",
+        iconPosition = self.db.iconPosition or "left",
         showCritLabel = showCritLabel,
         r = r,
         g = g,
@@ -828,10 +844,11 @@ local function SpawnMotionPreviewFrame(anchor, sample)
     frame.text:SetTextColor(r, g, b, 1)
     frame.baseAlpha = 1
     if frame.usesClassicShove then
-        frame.amountScale = BD.ComputeClassicAmountScale(sample.amount)
+        -- Template comparisons must not feed synthetic damage into the live average.
+        frame.amountScale = self.previewSamples and 1 or BD.ComputeClassicAmountScale(sample.amount)
     end
 
-    if PreviewCombineActive(BD, sample) then
+    if PreviewCombineActive(self, sample) then
         previewCombineSerial = previewCombineSerial + 1
         local token = "preview:" .. previewCombineSerial
         frame.combineKey = token
@@ -844,19 +861,19 @@ local function SpawnMotionPreviewFrame(anchor, sample)
             preset = preset,
             opts = layoutOpts,
         }
-        local window = BD.db.combineWindow or BD.DEFAULTS.combineWindow
+        local window = self.db.combineWindow or self.DEFAULTS.combineWindow
         for _, extra in ipairs(PREVIEW_COMBINE_HITS) do
             local amount = math.floor(sample.amount * extra.factor + 0.5)
             C_Timer.After(window * extra.at, function()
                 -- The pooled frame may have been released and reused since.
                 if frame.combineKey == token and frame:IsShown() then
-                    ApplyCombine(BD, frame, amount)
+                    ApplyCombine(self, frame, amount)
                 end
             end)
         end
     end
 
-    PlaceFrame(frame, anchor, spawnX, spawnY)
+    PlaceFrame(frame, anchor, spawnX, spawnY, self)
     frame:SetAlpha(1)
     if frame.isCrit then
         if frame.animMode == "classicPow" then
@@ -871,6 +888,29 @@ local function SpawnMotionPreviewFrame(anchor, sample)
     if frame.usesClassicShove then
         BD.Pool.RelayoutClassic(anchor)
     end
+    return frame
+end
+
+-- Compare templates through the live renderer without changing the player's settings.
+local STYLE_SAMPLES = {
+    { hitKind = "hit", amount = 1234, school = 1 },
+    { hitKind = "crit", amount = 5678, school = 1 },
+}
+local STYLE_SAMPLE_SPEED = 0.8
+
+local function StyleSampleOwner(style, interval)
+    local db = BD.CopyDefaults({ numberStyle = style, fontSize = 18,
+        fontFace = BD.db.fontFace }, BD.DEFAULTS)
+    return setmetatable({ db = db, previewSamples = STYLE_SAMPLES, previewSpeed = STYLE_SAMPLE_SPEED,
+        previewStagger = interval and interval * STYLE_SAMPLE_SPEED }, { __index = BD })
+end
+
+function BD:GetStyleSampleBounds(style, kind, interval)
+    return self.GetOptionsPreviewBounds(StyleSampleOwner(style, interval), kind)
+end
+
+function BD:ShowStyleSample(anchor, style, kind)
+    return SpawnMotionPreviewFrame(anchor, STYLE_SAMPLES[kind == "crit" and 2 or 1], StyleSampleOwner(style))
 end
 
 function BD:ShowMotionPreview(columns)
@@ -880,63 +920,28 @@ function BD:ShowMotionPreview(columns)
 
     previewGeneration = previewGeneration + 1
     local generation = previewGeneration
-    local stagger = self:IsClassicNumberStyle() and PREVIEW_STAGGER / 0.75 or PREVIEW_STAGGER
 
     local function PlayColumn(column)
         local anchor = column.stage or column.anchor
         if not anchor or not anchor:IsShown() then
             return
         end
-        if self:IsClassicNumberStyle() then
-            local samples = {}
-            for _, sample in ipairs(PREVIEW_SAMPLES) do
-                if MatchesPreviewKind(sample, column.kind) then
-                    samples[#samples + 1] = sample
-                end
-            end
-            if #samples == 0 then
-                return
-            end
-            local index = 1
-            local function PlaySample()
-                if generation ~= previewGeneration or not anchor:IsShown() then
-                    return
-                end
-                SpawnMotionPreviewFrame(anchor, samples[index])
-                index = index % #samples + 1
-                -- Schedule from the actual spawn: delayed timers cannot bunch
-                -- samples together or exceed the bounds' simultaneous count.
-                C_Timer.After(stagger, PlaySample)
-            end
-            C_Timer.After(0, PlaySample)
-            return
-        end
-        local index = 0
+        local samples = {}
         for _, sample in ipairs(PREVIEW_SAMPLES) do
             if MatchesPreviewKind(sample, column.kind) then
-                local previewSample, previewAnchor = sample, anchor
-                local delay = index * stagger
-                index = index + 1
-                C_Timer.After(delay, function()
-                    if generation ~= previewGeneration then
-                        return
-                    end
-                    if not previewAnchor:IsShown() then
-                        return
-                    end
-                    SpawnMotionPreviewFrame(previewAnchor, previewSample)
-                end)
+                samples[#samples + 1] = sample
             end
         end
-        if index == 0 then
-            return
+        if #samples == 0 then return end
+        local index, stagger = 1, PreviewStagger(self, column.kind)
+        local function PlaySample()
+            if generation ~= previewGeneration or not anchor:IsShown() then return end
+            SpawnMotionPreviewFrame(anchor, samples[index])
+            index = index % #samples + 1
+            -- Schedule from the actual spawn so delayed timers cannot bunch samples.
+            C_Timer.After(stagger, PlaySample)
         end
-        C_Timer.After(index * stagger, function()
-            if generation ~= previewGeneration then
-                return
-            end
-            PlayColumn(column)
-        end)
+        C_Timer.After(0, PlaySample)
     end
 
     for _, column in ipairs(columns) do

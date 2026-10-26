@@ -436,15 +436,22 @@ local function BuildPreferences(layout, root)
         BD:ShowTestNumbers()
     end)
     layout:Heading(L["Maintenance"])
+    layout:Action("resetDefaults", L["Reset Defaults"], L["Restore every PlateSCT setting to its default."], function()
+        root:ConfirmReset()
+    end)
+end
+
+local function BuildTransfer(parent, root)
+    local layout = NewLayout(parent, root, "transfer")
+    layout:Heading(L["Import & Export"])
+    layout:Note(L["Export a settings string to keep a backup or share your setup. Import a string to preview changes before applying them."])
     layout:Action("exportSettings", L["Export Settings"], L["Copy all settings supported by this client."], function()
         root:ShowSettingsTransfer(false)
     end)
     layout:Action("importSettings", L["Import Settings"], L["Preview and apply settings from a string."], function()
         root:ShowSettingsTransfer(true)
     end)
-    layout:Action("resetDefaults", L["Reset Defaults"], L["Restore every PlateSCT setting to its default."], function()
-        root:ConfirmReset()
-    end)
+    layout:Finish()
 end
 
 local function BuildDiagnostics(layout)
@@ -471,17 +478,13 @@ local function BuildDiagnostics(layout)
 end
 
 local function BuildWhatsNew(layout)
-    layout:Heading(L["Combine hits"])
-    layout:Note(L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."])
-    layout:Heading(L["Impact number style"])
-    layout:Note(L["Impact slams outgoing damage beside or above the nameplate, then floats up. New hits layer in front; crits amplify and CRITICAL flashes above when enabled."])
-    layout:Note(L["Impact uses Modern for incoming damage, healing, and miss text, preserving saved Modern motions."])
-    layout:Heading(L["Settings redesign"])
-    layout:Note(L["A new WoW-inspired settings window with clear sections, searchable controls, and gentle animations."])
-    layout:Note(L["Modern API options now have their own page. Damage mode combines Only my damage and All engaged nameplates without changing saved preferences."])
-    layout:Note(L["The compact bottom preview includes Mixed, Hit, Crit, and Miss samples. All number styles remain available on every API."])
-    layout:Heading(L["Existing features"])
-    layout:Note(L["Outgoing healing, incoming damage, font selection, scroll speed, school colors, spell icons, and critical-hit sounds remain available."])
+    layout:Heading(L["Welcome to PlateSCT"])
+    layout:Note(L["Choose Modern, Classic, or Impact from an animated welcome screen, or customize your settings. Open it anytime with /psct welcome."])
+    layout:Note(L["Style cards and Apply now have clear hover, selection, and disabled states."])
+    layout:Heading(L["Appearance preview"])
+    layout:Note(L["Slider values stay aligned when resizing. Modern and Impact previews use 70% scale; Classic uses 60%. The nameplate marker has been removed."])
+    layout:Heading(L["Import & Export"])
+    layout:Note(L["Import and export now have their own page above Help & Settings."])
 end
 
 local function BuildHelp(parent, root, tabId)
@@ -512,6 +515,9 @@ if IsModernAPI() then
         }, build = BuildModern,
     }
 end
+BD.OptionsPages[#BD.OptionsPages + 1] = {
+    id = "transfer", labelKey = "Import & Export", subtitleKey = "Back up, share, or restore your settings.", build = BuildTransfer,
+}
 BD.OptionsPages[#BD.OptionsPages + 1] = {
     id = "help", labelKey = "Help & Settings", subtitleKey = "Preferences, API information, and diagnostics.",
     tabs = {

@@ -42,6 +42,11 @@ local function IsClassicStyleFrame(frame)
     return frame.usesClassicShove and frame.animMode == "classicPow" and frame.classicReady
 end
 
+local function FrameAge(frame, now)
+    local speed = frame.isPreview and frame.previewSpeed or 1
+    return math.max(0, now - frame.spawnTime) * speed
+end
+
 local function PushDamageSample(amount)
     if not amount or not BD.CanAccessValue(amount) or amount <= 0 then
         return
@@ -479,6 +484,7 @@ local function ReleaseFrame(frame)
         frame.critLabel:ClearAllPoints()
     end
     frame.isPreview = nil
+    frame.previewSpeed = nil
     frame.anchor = nil
     frame.unitToken = nil
     frame.incoming = nil
@@ -798,7 +804,7 @@ local function ActiveClassicFrames(now)
     local frames = {}
     for frame in pairs(active) do
         if IsClassicStyleFrame(frame) then
-            frame.elapsed = math.max(0, now - frame.spawnTime)
+            frame.elapsed = FrameAge(frame, now)
             if frame.elapsed < frame.duration then
                 frames[#frames + 1] = frame
             end
@@ -1029,9 +1035,10 @@ local function FrameOnUpdate(frame, elapsed)
     local clock = perfTimes and debugprofilestop
     local t0 = clock and clock()
     if IsClassicStyleFrame(frame) then
-        frame.elapsed = math.max(0, GetTime() - frame.spawnTime)
+        frame.elapsed = FrameAge(frame, GetTime())
     else
-        frame.elapsed = frame.elapsed + elapsed
+        local speed = frame.isPreview and frame.previewSpeed or 1
+        frame.elapsed = frame.elapsed + elapsed * speed
     end
     if frame.elapsed / frame.duration >= 1 then
         ReleaseFrame(frame)

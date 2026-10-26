@@ -40,6 +40,7 @@ local schema = {
     animHit = Choice(30, BD.ANIM_STYLES), animCrit = Choice(31, BD.ANIM_STYLES_CRIT),
     animMiss = Choice(32, BD.ANIM_STYLES), showCritLabel = Boolean(33), showImpactCritLabel = Boolean(34),
     showOptionsPreview = Boolean(35), settingsAnimations = Boolean(36),
+    welcomeSeen = Boolean(70),
     showMinimapButton = Boolean(37), minimapAngle = Number(38), locale = Choice(39, BD.LOCALE_OPTIONS),
     attributionAuto = Boolean(40, "modern"), attributionManual = Choice(41, strictness, "modern"),
     attributionOpenWorld = Choice(42, strictness, "modern"), attributionDungeon = Choice(43, strictness, "modern"),
@@ -58,6 +59,7 @@ local schema = {
 
 -- Settings-window choices stay on this character. IDs stay reserved so older strings skip them.
 local localPreferences = {
+    welcomeSeen = true,
     locale = true,
     settingsAnimations = true,
     showOptionsPreview = true,

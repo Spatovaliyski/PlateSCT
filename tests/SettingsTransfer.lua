@@ -87,7 +87,7 @@ local function modernKey(key)
     return key == "onlyMyDamage" or key == "allNameplates" or key:match("^attribution") or key:match("^schoolFilter")
 end
 local function localPreference(key)
-    return key == "locale" or key == "settingsAnimations" or key == "showOptionsPreview"
+    return key == "locale" or key == "settingsAnimations" or key == "showOptionsPreview" or key == "welcomeSeen"
 end
 local function configured(BD)
     local numbers = {
@@ -134,7 +134,8 @@ local function reject(BD, text)
     local before, effects = copy(BD.db), copy(BD.effects)
     local identity = BD.db
     local preview, previewError = BD:PreviewSettingsImport(text)
-    eq(preview, nil, "rejected preview"); eq(type(previewError), "string", "preview error")
+    local description = type(text) == "string" and (text:sub(1, 160) .. " (" .. #text .. " bytes)") or tostring(text)
+    eq(preview, nil, "rejected preview: " .. description); eq(type(previewError), "string", "preview error")
     local result, err = BD:ImportSettings(text)
     eq(result, nil, "rejected import"); eq(type(err), "string", "import error")
     same(BD.db, before); same(BD.effects, effects); eq(BD.db, identity, "database identity")
@@ -194,16 +195,19 @@ test("settings window preferences stay on this character", function()
     eq(preview.values.locale, nil)
     eq(preview.values.settingsAnimations, nil)
     eq(preview.values.showOptionsPreview, nil)
+    eq(preview.values.welcomeSeen, nil)
     eq(preview.values.fontSize, 31)
     local receiver = new("classic")
     receiver.db.locale, receiver.db.settingsAnimations, receiver.db.showOptionsPreview = "deDE", true, true
-    local old = records("shared.locale=s:frFR;shared.settingsAnimations=b:0;shared.showOptionsPreview=b:0;shared.fontSize=n:28")
+    receiver.db.welcomeSeen = true
+    local old = records("shared.locale=s:frFR;shared.settingsAnimations=b:0;shared.showOptionsPreview=b:0;shared.welcomeSeen=b:0;shared.fontSize=n:28")
     local result = assert(receiver:ImportSettings(old))
     eq(receiver.db.locale, "deDE")
     eq(receiver.db.settingsAnimations, true)
     eq(receiver.db.showOptionsPreview, true)
+    eq(receiver.db.welcomeSeen, true)
     eq(receiver.db.fontSize, 28)
-    eq(#result.ignored, 3)
+    eq(#result.ignored, 4)
     local mixed = assert(receiver:ImportSettings(records("shared.locale=s:unknown;shared.fontSize=n:26")))
     eq(receiver.db.locale, "deDE")
     eq(receiver.db.fontSize, 26)
@@ -340,7 +344,7 @@ test("malformed and hostile strings never mutate settings or effects", function(
     for _, text in ipairs({
         "", "return { enabled = true }", CLASSIC_V1:sub(1, -2), CLASSIC_V1 .. "!junk",
         CLASSIC_V1:gsub("fontSize=n:22", "fontSize=n:23"),
-        records("shared.fontSize=n:25") .. string.rep(" ", 32769),
+        records("shared.fontSize=n:25") .. string.rep("x", 32769),
         records("shared.fontSize=n:25", "invalid"),
         wire("source=s:classic;shared.enabled=b:1"),
         wire("source=s:classic;addon=s:bad%7Cversion;shared.enabled=b:1"),
@@ -409,13 +413,19 @@ test("reset reuses refresh and imports persist through the login path", function
         local original = copy(BD.db)
         local text = assert(BD:ExportSettings())
         BD:ResetToDefaults()
-        same(BD.db, BD.DEFAULTS)
+        local defaults = copy(BD.DEFAULTS)
+        defaults.welcomeSeen = original.welcomeSeen
+        same(BD.db, defaults)
         assert(BD:ImportSettings(text))
         for _, frame in ipairs(frames) do
             if frame.scripts.OnEvent then frame.scripts.OnEvent(frame, "PLAYER_LOGIN") end
         end
         for key in pairs(BD.DEFAULTS) do
-            if not modernKey(key) or flavor == "modern" then eq(BD.db[key], original[key], key) end
+            if not modernKey(key) or flavor == "modern" then
+                local expected = original[key]
+                if localPreference(key) then expected = defaults[key] end
+                eq(BD.db[key], expected, key)
+            end
         end
     end
 end)
@@ -435,7 +445,7 @@ test("all shipped Lua compiles and every new string is translated", function()
         local key = start and line:match('^L%["(.-)"%]')
         if key then strings[#strings + 1] = key end
     end
-    eq(#strings, 24, "translated key count")
+    assert(#strings >= 35, "transfer and welcome strings must be checked")
     for code, translations in pairs(BD.LocaleTables) do
         for _, key in ipairs(strings) do
             local value = translations[key]

@@ -58,6 +58,16 @@ local ACTION_FACES = {
         line = { 0.96, 0.82, 0.48, 0.35 },
         text = { 1, 0.88, 0.58 },
     },
+    disabled = {
+        bg = { 0.065, 0.06, 0.05, 1 }, border = { 0.34, 0.30, 0.23, 1 },
+        top = { 0.09, 0.08, 0.065, 1 }, bottom = { 0.045, 0.04, 0.035, 1 },
+        line = { 0.50, 0.44, 0.34, 0.10 }, text = { 0.48, 0.45, 0.39 },
+    },
+    disabledHover = {
+        bg = { 0.09, 0.08, 0.06, 1 }, border = { 0.50, 0.43, 0.30, 1 },
+        top = { 0.12, 0.10, 0.075, 1 }, bottom = { 0.06, 0.05, 0.04, 1 },
+        line = { 0.62, 0.53, 0.36, 0.15 }, text = { 0.60, 0.55, 0.44 },
+    },
 }
 
 local function PaintGradient(texture, bottom, top)
@@ -98,6 +108,10 @@ local function HideActionFace(frame)
 end
 
 function W.PaintAction(frame, mode)
+    if mode == "idle" and frame.IsMouseOver and frame:IsMouseOver() then mode = "hover" end
+    if frame.IsEnabled and not frame:IsEnabled() then
+        mode = mode == "hover" and "disabledHover" or "disabled"
+    end
     local face = ACTION_FACES[mode] or ACTION_FACES.idle
     EnsureActionFace(frame)
     frame:SetBackdropColor(unpack(face.bg))
@@ -234,16 +248,19 @@ function W.Button(parent, label, width, height, onClick, style)
     if face == "action" then font:SetTextColor(unpack(GOLD)) end
     W.Tooltip(button, function(self) return self:GetText() end)
     if face == "action" then
+        if button.SetMotionScriptsWhileDisabled then button:SetMotionScriptsWhileDisabled(true) end
         local function RestoreFace(self)
             local mode = self.optionsBackdropKind == "selected" and "selected" or "idle"
-            if self:IsEnabled() and self.IsMouseOver and self:IsMouseOver() then mode = "hover" end
+            if self.IsMouseOver and self:IsMouseOver() then mode = "hover" end
             W.PaintAction(self, mode)
         end
         Hook(button, "OnEnter", function(self)
-            if not self:IsEnabled() then return end
             W.PaintAction(self, "hover")
         end)
         Hook(button, "OnLeave", RestoreFace)
+        Hook(button, "OnEnable", RestoreFace)
+        Hook(button, "OnDisable", RestoreFace)
+        Hook(button, "OnShow", RestoreFace)
         Hook(button, "OnMouseDown", function(self)
             if not self:IsEnabled() then return end
             W.PaintAction(self, "down")
@@ -274,7 +291,25 @@ function W.Button(parent, label, width, height, onClick, style)
     button:SetScript("OnClick", function(self, ...)
         if self:IsEnabled() and onClick then onClick(self, ...) end
     end)
+    if face == "action" then W.PaintAction(button, "idle") end
     return button
+end
+
+function W.TextLink(parent, label, onClick)
+    local link = CreateFrame("Button", nil, parent)
+    local font = link:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    link:SetFontString(font); link:SetText(label)
+    font:SetPoint("CENTER"); font:SetWordWrap(false); font:SetTextColor(unpack(GOLD))
+    link:SetSize(font:GetStringWidth() + 8, font:GetStringHeight() + 8)
+    local underline = link:CreateTexture(nil, "ARTWORK")
+    underline:SetPoint("TOPLEFT", font, "BOTTOMLEFT", 0, -1)
+    underline:SetPoint("TOPRIGHT", font, "BOTTOMRIGHT", 0, -1)
+    underline:SetHeight(1); underline:SetColorTexture(unpack(GOLD)); underline:Hide()
+    link:SetScript("OnEnter", function() font:SetTextColor(1, 0.90, 0.62); underline:Show() end)
+    link:SetScript("OnLeave", function() font:SetTextColor(unpack(GOLD)); underline:Hide() end)
+    link:SetScript("OnHide", function() font:SetTextColor(unpack(GOLD)); underline:Hide() end)
+    link:SetScript("OnClick", function(self) if self:IsEnabled() then onClick() end end)
+    return link
 end
 
 function W.CloseButton(parent, onClick)
@@ -724,7 +759,9 @@ function W.NewLayout(parent, root, pageId, tabId, width)
         control:SetValueStep(step)
         if control.SetObeyStepOnDrag then control:SetObeyStepOnDrag(true) end
         control:EnableMouseWheel(true)
-        local valueText = W.Text(row, "", self.width - controlWidth - 8, -8, controlWidth, "GameFontNormal", GOLD)
+        local valueText = W.Text(row, "", 0, 0, controlWidth, "GameFontNormal", GOLD)
+        valueText:ClearAllPoints()
+        valueText:SetPoint("TOPRIGHT", row, "TOPRIGHT", -14, -8)
         valueText:SetJustifyH("RIGHT")
         control.valueText = valueText
         control.layoutType = "slider"

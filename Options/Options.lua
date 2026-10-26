@@ -246,29 +246,23 @@ local function CreatePreview(root, content)
         local stage = CreateFrame("Frame", nil, clip)
         stage:SetSize(1, 1)
         stage:SetPoint("CENTER")
-        local plateMarker = stage:CreateTexture(nil, "BACKGROUND")
-        plateMarker:SetSize(64, 6)
-        plateMarker:SetPoint("CENTER")
-        plateMarker:SetColorTexture(0.60, 0.57, 0.48, 0.75)
         column.clip, column.stage = clip, stage
         pane.columns[index] = column
     end
     function pane:FitStage()
         LayoutColumns()
-        local scale = 0.7
+        local classic = BD:IsClassicNumberStyle()
+        local scale = classic and 0.6 or 0.7
         local offsetX, offsetY = BD:GetNumberStyleOffsets()
         local bounds = {}
         for index, column in ipairs(self.columns) do
             local clip = column.clip
             if clip:GetWidth() <= 0 or clip:GetHeight() <= 0 then return end
-            -- Motion bounds use the default spawn; keep the marker at the unshifted origin.
+            -- Motion bounds use the default spawn; account for the saved offsets.
             local left, right, bottom, top = BD:GetOptionsPreviewBounds(column.kind)
             left, right = math.min(-32, left + offsetX), math.max(32, right + offsetX)
             bottom, top = math.min(-3, bottom + offsetY), math.max(3, top + offsetY)
             bounds[index] = { left, right, bottom, top }
-            scale = math.min(scale,
-                math.max(1, clip:GetWidth() - 16) / math.max(1, right - left),
-                math.max(1, clip:GetHeight() - 16) / math.max(1, top - bottom))
         end
         for index, column in ipairs(self.columns) do
             local clip, stage = column.clip, column.stage
@@ -887,6 +881,8 @@ function BD:RebuildOptionsPanel()
 end
 
 function BD:OpenOptions()
+    self.db.welcomeSeen = true
+    if self.welcomeFrame then self.welcomeFrame:Hide() end
     if not self.configFrame then self:RegisterOptionsPanel() end
     if self.configFrame:IsShown() then self.configFrame:Hide(); return end
     self.configFrame:Show(); self.configFrame:Raise()
@@ -894,10 +890,16 @@ end
 
 local init = CreateFrame("Frame")
 init:RegisterEvent("PLAYER_LOGIN")
-init:SetScript("OnEvent", function() BD:RegisterOptionsPanel() end)
+init:SetScript("OnEvent", function()
+    BD:RegisterOptionsPanel()
+    C_Timer.After(0, function()
+        if not BD.db.welcomeSeen then BD:OpenWelcome() end
+    end)
+end)
 SLASH_PLATESCT1, SLASH_PLATESCT2 = "/platesct", "/psct"
 SlashCmdList["PLATESCT"] = function(message)
     message = string.lower(strtrim(message or ""))
+    if message == "welcome" then BD:OpenWelcome(); return end
     if message == "perf" then
         BD:TogglePerf()
         return

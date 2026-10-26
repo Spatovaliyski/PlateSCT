@@ -350,3 +350,26 @@ L["Reduce clutter"] = "Меньше лишнего"
 L["Pop on each merge"] = "Всплеск при каждом объединении"
 L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
     "Ненадолго увеличивать число каждый раз, когда к нему добавляется удар. Отключите для более спокойного отображения."
+
+-- Welcome screen
+L["Welcome to PlateSCT"] = "Добро пожаловать в PlateSCT"
+L["Damage numbers, right on enemy nameplates. Choose a number style to get started, or open settings to make it your own."] = "Числа урона прямо на индикаторах врагов. Выберите стиль чисел или откройте настройки, чтобы настроить аддон под себя."
+L["Modern API: Secrets & restrictions"] = "Современный API: секретные значения и ограничения"
+L["WoW hides some combat data as Secret values. Addons cannot reliably identify every damage source or spell. Personal mode estimates ownership; unreadable data limits filters, hit combining, icons, and sounds."] = "WoW скрывает часть боевых данных в виде секретных значений. Аддоны не могут надёжно определить каждый источник урона или заклинание. Персональный режим оценивает принадлежность урона; недоступные данные ограничивают фильтры, объединение попаданий, значки и звуки."
+L["Choose your number style"] = "Выберите стиль чисел"
+L["Smooth upward motion with a small critical pop."] = "Плавное движение вверх с небольшим увеличением критических попаданий."
+L["Grow-and-settle numbers with bold critical hits."] = "Числа увеличиваются и успокаиваются; критические попадания выделяются."
+L["A quick slam followed by upward motion."] = "Резкий удар, затем движение вверх."
+L["Apply"] = "Применить"
+L["Open settings"] = "Открыть настройки"
+L["Open settings anytime from the minimap icon or by typing /psct. Reopen this screen with /psct welcome."] = "Настройки всегда доступны через значок у миникарты или команду /psct. Вернуться сюда: /psct welcome."
+L["I want to customize instead"] = "Хочу настроить самостоятельно"
+
+-- 1.2.4: settings sharing and recent changes
+L["Import & Export"] = "Импорт / Экспорт"
+L["Back up, share, or restore your settings."] = "Сохраняйте, передавайте и восстанавливайте настройки."
+L["Export a settings string to keep a backup or share your setup. Import a string to preview changes before applying them."] = "Экспортируйте строку настроек для резервной копии или передачи своей конфигурации. Импортируйте строку, чтобы просмотреть изменения перед применением."
+L["Choose Modern, Classic, or Impact from an animated welcome screen, or customize your settings. Open it anytime with /psct welcome."] = "Выберите стиль Modern, Classic или Impact на анимированном экране приветствия или настройте аддон самостоятельно. Открыть экран можно командой /psct welcome."
+L["Style cards and Apply now have clear hover, selection, and disabled states."] = "Карточки стилей и кнопка «Применить» теперь наглядно показывают наведение, выбор и недоступность."
+L["Slider values stay aligned when resizing. Modern and Impact previews use 70% scale; Classic uses 60%. The nameplate marker has been removed."] = "Значения ползунков остаются выровненными при изменении размера окна. Масштаб предпросмотра Modern и Impact — 70 %, Classic — 60 %. Маркер индикатора имени убран."
+L["Import and export now have their own page above Help & Settings."] = "Импорт и экспорт теперь находятся на отдельной странице над разделом помощи и настроек."

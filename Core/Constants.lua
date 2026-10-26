@@ -45,6 +45,7 @@ BD.DEFAULTS = {
     showImpactCritLabel = true,
     showOptionsPreview = true,
     settingsAnimations = true,
+    welcomeSeen = false,
     showMinimapButton = true,
     minimapAngle = 200,
     locale = "auto",

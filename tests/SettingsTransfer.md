@@ -9,7 +9,7 @@ syntax, and dialog interactions. UI stubs cannot prove in-game rendering.
 
 ## In-game smoke test (Midnight and a Classic API client)
 
-1. Open `/platesct`, then Help → Preferences → Maintenance. Export; copy the full
+1. Open `/platesct`, then Import & Export → Export Settings. Copy the full
    selection with Ctrl+C. Check that the long string scrolls and the dialog fits
    at the current UI scale. Exporting and closing must change no preferences.
 2. On both clients, use distinct fonts, all three styles' saved offsets, sound
@@ -60,7 +60,7 @@ reported and discarded; known fields cannot change ownership through the string.
 Keep the fixed v1 and v2 fixtures when extending the schema or adding a new format.
 Update the explicit schema whenever adding a user preference. Retain old readers
 and add an explicit conversion if a previously exported value changes meaning.
-Never transfer or replay `layoutRevision`. Language, settings-window animation, and the live preview toggle stay on the local character. New exports omit them. Older strings ignore them.
+Never transfer or replay `layoutRevision`. Language, settings-window animation, the live preview toggle, and the welcome screen's first-visit marker stay on the local character. New exports omit them. Older strings ignore them. Resetting appearance preferences preserves the first-visit marker; `/psct welcome` always opens the welcome screen.
 
 No SavedVariables migration is involved. Reverting this feature leaves an
 ordinary PlateSCTDB that the previous release can read. Failed validation makes

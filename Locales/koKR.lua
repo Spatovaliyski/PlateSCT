@@ -439,3 +439,26 @@ L["Reduce clutter"] = "화면 정리"
 L["Pop on each merge"] = "합칠 때마다 튀어나오기"
 L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
     "다른 적중이 합쳐질 때마다 숫자를 잠깐 키웁니다. 더 차분하게 보려면 끄세요."
+
+-- Welcome screen
+L["Welcome to PlateSCT"] = "PlateSCT에 오신 것을 환영합니다"
+L["Damage numbers, right on enemy nameplates. Choose a number style to get started, or open settings to make it your own."] = "적 이름표에 피해 수치를 표시합니다. 숫자 스타일을 선택하여 시작하거나 설정을 열어 원하는 대로 조정하세요."
+L["Modern API: Secrets & restrictions"] = "최신 API: 비밀 값과 애드온 제한"
+L["WoW hides some combat data as Secret values. Addons cannot reliably identify every damage source or spell. Personal mode estimates ownership; unreadable data limits filters, hit combining, icons, and sounds."] = "WoW는 일부 전투 데이터를 비밀 값으로 숨깁니다. 애드온은 모든 피해의 출처나 주문을 정확히 식별할 수 없습니다. 개인 모드는 피해의 주체를 추정하며, 읽을 수 없는 데이터는 필터, 피해 합산, 아이콘 및 소리 기능을 제한합니다."
+L["Choose your number style"] = "숫자 스타일 선택"
+L["Smooth upward motion with a small critical pop."] = "부드럽게 위로 이동하며 치명타 시 살짝 커집니다."
+L["Grow-and-settle numbers with bold critical hits."] = "숫자가 커진 뒤 안정되며 치명타를 강조합니다."
+L["A quick slam followed by upward motion."] = "빠르게 충격을 준 뒤 위로 이동합니다."
+L["Apply"] = "적용"
+L["Open settings"] = "설정 열기"
+L["Open settings anytime from the minimap icon or by typing /psct. Reopen this screen with /psct welcome."] = "언제든 미니맵 아이콘을 클릭하거나 /psct를 입력하여 설정을 열 수 있습니다. /psct welcome으로 이 화면을 다시 여세요."
+L["I want to customize instead"] = "직접 설정하고 싶어요"
+
+-- 1.2.4: settings sharing and recent changes
+L["Import & Export"] = "가져오기 / 내보내기"
+L["Back up, share, or restore your settings."] = "설정을 백업하거나 공유하고 복원하세요."
+L["Export a settings string to keep a backup or share your setup. Import a string to preview changes before applying them."] = "설정 문자열을 내보내 백업하거나 다른 사람과 공유하세요. 문자열을 가져오면 적용 전에 변경 사항을 미리 확인할 수 있습니다."
+L["Choose Modern, Classic, or Impact from an animated welcome screen, or customize your settings. Open it anytime with /psct welcome."] = "움직이는 환영 화면에서 모던, 클래식 또는 Impact 숫자 스타일을 선택하거나 직접 설정하세요. 언제든 /psct welcome으로 열 수 있습니다."
+L["Style cards and Apply now have clear hover, selection, and disabled states."] = "스타일 카드와 적용 버튼에 마우스 올림, 선택 및 비활성 상태가 명확히 표시됩니다."
+L["Slider values stay aligned when resizing. Modern and Impact previews use 70% scale; Classic uses 60%. The nameplate marker has been removed."] = "창 크기를 바꿔도 슬라이더 값이 정렬된 상태로 유지됩니다. 모던 및 Impact 미리보기 배율은 70%, 클래식은 60%로 고정됩니다. 이름표 표시 막대는 제거되었습니다."
+L["Import and export now have their own page above Help & Settings."] = "가져오기와 내보내기가 도움말 및 설정 위의 별도 페이지로 이동했습니다."

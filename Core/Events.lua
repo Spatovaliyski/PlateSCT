@@ -1,6 +1,7 @@
 local _, BD = ...
 
 function BD:ResetToDefaults()
+    local welcomeSeen = self.db.welcomeSeen
     for key, value in pairs(self.DEFAULTS) do
         if type(value) == "table" then
             if type(self.db[key]) ~= "table" then
@@ -11,6 +12,8 @@ function BD:ResetToDefaults()
             self.db[key] = value
         end
     end
+    -- Onboarding is a first-visit marker, not an appearance preference.
+    self.db.welcomeSeen = welcomeSeen
     self:RefreshSettings()
 end
 

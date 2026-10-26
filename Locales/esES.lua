@@ -350,3 +350,26 @@ L["Reduce clutter"] = "Reducir el desorden"
 L["Pop on each merge"] = "Rebote en cada combinación"
 L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
     "Agranda brevemente el número cada vez que se le suma otro golpe. Desactívalo para una visualización más tranquila."
+
+-- Welcome screen
+L["Welcome to PlateSCT"] = "Te damos la bienvenida a PlateSCT"
+L["Damage numbers, right on enemy nameplates. Choose a number style to get started, or open settings to make it your own."] = "Cifras de daño sobre las placas de nombre enemigas. Elige un estilo para empezar o abre los ajustes para personalizarlo."
+L["Modern API: Secrets & restrictions"] = "API moderna: valores secretos y restricciones"
+L["WoW hides some combat data as Secret values. Addons cannot reliably identify every damage source or spell. Personal mode estimates ownership; unreadable data limits filters, hit combining, icons, and sounds."] = "WoW oculta algunos datos de combate como valores secretos. Los addons no pueden identificar con fiabilidad cada fuente de daño o hechizo. El modo Personal estima su origen; los datos ilegibles limitan los filtros, la combinación de golpes, los iconos y los sonidos."
+L["Choose your number style"] = "Elige tu estilo de números"
+L["Smooth upward motion with a small critical pop."] = "Movimiento suave hacia arriba con un pequeño efecto en los críticos."
+L["Grow-and-settle numbers with bold critical hits."] = "Números que crecen y se estabilizan, con críticos destacados."
+L["A quick slam followed by upward motion."] = "Un impacto rápido seguido de movimiento hacia arriba."
+L["Apply"] = "Aplicar"
+L["Open settings"] = "Abrir ajustes"
+L["Open settings anytime from the minimap icon or by typing /psct. Reopen this screen with /psct welcome."] = "Abre los ajustes cuando quieras desde el icono del minimapa o escribiendo /psct. Vuelve aquí con /psct welcome."
+L["I want to customize instead"] = "Prefiero personalizarlo"
+
+-- 1.2.4: settings sharing and recent changes
+L["Import & Export"] = "Importar / Exportar"
+L["Back up, share, or restore your settings."] = "Guarda, comparte o restaura tus ajustes."
+L["Export a settings string to keep a backup or share your setup. Import a string to preview changes before applying them."] = "Exporta una cadena de ajustes para guardar una copia de seguridad o compartir tu configuración. Importa una cadena para revisar los cambios antes de aplicarlos."
+L["Choose Modern, Classic, or Impact from an animated welcome screen, or customize your settings. Open it anytime with /psct welcome."] = "Elige el estilo Moderno, Classic o Impact en una pantalla de bienvenida animada, o personaliza tus ajustes. Ábrela cuando quieras con /psct welcome."
+L["Style cards and Apply now have clear hover, selection, and disabled states."] = "Las tarjetas de estilo y Aplicar ahora muestran claramente los estados al pasar el cursor, de selección y desactivados."
+L["Slider values stay aligned when resizing. Modern and Impact previews use 70% scale; Classic uses 60%. The nameplate marker has been removed."] = "Los valores de los deslizadores permanecen alineados al cambiar el tamaño. Las vistas previas Moderna e Impact usan una escala del 70 %; Classic, del 60 %. Se eliminó el marcador de placa de nombre."
+L["Import and export now have their own page above Help & Settings."] = "Importar y exportar ahora tienen su propia página encima de Ayuda y ajustes."
