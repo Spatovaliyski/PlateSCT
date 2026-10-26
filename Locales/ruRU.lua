@@ -169,6 +169,26 @@ L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be di
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "В рейдах и Эпохальном+ некоторые значения секретны, поэтому порог скрывает эти удары визуально, а не пропускает их."
 
+-- Combine hits
+L["Combine hits"] = "Объединение ударов"
+L["Combine rapid hits"] = "Объединять быстрые удары"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "Складывает удары, быстро попадающие по одному индикатору, в одно число вместо множества отдельных."
+L["Combine"] = "Объединять"
+L["Same spell"] = "Одно заклинание"
+L["All hits"] = "Все удары"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "«Одно заклинание» показывает число каждого заклинания отдельно. «Все удары» объединяет все удары по цели; иконка показывает заклинание, нанёсшее больше всего урона."
+L["Combine window"] = "Окно объединения"
+L["%.2fs"] = "%.2fс"
+L["Show hit count"] = "Показывать число ударов"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] =
+    "Показывает, сколько ударов объединено, например 37 200 (3). С иконками заклинаний число отображается на иконке."
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "Критические удары, обычные удары и исцеление объединяются отдельно."
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "Критические удары, обычные удары и исцеление объединяются отдельно. Секретные значения нельзя сложить, поэтому такие удары по-прежнему показываются по отдельности."
+
 L["Preview"] = "Просмотр"
 L["Updates live as you change options."] = "Обновляется сразу при изменении настроек."
 L["Target an enemy, then spawn sample numbers on its nameplate."] =
@@ -321,3 +341,12 @@ L["Outgoing font"] = "Шрифт наносимого урона"
 L["Incoming font"] = "Шрифт получаемого урона"
 L["Show only critical damage"] = "Показывать только критический урон"
 L["Hide non-critical outgoing and incoming damage. Healing and miss text are unaffected."] = "Скрывает некритический наносимый и получаемый урон. Исцеление и текст промахов не затрагиваются."
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "Быстрые удары по одному индикатору можно объединять в одно растущее число со счётчиком ударов. Включите в разделе «Бой» → «Объединение ударов»."
+-- Reduce clutter
+L["Reduce clutter"] = "Меньше лишнего"
+-- Combine hits: merge pop
+L["Pop on each merge"] = "Всплеск при каждом объединении"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "Ненадолго увеличивать число каждый раз, когда к нему добавляется удар. Отключите для более спокойного отображения."

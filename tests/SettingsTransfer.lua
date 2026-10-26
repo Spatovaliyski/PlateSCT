@@ -91,10 +91,12 @@ local function localPreference(key)
 end
 local function configured(BD)
     local numbers = {
+        combineWindow = 0.35,
         minDamage = 54321, fontSize = 25, incomingFontSize = 32, duration = 1.7, floatDistance = 85, scrollSpeed = 2.3,
         minimapAngle = -137.12345678901234, critSoundThreshold = 1234.56789, hugeCritSoundThreshold = 987654321,
     }
     local strings = {
+        combineMode = "target",
         thousandSeparator = "dot", iconPosition = "bottom", fontFace = "lsm:字体 Français;%=!~ +",
         incomingFontFace = "lsm:Incoming font",
         numberStyle = "impact", impactPosition = "top", animHit = "rainfall", animCrit = "classicSlap",

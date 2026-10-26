@@ -22,6 +22,8 @@ local strictness = { "loose", "balanced", "strict", "veryStrict" }
 -- Add new preferences with unused IDs; unknown IDs are safely skipped by readers.
 local schema = {
     enabled = Boolean(1), minDamage = Number(2, 0), abbreviate = Boolean(3),
+    combineHits = Boolean(65), combineMode = Choice(66, BD.COMBINE_MODES), combinePulse = Boolean(67),
+    combineShowCount = Boolean(68), combineWindow = Number(69, 0.1, 1),
     thousandSeparator = Choice(4, BD.THOUSAND_SEPARATORS),
     showSpellIcon = Boolean(5), iconPosition = Choice(6, BD.ICON_POSITIONS),
     fontSize = Number(7, 10, 48), duration = Number(8, 0.5, 4),

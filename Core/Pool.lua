@@ -456,6 +456,8 @@ local function ReleaseFrame(frame)
     frame.icon:SetTexture(nil)
     frame.icon:Hide()
     frame.icon:ClearAllPoints()
+    frame.iconCount:SetText("")
+    frame.iconCount:Hide()
     if frame.critLabel then
         frame.critLabel:SetText("")
         frame.critLabel:SetAlpha(1)
@@ -486,6 +488,14 @@ local function ReleaseFrame(frame)
     frame.lingerWorldX = nil
     frame.lingerWorldY = nil
     frame.anchorGuid = nil
+    frame.combineKey = nil
+    frame.combineTotal = nil
+    frame.combineCount = nil
+    frame.combineLayout = nil
+    frame.combinePulseAt = nil
+    frame.combineSources = nil
+    frame.combineTopIcon = nil
+    frame.combineSoundTier = nil
     if frame.lingerHost then
         ReleaseLingerHost(frame.lingerHost)
         frame.lingerHost = nil
@@ -964,6 +974,15 @@ end
 
 local function ApplyFrameMotion(frame)
     local x, y, scale, alpha = ComputeMotion(frame)
+    -- Combined hit landed: brief scale pulse so the growing total reads as new damage.
+    if frame.combinePulseAt then
+        local t = (frame.elapsed - frame.combinePulseAt) / BD.COMBINE_PULSE_DURATION
+        if t < 1 then
+            scale = scale * (1 + BD.COMBINE_PULSE_SCALE * (1 - t))
+        else
+            frame.combinePulseAt = nil
+        end
+    end
     if frame.classicReady or frame.animMode == "impactSlam" then
         -- Keep placement in logical pixels while text size changes.
         frame:SetScale(scale)
@@ -1034,6 +1053,13 @@ local function CreatePooledFrame()
     icon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
     icon:Hide()
     frame.icon = icon
+
+    -- Combined hit count, drawn on the icon like an aura stack number.
+    local iconCount = frame:CreateFontString(nil, "OVERLAY", "NumberFontNormalSmall")
+    iconCount:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT", 2, -2)
+    iconCount:SetJustifyH("RIGHT")
+    iconCount:Hide()
+    frame.iconCount = iconCount
 
     local critLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
     critLabel:Hide()

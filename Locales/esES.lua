@@ -169,6 +169,26 @@ L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be di
 L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."] =
     "En bandas y Mítica+ algunos valores son secretos, así que el umbral oculta esos golpes visualmente en lugar de omitirlos."
 
+-- Combine hits
+L["Combine hits"] = "Combinar golpes"
+L["Combine rapid hits"] = "Combinar golpes rápidos"
+L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."] =
+    "Suma los golpes que impactan en la misma placa de nombre en rápida sucesión en un solo número en lugar de apilar muchos."
+L["Combine"] = "Combinar"
+L["Same spell"] = "Mismo hechizo"
+L["All hits"] = "Todos los golpes"
+L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."] =
+    "Mismo hechizo mantiene separado el número de cada hechizo. Todos los golpes combina cada golpe sobre el objetivo; su icono muestra el hechizo que más daño hizo."
+L["Combine window"] = "Ventana de combinación"
+L["%.2fs"] = "%.2fs"
+L["Show hit count"] = "Mostrar número de golpes"
+L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."] =
+    "Muestra cuántos golpes se combinaron, p. ej. 37.200 (3). Con los iconos de hechizo activados, el número aparece sobre el icono."
+L["%s (%d)"] = "%s (%d)"
+L["Crits, normal hits, and heals combine separately."] = "Los críticos, los golpes normales y las sanaciones se combinan por separado."
+L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."] =
+    "Los críticos, los golpes normales y las sanaciones se combinan por separado. Los valores secretos no se pueden sumar, así que esos golpes se siguen mostrando por separado."
+
 L["Preview"] = "Vista previa"
 L["Updates live as you change options."] = "Se actualiza en vivo al cambiar opciones."
 L["Target an enemy, then spawn sample numbers on its nameplate."] =
@@ -321,3 +341,12 @@ L["Outgoing font"] = "Fuente del daño infligido"
 L["Incoming font"] = "Fuente del daño recibido"
 L["Show only critical damage"] = "Mostrar solo daño crítico"
 L["Hide non-critical outgoing and incoming damage. Healing and miss text are unaffected."] = "Oculta el daño infligido y recibido no crítico. No afecta a la sanación ni al texto de fallos."
+-- What's new: combine hits
+L["Rapid hits on the same nameplate can merge into one growing number with a hit count. Turn it on under Combat → Combine hits."] =
+    "Los golpes rápidos en la misma placa de nombre pueden combinarse en un solo número creciente con el número de golpes. Actívalo en Combate → Combinar golpes."
+-- Reduce clutter
+L["Reduce clutter"] = "Reducir el desorden"
+-- Combine hits: merge pop
+L["Pop on each merge"] = "Rebote en cada combinación"
+L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."] =
+    "Agranda brevemente el número cada vez que se le suma otro golpe. Desactívalo para una visualización más tranquila."
