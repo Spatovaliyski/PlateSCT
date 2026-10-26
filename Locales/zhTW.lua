@@ -257,6 +257,10 @@ L["Auto"] = "自動"
 -- Settings redesign
 L["A new WoW-inspired settings window with clear sections, searchable controls, and gentle animations."] = "全新的設定視窗採用 WoW 風格，分區清楚，支援搜尋設定，並帶有柔和的動畫。"
 L["Animate settings"] = "啟用設定視窗動畫"
+
+-- Settings window resize
+L["Drag to resize. Double-click to restore the default size."] = "拖曳以調整大小。按兩下恢復預設大小。"
+
 L["Appearance"] = "外觀"
 L["Appearance only · Test on Target checks gameplay size."] = "僅預覽外觀 · 使用「在目標上測試」檢查實際遊戲中的大小。"
 L["Appearance preview"] = "外觀預覽"
