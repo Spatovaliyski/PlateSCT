@@ -492,6 +492,8 @@ local function ReleaseFrame(frame)
     frame.animMode = nil
     frame.numberStyle = nil
     frame.impactSpacingScale = nil
+    frame.impactBottom = nil
+    frame.impactTop = nil
     frame.impactPushFrom = nil
     frame.impactPushTo = nil
     frame.impactPushStarted = nil
@@ -940,18 +942,29 @@ local function SpawnSlotBlocked(frame, anchor, cx, cy, minDistSq, acrossAnchors)
     return false
 end
 
-local function PushImpactFrames(anchor, frame)
+local function GetImpactStackSpacing(bottom, top)
+    return math.max(IMPACT_STACK_OFFSET, top - bottom + 4)
+end
+
+local function PushImpactFrames(anchor, frame, spawnY)
     frame.impactPushTo = 0
+    local frames = {}
+    local push = IMPACT_STACK_OFFSET
     for other in pairs(active) do
         if other ~= frame and other.animMode == "impactSlam" and other.impactPushTo ~= nil
             and other.anchor == anchor and other.anchorRelPoint == frame.anchorRelPoint
             and other.isPreview == frame.isPreview and not other.lingerFrozen
             and other.elapsed < other.duration then
-            -- Keep each push fixed in logical pixels, independent of font or crit size.
-            other.impactPushFrom = ComputeImpactPush(other)
-            other.impactPushTo = other.impactPushTo + IMPACT_STACK_OFFSET
-            other.impactPushStarted = other.elapsed
+            frames[#frames + 1] = other
+            push = math.max(push, GetImpactStackSpacing(other.startY + other.impactBottom + other.impactPushTo,
+                spawnY + frame.impactTop))
         end
+    end
+    -- Move the existing stack together so a larger new hit preserves older gaps.
+    for _, other in ipairs(frames) do
+        other.impactPushFrom = ComputeImpactPush(other)
+        other.impactPushTo = other.impactPushTo + push
+        other.impactPushStarted = other.elapsed
     end
 end
 
@@ -960,7 +973,7 @@ local function PickClearSpawn(anchor, frame, baseX, baseY, isCrit, acrossAnchors
     if frame.animMode == "impactSlam" then
         local jitter = frame.spawnJitter or 0
         local x, y = baseX + (math.random() * 2 - 1) * jitter, baseY + (math.random() * 2 - 1) * jitter
-        PushImpactFrames(anchor, frame)
+        PushImpactFrames(anchor, frame, y)
         return x, y
     end
     if frame.usesClassicShove and frame.classicBounds then
@@ -1154,6 +1167,7 @@ BD.Pool = {
     PickClearSpawn = PickClearSpawn,
     ApplyMotion = ApplyFrameMotion,
     RelayerImpact = RelayerImpact,
+    GetImpactStackSpacing = GetImpactStackSpacing,
     RelayoutClassic = RelayoutClassic,
     GetClassicPreviewBounds = GetClassicPreviewBounds,
     ReleasePreviewFrames = ReleasePreviewFrames,

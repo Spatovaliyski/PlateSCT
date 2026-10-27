@@ -55,6 +55,7 @@ local schema = {
     schoolFilterArcane = Boolean(61, "modern"),
     incomingFontFace = Choice(62, BD.BUILTIN_FONTS), incomingFontSize = Number(63, 10, 48),
     onlyCriticalDamage = Boolean(64),
+    showMisses = Boolean(71),
 }
 
 -- Settings-window choices stay on this character. IDs stay reserved so older strings skip them.

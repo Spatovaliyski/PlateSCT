@@ -107,6 +107,34 @@ local function AccessibleTextSize(text, fontSize)
     return width, math.max(fontSize, height)
 end
 
+local function ImpactTextBounds(textW, textH, labelW, labelH, iconSize, iconPosition)
+    local left, right, bottom, top = -textW * 0.5, textW * 0.5, -textH * 0.5, textH * 0.5
+    local labelBottom = top + CRIT_LABEL_GAP
+    if iconSize then
+        if iconPosition == "top" or iconPosition == "bottom" then
+            left, right = math.min(left, -iconSize * 0.5), math.max(right, iconSize * 0.5)
+            if iconPosition == "top" then
+                top = top + ICON_GAP + iconSize
+                labelBottom = top + CRIT_LABEL_GAP
+            else
+                bottom = bottom - ICON_GAP - iconSize
+            end
+        else
+            bottom, top = math.min(bottom, -iconSize * 0.5), math.max(top, iconSize * 0.5)
+            if iconPosition == "right" then
+                right = right + ICON_GAP + iconSize
+            else
+                left = left - ICON_GAP - iconSize
+            end
+        end
+    end
+    if labelW > 0 then
+        left, right = math.min(left, -labelW * 0.5), math.max(right, labelW * 0.5)
+        top = math.max(top, labelBottom + labelH)
+    end
+    return left, right, bottom, top
+end
+
 local function RecordClassicBounds(frame, fontSize, iconSize, iconPosition)
     if not frame.usesClassicShove then
         return
@@ -219,6 +247,16 @@ local function ApplyTextLayout(frame, fontSize, fontPath, fontFlags, preset, lay
         if showCritLabel and frame.critLabel then
             frame.critLabel:SetPoint("BOTTOM", labelAnchor, "TOP", 0, CRIT_LABEL_GAP)
         end
+        local width, height = AccessibleTextSize(frame.text, fontSize)
+        local labelW, labelH = 0, 0
+        if frame.critLabel and frame.critLabel:IsShown() then
+            labelW, labelH = AccessibleTextSize(frame.critLabel, math.max(8, math.floor(fontSize * 0.55 + 0.5)))
+        end
+        local _, _, bottom, top = ImpactTextBounds(width, height, labelW, labelH, resolvedIcon and size, iconPosition)
+        local peak = frame.isCrit and math.max(1, frame.critSlapScale, frame.critRestScale) or 1
+        -- Leave room for a combined-hit pulse as well as the crit's entrance peak.
+        peak = peak * (1 + BD.COMBINE_PULSE_SCALE)
+        frame.impactBottom, frame.impactTop = bottom * peak, top * peak
         return
     end
 
@@ -599,34 +637,6 @@ local function PreviewStagger(self, sampleKind)
     return duration * 0.5 + 0.01
 end
 
-local function ImpactTextBounds(textW, textH, labelW, labelH, iconSize, iconPosition)
-    local left, right, bottom, top = -textW * 0.5, textW * 0.5, -textH * 0.5, textH * 0.5
-    local labelBottom = top + CRIT_LABEL_GAP
-    if iconSize then
-        if iconPosition == "top" or iconPosition == "bottom" then
-            left, right = math.min(left, -iconSize * 0.5), math.max(right, iconSize * 0.5)
-            if iconPosition == "top" then
-                top = top + ICON_GAP + iconSize
-                labelBottom = top + CRIT_LABEL_GAP
-            else
-                bottom = bottom - ICON_GAP - iconSize
-            end
-        else
-            bottom, top = math.min(bottom, -iconSize * 0.5), math.max(top, iconSize * 0.5)
-            if iconPosition == "right" then
-                right = right + ICON_GAP + iconSize
-            else
-                left = left - ICON_GAP - iconSize
-            end
-        end
-    end
-    if labelW > 0 then
-        left, right = math.min(left, -labelW * 0.5), math.max(right, labelW * 0.5)
-        top = math.max(top, labelBottom + labelH)
-    end
-    return left, right, bottom, top
-end
-
 local function ImpactPreviewBounds(self, sampleKind)
     local preset = self.STYLE_PRESETS.impact
     local fontSize = (self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale
@@ -637,6 +647,7 @@ local function ImpactPreviewBounds(self, sampleKind)
     local jitter = preset.spawnJitter * spacing
     local x, y = GetImpactPlacement(self, spacing)
     local left, right, bottom, top = 0, 0, 0, 0
+    local stackBottom, stackTop, maxDuration = 0, 0, 0
     for _, sample in ipairs(self.previewSamples or PREVIEW_SAMPLES) do
         if sample.hitKind ~= "miss" and MatchesPreviewKind(sample, sampleKind) then
             local text = PreviewSampleText(self, sample)
@@ -651,12 +662,22 @@ local function ImpactPreviewBounds(self, sampleKind)
             local textX = ImpactTextOffset(self, iconSize, self.db.iconPosition)
             l, r = l + textX, r + textX
             local scale = (sample.hitKind == "crit" and preset.critSlapScale or 1) * PreviewPulseScale(self, sample)
+            local stackScale = (sample.hitKind == "crit" and math.max(1, preset.critSlapScale, preset.critRestScale) or 1)
+                * (1 + BD.COMBINE_PULSE_SCALE)
+            stackBottom, stackTop = math.min(stackBottom, b * stackScale), math.max(stackTop, t * stackScale)
+            local duration = (self.db.duration or self.DEFAULTS.duration) * preset.durationMult
+                * (sample.hitKind == "crit" and preset.critDurationMult or 1)
+            maxDuration = math.max(maxDuration, duration)
             left = math.min(left, x + dx1 - jitter + l * scale - 4)
             right = math.max(right, x + dx2 + jitter + r * scale + 4)
             bottom = math.min(bottom, y + dy1 - jitter + b * scale - 4)
             top = math.max(top, y + dy2 + jitter + t * scale + 4)
         end
     end
+    -- Older preview hits move up whenever the next sample lands on their stack.
+    local stagger = self.previewStagger or PreviewStagger(self, sampleKind)
+    local pushes = math.max(0, math.ceil(maxDuration / stagger) - 1)
+    top = top + pushes * BD.Pool.GetImpactStackSpacing(stackBottom - jitter, stackTop + jitter)
     if not self.previewSamples and (not sampleKind or sampleKind == "mixed" or sampleKind == "miss") then
         local l, r, b, t = self:GetOptionsPreviewBounds("miss", "retail")
         left, right, bottom, top = math.min(left, l), math.max(right, r), math.min(bottom, b), math.max(top, t)
@@ -1013,6 +1034,9 @@ function BD:ReleaseMotionPreviews()
 end
 
 function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isHeal, spellIcon, hitKind, spellId)
+    if hitKind == "miss" and not self.db.showMisses then
+        return
+    end
     if self.db.onlyCriticalDamage and not isHeal and hitKind ~= "miss" and not isCrit then
         return
     end
@@ -1191,6 +1215,9 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
 end
 
 function BD:ShowIncoming(text, r, g, b, amountForThreshold, isCrit, hitKind)
+    if hitKind == "miss" and not self.db.showMisses then
+        return
+    end
     if self.db.onlyCriticalDamage and hitKind ~= "miss" and not isCrit then
         return
     end

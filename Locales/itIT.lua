@@ -3,6 +3,10 @@ local _, BD = ...
 local L = {}
 BD.RegisterLocale("itIT", L)
 
+-- Miss and avoidance visibility
+L["Show misses and avoidance"] = "Mostra colpi mancati ed evitati"
+L["Show miss, dodge, parry, and similar text for outgoing and incoming attacks."] = "Mostra colpi mancati, schivate, parate e risultati simili per gli attacchi inflitti e ricevuti."
+
 -- Number position and font preview
 L["Number position"] = "Posizione dei numeri"
 L["X offset"] = "Scostamento X"

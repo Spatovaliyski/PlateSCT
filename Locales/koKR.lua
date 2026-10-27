@@ -3,6 +3,10 @@ local _, BD = ...
 local L = {}
 BD.RegisterLocale("koKR", L)
 
+-- Miss and avoidance visibility
+L["Show misses and avoidance"] = "빗나감 및 회피 표시"
+L["Show miss, dodge, parry, and similar text for outgoing and incoming attacks."] = "가하거나 받은 공격의 빗나감, 회피, 무기 막기 및 유사한 결과를 표시합니다."
+
 -- Number position and font preview
 L["Number position"] = "숫자 위치"
 L["X offset"] = "X 오프셋"

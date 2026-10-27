@@ -91,6 +91,8 @@ local function BuildCombat(parent, root)
     layout:Heading(L["Display settings"])
     layout:Checkbox("onlyCriticalDamage", L["Show only critical damage"],
         L["Hide non-critical outgoing and incoming damage. Healing and miss text are unaffected."])
+    layout:Checkbox("showMisses", L["Show misses and avoidance"],
+        L["Show miss, dodge, parry, and similar text for outgoing and incoming attacks."])
     if IsModernAPI() then
         layout:Note(L["Choose whose damage to display under Modern API → Damage mode. Personal mode is experimental."])
     else

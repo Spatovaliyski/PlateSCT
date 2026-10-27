@@ -327,11 +327,12 @@ test("both booleans, numeric boundaries, and Unicode strings", function()
     for _, flavor in ipairs({ "classic", "modern" }) do
         local BD = new(flavor)
         for _, value in ipairs({ false, true }) do
-            BD.db.enabled, BD.db.showIncoming, BD.db.debug = value, value, value
+            BD.db.enabled, BD.db.showIncoming, BD.db.debug, BD.db.showMisses = value, value, value, value
             local text = assert(BD:ExportSettings())
-            BD.db.enabled, BD.db.showIncoming, BD.db.debug = not value, not value, not value
+            BD.db.enabled, BD.db.showIncoming, BD.db.debug, BD.db.showMisses = not value, not value, not value, not value
             assert(BD:ImportSettings(text))
             eq(BD.db.enabled, value); eq(BD.db.showIncoming, value); eq(BD.db.debug, value)
+            eq(BD.db.showMisses, value)
         end
         assert(BD:ImportSettings(records("shared.fontSize=n:10;shared.duration=n:0.5;shared.retailOffsetX=n:-200;shared.minDamage=n:0")))
         assert(BD:ImportSettings(records("shared.fontSize=n:48;shared.duration=n:4;shared.retailOffsetX=n:200;shared.minDamage=n:1e+20")))
@@ -439,7 +440,10 @@ test("all shipped Lua compiles and every new string is translated", function()
     for _, code in ipairs({ "frFR", "deDE", "esES", "ruRU", "itIT", "ptBR", "zhCN", "zhTW", "koKR" }) do
         load("Locales/" .. code .. ".lua", BD)
     end
-    local strings, start = {}, false
+    local strings, start = {
+        "Show misses and avoidance",
+        "Show miss, dodge, parry, and similar text for outgoing and incoming attacks.",
+    }, false
     for line in io.lines("Locales/enUS.lua") do
         if line:find("-- Settings import / export", 1, true) then start = true end
         local key = start and line:match('^L%["(.-)"%]')

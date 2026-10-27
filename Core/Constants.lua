@@ -15,6 +15,7 @@ BD.DEFAULTS = {
     incomingFontFace = "game",
     incomingFontSize = 14,
     onlyCriticalDamage = false,
+    showMisses = true,
     hideBlizzardFCT = true,
     onlyMyDamage = true,
     allNameplates = false,
