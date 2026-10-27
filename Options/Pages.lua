@@ -480,13 +480,12 @@ local function BuildDiagnostics(layout)
 end
 
 local function BuildWhatsNew(layout)
-    layout:Heading(L["Welcome to PlateSCT"])
-    layout:Note(L["Choose Modern, Classic, or Impact from an animated welcome screen, or customize your settings. Open it anytime with /psct welcome."])
-    layout:Note(L["Style cards and Apply now have clear hover, selection, and disabled states."])
-    layout:Heading(L["Appearance preview"])
-    layout:Note(L["Slider values stay aligned when resizing. Modern and Impact previews use 70% scale; Classic uses 60%. The nameplate marker has been removed."])
-    layout:Heading(L["Import & Export"])
-    layout:Note(L["Import and export now have their own page above Help & Settings."])
+    layout:Heading("1.2.5")
+    layout:Heading(L["Show misses and avoidance"])
+    layout:Note(L["Show or hide outgoing and incoming miss, dodge, parry, and similar text under Combat → Display settings. Enabled by default on Midnight and Classic APIs."])
+    layout:Note(L["Midnight Personal mode still omits outgoing misses."])
+    layout:Heading(L["Impact number style"])
+    layout:Note(L["Impact now leaves room for CRITICAL labels, icons, and enlarged crits when stacking damage numbers."])
 end
 
 local function BuildHelp(parent, root, tabId)

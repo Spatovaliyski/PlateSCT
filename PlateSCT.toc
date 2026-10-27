@@ -12,7 +12,7 @@
 ## Notes-zhTW: 在名條上顯示傷害數字，支援傷害門檻篩選和數字縮寫。支援 Midnight、Forever 和經典 API 客戶端。
 ## Notes-koKR: 이름표에 피해 숫자를 표시하며, 피해 기준값 필터와 숫자 축약을 지원합니다. Midnight, Forever 및 클래식 API 클라이언트를 지원합니다.
 ## Author: Limitedby
-## Version: 1.2.4
+## Version: 1.2.5
 ## SavedVariables: PlateSCTDB
 ## IconTexture: Interface\AddOns\PlateSCT\Media\psct-logo-mini.png
 ## AddonCompartmentFunc: PlateSCT_OnAddonCompartmentClick

@@ -3,6 +3,11 @@ local _, BD = ...
 local L = {}
 BD.RegisterLocale("zhTW", L)
 
+-- What's new: 1.2.5
+L["Show or hide outgoing and incoming miss, dodge, parry, and similar text under Combat → Display settings. Enabled by default on Midnight and Classic APIs."] = "在戰鬥 → 顯示設定中，顯示或隱藏對外攻擊和受到攻擊時的未命中、閃躲、招架等文字。在 Midnight 和經典 API 用戶端中預設啟用。"
+L["Midnight Personal mode still omits outgoing misses."] = "Midnight 的個人模式仍不顯示對外攻擊的未命中文字。"
+L["Impact now leaves room for CRITICAL labels, icons, and enlarged crits when stacking damage numbers."] = "Impact 現在會在傷害數字堆疊時為致命一擊標籤、圖示和放大的致命一擊數字預留空間。"
+
 -- Miss and avoidance visibility
 L["Show misses and avoidance"] = "顯示未命中與閃避等結果"
 L["Show miss, dodge, parry, and similar text for outgoing and incoming attacks."] = "顯示對外攻擊和受到攻擊時的未命中、閃躲、招架等文字。"

@@ -3,6 +3,11 @@ local _, BD = ...
 local L = {}
 BD.RegisterLocale("koKR", L)
 
+-- What's new: 1.2.5
+L["Show or hide outgoing and incoming miss, dodge, parry, and similar text under Combat → Display settings. Enabled by default on Midnight and Classic APIs."] = "전투 → 표시 설정에서 가하거나 받은 공격의 빗나감, 회피, 무기 막기 및 유사한 결과를 표시하거나 숨길 수 있습니다. Midnight 및 클래식 API에서 기본으로 활성화됩니다."
+L["Midnight Personal mode still omits outgoing misses."] = "Midnight 개인 모드에서는 여전히 가한 공격의 빗나감을 표시하지 않습니다."
+L["Impact now leaves room for CRITICAL labels, icons, and enlarged crits when stacking damage numbers."] = "Impact에서 피해 숫자를 쌓을 때 치명타 문구, 아이콘 및 확대된 치명타 숫자를 위한 공간을 확보합니다."
+
 -- Miss and avoidance visibility
 L["Show misses and avoidance"] = "빗나감 및 회피 표시"
 L["Show miss, dodge, parry, and similar text for outgoing and incoming attacks."] = "가하거나 받은 공격의 빗나감, 회피, 무기 막기 및 유사한 결과를 표시합니다."

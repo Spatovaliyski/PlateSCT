@@ -443,6 +443,9 @@ test("all shipped Lua compiles and every new string is translated", function()
     local strings, start = {
         "Show misses and avoidance",
         "Show miss, dodge, parry, and similar text for outgoing and incoming attacks.",
+        "Show or hide outgoing and incoming miss, dodge, parry, and similar text under Combat → Display settings. Enabled by default on Midnight and Classic APIs.",
+        "Midnight Personal mode still omits outgoing misses.",
+        "Impact now leaves room for CRITICAL labels, icons, and enlarged crits when stacking damage numbers.",
     }, false
     for line in io.lines("Locales/enUS.lua") do
         if line:find("-- Settings import / export", 1, true) then start = true end

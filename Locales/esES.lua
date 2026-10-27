@@ -3,6 +3,11 @@ local _, BD = ...
 local L = {}
 BD.RegisterLocale("esES", L)
 
+-- What's new: 1.2.5
+L["Show or hide outgoing and incoming miss, dodge, parry, and similar text under Combat → Display settings. Enabled by default on Midnight and Classic APIs."] = "Muestra u oculta fallos, esquivas, paradas y resultados similares de ataques realizados y recibidos en Combate → Ajustes de visualización. Activado por defecto en las API de Midnight y Classic."
+L["Midnight Personal mode still omits outgoing misses."] = "El modo Personal de Midnight sigue sin mostrar los fallos de tus ataques."
+L["Impact now leaves room for CRITICAL labels, icons, and enlarged crits when stacking damage numbers."] = "Impact ahora deja espacio para los textos de CRÍTICO, los iconos y los críticos ampliados al apilar los números de daño."
+
 -- Miss and avoidance visibility
 L["Show misses and avoidance"] = "Mostrar fallos y ataques evitados"
 L["Show miss, dodge, parry, and similar text for outgoing and incoming attacks."] = "Mostrar fallos, esquivas, paradas y resultados similares de ataques realizados y recibidos."
