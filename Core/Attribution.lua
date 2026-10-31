@@ -257,7 +257,9 @@ local function TryMatchPending(unit, now, strict)
     local bestIndex
     local preferDest = false
 
-    for index = 1, #pending do
+    -- Newest first: an older cast with hits or linger left must not take the
+    -- hit of the cast just made, or icons trail one cast behind.
+    for index = #pending, 1, -1 do
         local entry = pending[index]
         if entry.source == "pet" and not (BD.db and BD.db.includePetDamage) then
             -- skip

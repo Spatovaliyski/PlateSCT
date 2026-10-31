@@ -79,14 +79,13 @@ local function BuildCombat(parent, root)
             BD:RefreshMinimapButton()
         end)
 
-    local nameplateNote = layout:Note(L["PlateSCT needs enemy nameplates. Press V (default) or enable them in the game's nameplate settings."])
-    root.refreshers[#root.refreshers + 1] = function()
-        if EnemyNameplatesEnabled() then
-            nameplateNote:SetTextColor(0.65, 0.61, 0.53)
-        else
-            nameplateNote:SetTextColor(1, 0.48, 0.25)
-        end
-    end
+    layout:When(EnemyNameplatesEnabled, function()
+        local nameplateNote = layout:Note(L["PlateSCT needs enemy nameplates. Press V (default) or enable them in the game's nameplate settings."])
+        nameplateNote:SetTextColor(0.65, 0.61, 0.53)
+    end)
+    layout:When(function() return not EnemyNameplatesEnabled() end, function()
+        layout:Warning(L["Enemy nameplates are off, so PlateSCT cannot show any numbers. Press V (default) or enable them in the game's nameplate settings."])
+    end)
 
     layout:Heading(L["Display settings"])
     layout:Checkbox("onlyCriticalDamage", L["Show only critical damage"],
@@ -94,7 +93,9 @@ local function BuildCombat(parent, root)
     layout:Checkbox("showMisses", L["Show misses and avoidance"],
         L["Show miss, dodge, parry, and similar text for outgoing and incoming attacks."])
     if IsModernAPI() then
-        layout:Note(L["Choose whose damage to display under Modern API → Damage mode. Personal mode is experimental."])
+        layout:When(function() return BD.db.onlyMyDamage and BD.db.showMisses end, function()
+            layout:Warning(L["Personal mode can't tell whose attack missed, so misses, dodges, and parries from your attacks are hidden. Misses against you still show when Show incoming hits is on."])
+        end)
     else
         layout:Note(L["Shows your damage on hostile nameplates. Source is read from the combat log."])
     end
@@ -103,6 +104,11 @@ local function BuildCombat(parent, root)
             or L["Also show damage from your pet and guardians on nameplates."],
         PersonalModeAvailable, nil,
         L["Choose Personal - experimental under Modern API → Damage mode to use pet matching."])
+    if IsModernAPI() then
+        layout:When(function() return PersonalModeAvailable() and BD.db.includePetDamage end, function()
+            layout:Warning(L["Pet damage is a best guess. The game no longer says which hits came from your pet, so PlateSCT counts hits that land right after your pet casts."])
+        end)
+    end
 
     layout:Heading(L["Healing"])
     layout:Checkbox("showHealing", L["Show healing"],
@@ -187,13 +193,18 @@ local function BuildAppearance(parent, root)
             or L["Display the spell's icon next to the damage number. Uses the spell from the combat log."],
         PersonalModeAvailable, nil,
         L["Choose Personal - experimental under Modern API → Damage mode to use spell icons."])
+    if IsModernAPI() then
+        layout:When(function() return PersonalModeAvailable() and BD.db.showSpellIcon end, function()
+            layout:Warning(L["Spell icons are a best guess. The game no longer says which spell caused a hit, so PlateSCT uses your latest matching cast and may show the wrong icon."])
+        end)
+    end
     layout:Choice("iconPosition", L["Icon position"], BD.ICON_POSITIONS,
         L["Place the spell icon beside, above, or below the number."], function()
             return PersonalModeAvailable() and BD.db.showSpellIcon
         end, nil, L["Enable Show spell icon to choose its position."])
-    layout:Note(IsModernAPI()
-        and L["Spell icons use matched casts in Personal mode; Modern API cannot identify a spell for every hit."]
-        or L["Spell icons use the spell from the combat log."])
+    if not IsModernAPI() then
+        layout:Note(L["Spell icons use the spell from the combat log."])
+    end
     layout:Finish()
 end
 
@@ -334,7 +345,12 @@ local function BuildModernMode(layout)
         { id = "engaged", labelKey = "Engaged nameplates" },
     }, L["Personal matches recent casts. Current target and Engaged nameplates show damage from all sources."])
     control.searchAliases = { L["Only my damage"], L["All engaged nameplates"] }
-    layout:Note(L["Personal - experimental: best-effort matching by destination and timing. Other players' hits on the same target can appear."])
+    layout:When(function() return not BD.db.onlyMyDamage end, function()
+        layout:Note(L["Personal - experimental: best-effort matching by destination and timing. Other players' hits on the same target can appear."])
+    end)
+    layout:When(function() return BD.db.onlyMyDamage end, function()
+        layout:Warning(L["Personal mode is a best guess. The game no longer says who dealt each hit, so PlateSCT matches hits and heals to your recent casts by target and timing. Other players' hits can appear, and some of yours may not show."])
+    end)
     layout:Note(L["Current target: all-source numbers on your target. Engaged nameplates: all-source numbers on engaged enemies."])
     layout:Heading(L["Attribution limitations"])
     layout:Note(L["Best effort: matches your casts to nameplates by destination and timing. Dest-matched cleave can show. Other players on the same target can still appear. Mythic+ uses the Dungeon profile."])

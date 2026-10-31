@@ -214,6 +214,8 @@ L["Game fonts, plus SharedMedia fonts when that library is loaded by another add
 L["Only fonts inside the WoW folder can load. SharedMedia fonts appear when another addon provides them."] =
     "WoW 폴더 안에 있는 글꼴만 불러올 수 있습니다. 다른 애드온이 SharedMedia 글꼴을 제공하면 목록에 표시됩니다."
 L["%d px"] = "%d px"
+L["Click to type an exact value."] = "클릭하여 정확한 값을 입력합니다."
+L["Range: %s to %s"] = "범위: %s ~ %s"
 L["%.1fs"] = "%.1f초"
 L["%.1fx"] = "%.1fx"
 L["Motion (Modern)"] = "움직임 (모던 스타일)"
@@ -386,6 +388,16 @@ L["Show sample hits, crits, and misses in the bottom preview drawer."] = "하단
 L["Show sample hits, crits, and misses inside this window."] = "이 창 안에 일반 적중, 치명타, 빗나감 예시를 표시합니다."
 L["Sounds"] = "효과음"
 L["Spell icons"] = "주문 아이콘"
+L["Spell icons are a best guess. The game no longer says which spell caused a hit, so PlateSCT uses your latest matching cast and may show the wrong icon."] =
+    "주문 아이콘은 추정값입니다. 게임이 더 이상 어떤 주문이 피해를 입혔는지 알려주지 않으므로, PlateSCT가 가장 최근에 일치한 시전을 사용하며 잘못된 아이콘이 표시될 수 있습니다."
+L["Enemy nameplates are off, so PlateSCT cannot show any numbers. Press V (default) or enable them in the game's nameplate settings."] =
+    "적 이름표가 꺼져 있어 PlateSCT가 숫자를 표시할 수 없습니다. V 키(기본값)를 누르거나 게임의 이름표 설정에서 켜세요."
+L["Personal mode can't tell whose attack missed, so misses, dodges, and parries from your attacks are hidden. Misses against you still show when Show incoming hits is on."] =
+    "개인 피해 모드는 누구의 공격이 빗나갔는지 알 수 없어 내 공격의 빗나감, 회피, 막음을 숨깁니다. '받는 피해 표시'가 켜져 있으면 나를 향한 빗나감은 계속 표시됩니다."
+L["Pet damage is a best guess. The game no longer says which hits came from your pet, so PlateSCT counts hits that land right after your pet casts."] =
+    "소환수 피해는 추정값입니다. 게임이 더 이상 어떤 피해가 소환수에게서 왔는지 알려주지 않으므로, PlateSCT가 소환수 시전 직후에 들어온 피해를 소환수 피해로 셉니다."
+L["Personal mode is a best guess. The game no longer says who dealt each hit, so PlateSCT matches hits and heals to your recent casts by target and timing. Other players' hits can appear, and some of yours may not show."] =
+    "개인 피해 모드는 추정값입니다. 게임이 더 이상 각 피해를 누가 입혔는지 알려주지 않으므로, PlateSCT가 대상과 타이밍을 기준으로 피해와 치유를 최근 시전에 연결합니다. 다른 플레이어의 피해가 표시되거나 내 피해 일부가 표시되지 않을 수 있습니다."
 L["Spell icons use matched casts in Personal mode; Modern API cannot identify a spell for every hit."] =
     "개인 피해 모드에서는 연결된 시전의 주문 아이콘을 사용합니다. 모던 API는 모든 피해에 해당하는 주문을 식별할 수 없습니다."
 L["Spell icons use the spell from the combat log."] = "주문 아이콘은 전투 기록의 주문 정보를 사용합니다."

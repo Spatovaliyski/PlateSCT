@@ -4,7 +4,7 @@ Nameplate scrolling combat text for World of Warcraft.
 
 PlateSCT displays outgoing combat numbers on nameplates and supports incoming player combat text, configurable number styles, animations, fonts, colors, and critical-hit sounds.
 
-**Author:** Limitedby
+**Author:** _rootkit
 
 ## Features
 

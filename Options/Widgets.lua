@@ -5,7 +5,9 @@ BD.OptionsWidgets = W
 local GOLD = { 0.88, 0.72, 0.43 }
 local TEXT = { 0.88, 0.86, 0.80 }
 local MUTED = { 0.60, 0.60, 0.57 }
+local WARNING = { 1, 0.68, 0.32 }
 local WHITE = "Interface\\Buttons\\WHITE8X8"
+local WARNING_ICON = "Interface\\DialogFrame\\UI-Dialog-Icon-AlertNew"
 local GLASS = "Interface\\DialogFrame\\UI-DialogBox-Background"
 local CONTROL_WIDTH = 220
 
@@ -145,6 +147,9 @@ function W.Backdrop(frame, kind)
     elseif kind == "row" then
         background = { 0.12, 0.105, 0.080, 0.82 }
         border = { 0.45, 0.35, 0.20, 0.08 }
+    elseif kind == "warning" then
+        background = { 0.30, 0.15, 0.03, 0.45 }
+        border = { 0.92, 0.52, 0.14, 0.9 }
     elseif kind == "window" then
         background = { 0.15, 0.14, 0.13, 1 }
         border = { 0.53, 0.41, 0.24, 0.98 }
@@ -624,6 +629,128 @@ local function ParseAmount(text)
     return math.floor(math.max(0, number))
 end
 
+-- Typed slider values keep digits, one leading minus when the range allows it, and one
+-- decimal point on fractional sliders. A comma is read as the decimal point.
+local function SanitizeEntry(text, allowNegative, allowDecimal)
+    text = string.gsub(text or "", ",", ".")
+    local negative = allowNegative and string.sub(text, 1, 1) == "-"
+    local clean = string.gsub(text, allowDecimal and "[^%d%.]" or "%D", "")
+    local point = allowDecimal and string.find(clean, ".", 1, true)
+    if point then
+        clean = string.sub(clean, 1, point) .. string.gsub(string.sub(clean, point + 1), "%.", "")
+    end
+    return (negative and "-" or "") .. clean
+end
+
+-- Rounds to the slider's display precision and clamps to its range, but not to its step.
+local function ParseEntry(text, minimum, maximum, decimals)
+    local number = tonumber(text)
+    if not number then return nil end
+    local scale = 10 ^ decimals
+    number = math.floor(number * scale + 0.5) / scale
+    return math.max(minimum, math.min(maximum, number))
+end
+
+local function StepDecimals(step)
+    local decimals = 0
+    while decimals < 4 do
+        local scaled = step * 10 ^ decimals
+        if math.abs(scaled - math.floor(scaled + 0.5)) < 1e-9 then break end
+        decimals = decimals + 1
+    end
+    return decimals
+end
+
+local function CreateValueEntry(root)
+    local layer = CreateFrame("Button", nil, UIParent)
+    layer:SetAllPoints(UIParent)
+    layer:SetFrameStrata("FULLSCREEN_DIALOG")
+    layer:EnableMouse(true)
+    layer:EnableMouseWheel(true)
+    layer:Hide()
+    local popup = CreateFrame("Frame", nil, layer, "BackdropTemplate")
+    popup:SetFrameStrata("FULLSCREEN_DIALOG")
+    popup:SetFrameLevel(layer:GetFrameLevel() + 2)
+    popup:SetClampedToScreen(true)
+    popup:EnableMouse(true)
+    W.Backdrop(popup, "window")
+    -- Match the settings window body: the window's top sheen would lighten this short popup.
+    if popup.optionsSheen then popup.optionsSheen:Hide() end
+    popup.layer = layer
+    local input = W.EditBox(popup, 104, 26)
+    input:SetPoint("TOPLEFT", 10, -10)
+    input:SetMaxLetters(10)
+    popup.input = input
+    local function PaintInput(focused)
+        W.Backdrop(input, "control")
+        input:SetBackdropColor(0, 0, 0, 0)
+        input:SetBackdropBorderColor(GOLD[1], GOLD[2], GOLD[3], focused and 0.85 or 0.45)
+    end
+    PaintInput(false)
+    local apply = W.Button(popup, Localize("Apply"), 70, 26, function() popup:Commit() end)
+    apply:SetPoint("TOPRIGHT", -10, -10)
+    local range = W.Text(popup, "", 10, -44, nil, "GameFontHighlightSmall", MUTED)
+    range:SetWordWrap(false)
+    popup.range = range
+    layer:SetScript("OnMouseWheel", function() end)
+    layer:SetScript("OnClick", function() popup:Hide() end)
+    input:SetScript("OnTextChanged", function(self, userInput)
+        if not userInput or not popup.request then return end
+        local text = self:GetText()
+        local request = popup.request
+        local clean = SanitizeEntry(text, request.minimum < 0, request.decimals > 0)
+        if clean == text then return end
+        local cursor = self:GetCursorPosition() - (#text - #clean)
+        self:SetText(clean)
+        self:SetCursorPosition(math.max(0, math.min(#clean, cursor)))
+    end)
+    input:SetScript("OnEnterPressed", function() popup:Commit() end)
+    input:SetScript("OnEscapePressed", function() popup:Hide() end)
+    input:SetScript("OnEditFocusGained", function() PaintInput(true) end)
+    input:SetScript("OnEditFocusLost", function() PaintInput(false) end)
+    function popup:Commit()
+        local request = self.request
+        local value = request and ParseEntry(input:GetText(), request.minimum, request.maximum, request.decimals)
+        self:Hide()
+        if value ~= nil then request.apply(value) end
+    end
+    popup:SetScript("OnHide", function(self)
+        layer:Hide()
+        input:ClearFocus()
+        self.owner, self.request = nil, nil
+        if root.transientMenu == self then root.transientMenu = nil end
+        root.pageScrollLocked = false
+    end)
+    return popup
+end
+
+local function OpenValueEntry(control, root, request)
+    if not control:IsEnabled() then return end
+    root:DismissTransient()
+    local popup = root.valueEntry or CreateValueEntry(root)
+    root.valueEntry = popup
+    popup.layer:SetScale(root:GetScale())
+    popup.owner, popup.request = control, request
+    popup.range:SetText(request.range)
+    popup:SetSize(math.max(196, popup.range:GetStringWidth() + 20), 64)
+    popup:ClearAllPoints()
+    local anchor = control.entryButton
+    local bottom = anchor:GetBottom()
+    if bottom and bottom < 88 then
+        popup:SetPoint("BOTTOMRIGHT", anchor, "TOPRIGHT", 0, 4)
+    else
+        popup:SetPoint("TOPRIGHT", anchor, "BOTTOMRIGHT", 0, -4)
+    end
+    root.transientMenu = popup
+    root.pageScrollLocked = true
+    popup.layer:Show()
+    popup:Show()
+    popup:Raise()
+    popup.input:SetText(string.format("%." .. request.decimals .. "f", request.value))
+    popup.input:SetFocus()
+    popup.input:HighlightText()
+end
+
 function W.NewLayout(parent, root, pageId, tabId, width)
     local layout = { parent = parent, root = root, page = pageId, tab = tabId, x = 16, y = -16,
         width = math.max(200, (width or parent:GetWidth()) - 32), rows = {} }
@@ -679,6 +806,24 @@ function W.NewLayout(parent, root, pageId, tabId, width)
         label.row = row
         self:AddRow(row, label, "note")
         self.y = self.y - height
+        return label
+    end
+
+    function layout:Warning(text)
+        local row = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+        row:SetPoint("TOPLEFT", self.x, self.y)
+        row:SetWidth(self.width)
+        W.Backdrop(row, "warning")
+        local icon = row:CreateTexture(nil, "ARTWORK")
+        icon:SetSize(22, 22)
+        icon:SetPoint("LEFT", 10, 0)
+        icon:SetTexture(WARNING_ICON)
+        local label = W.Text(row, text, 40, -9, self.width - 50, "GameFontHighlight", WARNING)
+        local height = math.max(22, label:GetStringHeight()) + 18
+        row:SetHeight(height)
+        label.row = row
+        self:AddRow(row, label, "warning")
+        self.y = self.y - height - 3
         return label
     end
 
@@ -771,8 +916,55 @@ function W.NewLayout(parent, root, pageId, tabId, width)
             local rounded = minimum + math.floor((value - minimum) / step + 0.5) * step
             return math.max(minimum, math.min(maximum, rounded))
         end
+        local function Format(value)
+            return formatter and formatter(value) or tostring(value)
+        end
+        -- Clicking the readout types an exact value. It clamps to the range but not the step.
+        local entry = CreateFrame("Button", nil, row)
+        entry:SetPoint("TOPRIGHT", valueText, "TOPRIGHT", 4, 3)
+        local underline = entry:CreateTexture(nil, "ARTWORK")
+        underline:SetPoint("BOTTOMLEFT", 4, 2)
+        underline:SetPoint("BOTTOMRIGHT", -4, 2)
+        underline:SetHeight(1)
+        underline:SetColorTexture(unpack(GOLD))
+        underline:Hide()
+        local function RestEntry()
+            valueText:SetTextColor(unpack(GOLD))
+            underline:Hide()
+        end
+        entry:SetScript("OnEnter", function()
+            if not control:IsEnabled() then return end
+            valueText:SetTextColor(1, 0.90, 0.62)
+            underline:Show()
+        end)
+        entry:SetScript("OnLeave", RestEntry)
+        entry:SetScript("OnHide", function()
+            RestEntry()
+            if root.valueEntry and root.valueEntry.owner == control then root.valueEntry:Hide() end
+        end)
+        local decimals = StepDecimals(step)
+        entry:SetScript("OnClick", function()
+            OpenValueEntry(control, root, {
+                value = tonumber(GetBinding(key)) or minimum,
+                minimum = minimum,
+                maximum = maximum,
+                decimals = decimals,
+                range = string.format(Localize("Range: %s to %s"), Format(minimum), Format(maximum)),
+                apply = function(value)
+                    if control:IsEnabled() and value ~= GetBinding(key) then
+                        Changed(root, key, value, onChanged)
+                    end
+                end,
+            })
+        end)
+        W.Tooltip(entry, function()
+            if control:IsEnabled() then return Localize("Click to type an exact value.") end
+            return Evaluate(control.disabledReason, control)
+        end)
+        control.entryButton = entry
         local function Display(value)
-            valueText:SetText(formatter and formatter(value) or tostring(value))
+            valueText:SetText(Format(value))
+            entry:SetSize(valueText:GetStringWidth() + 8, valueText:GetStringHeight() + 6)
         end
         control:SetScript("OnValueChanged", function(self, value)
             if self.refreshing or not self:IsEnabled() then return end
@@ -913,6 +1105,9 @@ function W.NewLayout(parent, root, pageId, tabId, width)
                 elseif row.layoutKind == "note" then
                     caption:SetWidth(self.width - 16)
                     height = math.max(16, caption:GetStringHeight()) + 12
+                elseif row.layoutKind == "warning" then
+                    caption:SetWidth(self.width - 50)
+                    height = math.max(22, caption:GetStringHeight()) + 18
                 else
                     local controlWidth = math.min(CONTROL_WIDTH, math.floor(self.width * 0.44))
                     if control.layoutType == "action" then
@@ -944,7 +1139,7 @@ function W.NewLayout(parent, root, pageId, tabId, width)
                     control.searchMeta.y = y
                 end
                 row:SetHeight(height)
-                y = y - height - (row.layoutKind == "control" and 3 or 0)
+                y = y - height - ((row.layoutKind == "control" or row.layoutKind == "warning") and 3 or 0)
             end
         end
         self.y = y
