@@ -386,6 +386,16 @@ L["Show sample hits, crits, and misses in the bottom preview drawer."] = "하단
 L["Show sample hits, crits, and misses inside this window."] = "이 창 안에 일반 적중, 치명타, 빗나감 예시를 표시합니다."
 L["Sounds"] = "효과음"
 L["Spell icons"] = "주문 아이콘"
+L["Spell icons are a best guess. On Midnight and Forever, the game no longer tells addons which spell caused each hit, so PlateSCT guesses from your recent casts. An icon may sometimes show the wrong spell."] =
+    "주문 아이콘은 추정값입니다. Midnight 및 Forever에서는 게임이 각 피해를 어떤 주문이 입혔는지 애드온에 알려주지 않으므로, PlateSCT가 최근 시전을 바탕으로 추측합니다. 아이콘이 가끔 잘못된 주문을 표시할 수 있습니다."
+L["Enemy nameplates are turned off, so PlateSCT cannot show any damage numbers. Press V (default) or turn them on in the game's nameplate settings."] =
+    "적 이름표가 꺼져 있어 PlateSCT가 피해 숫자를 표시할 수 없습니다. V 키(기본값)를 누르거나 게임의 이름표 설정에서 켜세요."
+L["On Midnight and Forever, Personal mode cannot tell whose attack missed, so misses, dodges, and parries from your own attacks are not shown. Misses against you still show when Show incoming hits is on."] =
+    "Midnight 및 Forever에서는 개인 피해 모드가 누구의 공격이 빗나갔는지 알 수 없어, 내 공격의 빗나감, 회피, 막음은 표시되지 않습니다. '받는 피해 표시'가 켜져 있으면 나를 향한 빗나감은 계속 표시됩니다."
+L["Pet damage is a best guess. On Midnight and Forever, the game no longer tells addons which hits came from your pet, so PlateSCT counts hits that land just after your pet casts. Other players' hits can sometimes be counted as your pet's."] =
+    "소환수 피해는 추정값입니다. Midnight 및 Forever에서는 게임이 어떤 피해가 소환수에게서 왔는지 애드온에 알려주지 않으므로, PlateSCT가 소환수 시전 직후에 들어온 피해를 소환수 피해로 셉니다. 다른 플레이어의 피해가 가끔 소환수 피해로 집계될 수 있습니다."
+L["Personal mode is a best guess. On Midnight and Forever, the game no longer tells addons who dealt each hit, so PlateSCT matches hits and heals to your recent casts by target and timing. Other players' numbers on the same target can appear, and some of your own may not show."] =
+    "개인 피해 모드는 추정값입니다. Midnight 및 Forever에서는 게임이 각 피해를 누가 입혔는지 애드온에 알려주지 않으므로, PlateSCT가 대상과 타이밍을 기준으로 피해와 치유를 최근 시전에 연결합니다. 같은 대상에 대한 다른 플레이어의 숫자가 표시될 수 있으며, 내 숫자 중 일부는 표시되지 않을 수 있습니다."
 L["Spell icons use matched casts in Personal mode; Modern API cannot identify a spell for every hit."] =
     "개인 피해 모드에서는 연결된 시전의 주문 아이콘을 사용합니다. 모던 API는 모든 피해에 해당하는 주문을 식별할 수 없습니다."
 L["Spell icons use the spell from the combat log."] = "주문 아이콘은 전투 기록의 주문 정보를 사용합니다."

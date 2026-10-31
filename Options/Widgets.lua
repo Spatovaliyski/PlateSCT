@@ -5,7 +5,9 @@ BD.OptionsWidgets = W
 local GOLD = { 0.88, 0.72, 0.43 }
 local TEXT = { 0.88, 0.86, 0.80 }
 local MUTED = { 0.60, 0.60, 0.57 }
+local WARNING = { 1, 0.68, 0.32 }
 local WHITE = "Interface\\Buttons\\WHITE8X8"
+local WARNING_ICON = "Interface\\DialogFrame\\UI-Dialog-Icon-AlertNew"
 local GLASS = "Interface\\DialogFrame\\UI-DialogBox-Background"
 local CONTROL_WIDTH = 220
 
@@ -145,6 +147,9 @@ function W.Backdrop(frame, kind)
     elseif kind == "row" then
         background = { 0.12, 0.105, 0.080, 0.82 }
         border = { 0.45, 0.35, 0.20, 0.08 }
+    elseif kind == "warning" then
+        background = { 0.30, 0.15, 0.03, 0.45 }
+        border = { 0.92, 0.52, 0.14, 0.9 }
     elseif kind == "window" then
         background = { 0.15, 0.14, 0.13, 1 }
         border = { 0.53, 0.41, 0.24, 0.98 }
@@ -682,6 +687,24 @@ function W.NewLayout(parent, root, pageId, tabId, width)
         return label
     end
 
+    function layout:Warning(text)
+        local row = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+        row:SetPoint("TOPLEFT", self.x, self.y)
+        row:SetWidth(self.width)
+        W.Backdrop(row, "warning")
+        local icon = row:CreateTexture(nil, "ARTWORK")
+        icon:SetSize(22, 22)
+        icon:SetPoint("LEFT", 10, 0)
+        icon:SetTexture(WARNING_ICON)
+        local label = W.Text(row, text, 40, -9, self.width - 50, "GameFontHighlight", WARNING)
+        local height = math.max(22, label:GetStringHeight()) + 18
+        row:SetHeight(height)
+        label.row = row
+        self:AddRow(row, label, "warning")
+        self.y = self.y - height - 3
+        return label
+    end
+
     function layout:NewRow(label, minimum, disabledReason)
         local row = CreateFrame("Frame", nil, parent, "BackdropTemplate")
         row:SetWidth(self.width)
@@ -913,6 +936,9 @@ function W.NewLayout(parent, root, pageId, tabId, width)
                 elseif row.layoutKind == "note" then
                     caption:SetWidth(self.width - 16)
                     height = math.max(16, caption:GetStringHeight()) + 12
+                elseif row.layoutKind == "warning" then
+                    caption:SetWidth(self.width - 50)
+                    height = math.max(22, caption:GetStringHeight()) + 18
                 else
                     local controlWidth = math.min(CONTROL_WIDTH, math.floor(self.width * 0.44))
                     if control.layoutType == "action" then
@@ -944,7 +970,7 @@ function W.NewLayout(parent, root, pageId, tabId, width)
                     control.searchMeta.y = y
                 end
                 row:SetHeight(height)
-                y = y - height - (row.layoutKind == "control" and 3 or 0)
+                y = y - height - ((row.layoutKind == "control" or row.layoutKind == "warning") and 3 or 0)
             end
         end
         self.y = y
