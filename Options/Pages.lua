@@ -84,7 +84,7 @@ local function BuildCombat(parent, root)
         nameplateNote:SetTextColor(0.65, 0.61, 0.53)
     end)
     layout:When(function() return not EnemyNameplatesEnabled() end, function()
-        layout:Warning(L["Enemy nameplates are turned off, so PlateSCT cannot show any damage numbers. Press V (default) or turn them on in the game's nameplate settings."])
+        layout:Warning(L["Enemy nameplates are off, so PlateSCT cannot show any numbers. Press V (default) or enable them in the game's nameplate settings."])
     end)
 
     layout:Heading(L["Display settings"])
@@ -94,9 +94,8 @@ local function BuildCombat(parent, root)
         L["Show miss, dodge, parry, and similar text for outgoing and incoming attacks."])
     if IsModernAPI() then
         layout:When(function() return BD.db.onlyMyDamage and BD.db.showMisses end, function()
-            layout:Warning(L["On Midnight and Forever, Personal mode cannot tell whose attack missed, so misses, dodges, and parries from your own attacks are not shown. Misses against you still show when Show incoming hits is on."])
+            layout:Warning(L["Personal mode can't tell whose attack missed, so misses, dodges, and parries from your attacks are hidden. Misses against you still show when Show incoming hits is on."])
         end)
-        layout:Note(L["Choose whose damage to display under Modern API → Damage mode. Personal mode is experimental."])
     else
         layout:Note(L["Shows your damage on hostile nameplates. Source is read from the combat log."])
     end
@@ -107,7 +106,7 @@ local function BuildCombat(parent, root)
         L["Choose Personal - experimental under Modern API → Damage mode to use pet matching."])
     if IsModernAPI() then
         layout:When(function() return PersonalModeAvailable() and BD.db.includePetDamage end, function()
-            layout:Warning(L["Pet damage is a best guess. On Midnight and Forever, the game no longer tells addons which hits came from your pet, so PlateSCT counts hits that land just after your pet casts. Other players' hits can sometimes be counted as your pet's."])
+            layout:Warning(L["Pet damage is a best guess. The game no longer says which hits came from your pet, so PlateSCT counts hits that land right after your pet casts."])
         end)
     end
 
@@ -196,7 +195,7 @@ local function BuildAppearance(parent, root)
         L["Choose Personal - experimental under Modern API → Damage mode to use spell icons."])
     if IsModernAPI() then
         layout:When(function() return PersonalModeAvailable() and BD.db.showSpellIcon end, function()
-            layout:Warning(L["Spell icons are a best guess. On Midnight and Forever, the game no longer tells addons which spell caused each hit, so PlateSCT guesses from your recent casts. An icon may sometimes show the wrong spell."])
+            layout:Warning(L["Spell icons are a best guess. The game no longer says which spell caused a hit, so PlateSCT uses your latest matching cast and may show the wrong icon."])
         end)
     end
     layout:Choice("iconPosition", L["Icon position"], BD.ICON_POSITIONS,
@@ -350,7 +349,7 @@ local function BuildModernMode(layout)
         layout:Note(L["Personal - experimental: best-effort matching by destination and timing. Other players' hits on the same target can appear."])
     end)
     layout:When(function() return BD.db.onlyMyDamage end, function()
-        layout:Warning(L["Personal mode is a best guess. On Midnight and Forever, the game no longer tells addons who dealt each hit, so PlateSCT matches hits and heals to your recent casts by target and timing. Other players' numbers on the same target can appear, and some of your own may not show."])
+        layout:Warning(L["Personal mode is a best guess. The game no longer says who dealt each hit, so PlateSCT matches hits and heals to your recent casts by target and timing. Other players' hits can appear, and some of yours may not show."])
     end)
     layout:Note(L["Current target: all-source numbers on your target. Engaged nameplates: all-source numbers on engaged enemies."])
     layout:Heading(L["Attribution limitations"])
