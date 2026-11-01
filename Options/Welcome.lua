@@ -1,6 +1,7 @@
 local _, BD = ...
 local L, W = BD.L, BD.OptionsWidgets
-local GOLD = { 0.92, 0.76, 0.42 }
+local C = W.COLORS
+local GOLD = C.accent
 local WIDTH, SAMPLE_HEIGHT, SAMPLE_SCALE, SAMPLE_INTERVAL = 840, 216, 0.85, 0.8
 
 local function AddSampleScene(card, y)
@@ -27,16 +28,19 @@ local function BuildWelcome()
         tinsert(UISpecialFrames, "PlateSCTWelcomeFrame")
     end
     local header = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-    header:SetPoint("TOPLEFT", 2, -2); header:SetPoint("TOPRIGHT", -2, -2); header:SetHeight(52)
-    W.Backdrop(header, "inset"); header:EnableMouse(true)
-    W.Text(header, L["Welcome to PlateSCT"], 22, -16, WIDTH - 80, "GameFontNormalLarge", GOLD)
+    header:SetPoint("TOPLEFT", 1, -1); header:SetPoint("TOPRIGHT", -1, -1); header:SetHeight(53)
+    header:EnableMouse(true)
+    local headerLine = W.Line(header, C.line)
+    headerLine:SetHeight(1); headerLine:SetPoint("BOTTOMLEFT"); headerLine:SetPoint("BOTTOMRIGHT")
+    local title = W.Text(header, L["Welcome to PlateSCT"], 24, -15, WIDTH - 96, "GameFontNormalLarge", C.bright)
+    W.SetFont(title, "display", 18)
     header:SetScript("OnMouseDown", function(_, button)
         if button == "LeftButton" then frame:StartMoving() end
     end)
     header:SetScript("OnMouseUp", function() frame:StopMovingOrSizing() end)
     frame.header = header
     local close = W.CloseButton(frame, function() frame:Hide() end)
-    close:SetPoint("TOPRIGHT", -4, -4); close:SetFrameLevel(header:GetFrameLevel() + 5)
+    close:SetPoint("TOPRIGHT", -12, -11); close:SetFrameLevel(header:GetFrameLevel() + 5)
 
     local y = -66
     local function Paragraph(text)
@@ -67,13 +71,19 @@ local function BuildWelcome()
         local style = entry[1]
         local card = CreateFrame("Button", nil, frame, "BackdropTemplate")
         card:SetWidth(252); card:SetPoint("TOPLEFT", 24 + (index - 1) * 270, y)
-        W.Backdrop(card, "inset")
+        W.Backdrop(card, "card")
+        -- Inset so the square hover wash stays inside the rounded corners.
         card:SetHighlightTexture("Interface\\Buttons\\WHITE8X8")
         local highlight = card:GetHighlightTexture()
-        if highlight then highlight:SetVertexColor(GOLD[1], GOLD[2], GOLD[3], 0.12) end
+        if highlight then
+            highlight:SetVertexColor(1, 1, 1, 0.025)
+            if highlight.ClearAllPoints then
+                highlight:ClearAllPoints(); highlight:SetPoint("TOPLEFT", 8, -8); highlight:SetPoint("BOTTOMRIGHT", -8, 8)
+            end
+        end
         card.style = style
-        local heading = W.Text(card, L[entry[2]], 12, -16, 228, "GameFontNormal", GOLD)
-        local description = W.Text(card, L[entry[3]], 12, -22 - heading:GetStringHeight(), 228)
+        local heading = W.Text(card, L[entry[2]], 16, -16, 220, "GameFontNormal", C.bright)
+        local description = W.Text(card, L[entry[3]], 16, -22 - heading:GetStringHeight(), 220, nil, C.muted)
         descriptionHeight = math.max(descriptionHeight, heading:GetStringHeight() + description:GetStringHeight())
         card:SetScript("OnClick", function() frame:SelectStyle(style) end)
         frame.cards[index] = card
@@ -84,12 +94,12 @@ local function BuildWelcome()
         card:SetHeight(cardHeight)
         card.sample = AddSampleScene(card, sampleY)
         -- Keep the key beneath the motion area; both kinds share a live spawn point.
-        W.Text(card, L["Hit"] .. " 1234", 12, -cardHeight + 24, 108)
-        local crit = W.Text(card, L["Crit"] .. " 5678", 132, -cardHeight + 24, 108)
+        W.Text(card, L["Hit"] .. " 1234", 16, -cardHeight + 28, 104, nil, C.dim)
+        local crit = W.Text(card, L["Crit"] .. " 5678", 132, -cardHeight + 28, 104, nil, C.dim)
         crit:SetJustifyH("RIGHT")
     end
     y = y - cardHeight - 24
-    local apply = W.Button(frame, L["Apply"], 160, 32, function()
+    local apply = W.Button(frame, L["Apply"], 160, 34, function()
         if not frame.pendingStyle then return end
         BD.db.numberStyle = frame.pendingStyle
         frame:Hide()
@@ -107,7 +117,7 @@ local function BuildWelcome()
         local selected = self.pendingStyle or BD.db.numberStyle
         for _, card in ipairs(self.cards) do
             card.selected = card.style == selected
-            card:SetBackdropBorderColor(unpack(card.selected and GOLD or { 0.36, 0.28, 0.17 }))
+            W.Backdrop(card, card.selected and "cardSelected" or "card")
         end
         self.apply:SetEnabled(self.pendingStyle ~= nil)
         W.PaintAction(self.apply, "idle")

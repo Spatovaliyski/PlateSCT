@@ -1,5 +1,7 @@
 local _, BD = ...
 
+BD.MIN_FONT_SIZE = 13
+
 BD.DEFAULTS = {
     enabled = true,
     minDamage = 0,
@@ -27,10 +29,18 @@ BD.DEFAULTS = {
     combineMode = "spell", -- "spell" | "target"
     combineShowCount = true,
     combinePulse = true, -- pop the number again each time a hit merges in
-    incomingOffsetX = 0,
-    incomingOffsetY = -100,
+    displayMode = "nameplates", -- "nameplates" | "screen": where outgoing numbers appear (Layout.lua)
+    -- Screen area ids for each kind of number; the areas themselves are db.screenAreas.
+    routeOutgoingHit = "outgoing",
+    routeOutgoingCrit = "outgoing",
+    routeOutgoingHeal = "outgoing",
+    routeOutgoingMiss = "outgoing",
+    routeIncomingHit = "incoming",
+    routeIncomingCrit = "incoming",
+    routeIncomingMiss = "incoming",
     debug = false,
     numberStyle = "retail", -- "retail", "classic", "impact": number styles, not API clients
+    screenStyle = "linear", -- Legacy global style, retained for old settings strings; areas own animation now.
     retailOffsetX = 0,
     retailOffsetY = 0,
     classicOffsetX = 0,
@@ -50,7 +60,7 @@ BD.DEFAULTS = {
     showMinimapButton = true,
     minimapAngle = 200,
     locale = "auto",
-    layoutRevision = 14,
+    layoutRevision = 17,
     attributionAuto = true,
     attributionManual = "balanced",
     attributionOpenWorld = "loose",
@@ -133,6 +143,41 @@ BD.SOUND_CHANNELS = {
 }
 
 BD.STYLE_PRESETS = {
+    -- Screen areas only (MSBT-style): steady scroll, no pop on hits, crits start large and
+    -- settle, then everything fades over the last fifth of its trip.
+    linear = {
+        fontFlags = "OUTLINE",
+        fontScale = 1.0,
+        popScale = 1.0,
+        popDuration = 0,
+        fadeMode = "linear",
+        fadeInRatio = 0,
+        driftX = 0,
+        useSchoolColors = false,
+        defaultColor = { 1.0, 0.93, 0.0 },
+        critColor = { 1.0, 0.93, 0.0 },
+        critPopStartScale = 1.7,
+        critSlapScale = 1.7,
+        critRestScale = 1.3,
+        critSlapDuration = 0.18,
+        critSlapDrop = 0,
+        durationMult = 1.0,
+        critDurationMult = 1.0,
+        floatMult = 1.0,
+        animMode = "linear",
+        critsHold = false,
+        spawnLanes = {
+            { 0, 0 },
+            { 0, 18 },
+            { 0, -18 },
+            { 0, 36 },
+            { 0, -36 },
+        },
+        spawnMinDist = 22,
+        spawnMinDistCrit = 28,
+        spawnJitter = 6,
+        shadowOffset = { 1, -1 },
+    },
     impact = {
         fontFlags = "OUTLINE",
         fontScale = 1.0,
@@ -334,6 +379,8 @@ BD.POOL_SIZE = 24
 BD.MAX_NUMBERS_PER_PLATE = 3
 BD.MAX_NUMBERS_TARGET = 15
 BD.MAX_NUMBERS = 40
+-- Live numbers at most in one screen area; past it the oldest normal number gives way.
+BD.MAX_NUMBERS_PER_AREA = 15
 -- Seconds between checks that a number's plate still shows the same unit (Classic reuse signal).
 BD.GUID_CHECK_INTERVAL = 0.1
 -- Seconds between reads of a number's world position (kept for when its enemy dies; a fresh

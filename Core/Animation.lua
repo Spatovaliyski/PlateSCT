@@ -134,6 +134,11 @@ function Anim.ComputeAlpha(frame, progress)
     local baseAlpha = frame.baseAlpha or 1
     local fadeIn = frame.fadeInRatio or 0
 
+    if frame.fadeMode == "linear" then
+        -- Fully visible for most of the trip, then a straight fade over the last fifth.
+        return baseAlpha * (1 - Anim.Clamp01((progress - 0.8) / 0.2))
+    end
+
     if frame.fadeMode == "impact" then
         local t = Anim.Clamp01((progress - 0.55) / 0.45)
         return baseAlpha * (1 - t * t * (3 - 2 * t))
@@ -189,6 +194,13 @@ end
 
 function Anim.ComputeVertical(progress, distance)
     return 0, (distance or 0) * Anim.EaseOutCubic(progress)
+end
+
+-- Screen areas scroll at a constant speed so spacing between numbers holds for the whole
+-- trip; a curved path bows sideways by `curve` at the middle and returns.
+function Anim.ComputeAreaPath(progress, travel, curve)
+    local p = Anim.Clamp01(progress)
+    return (curve or 0) * 4 * p * (1 - p), (travel or 0) * p
 end
 
 Anim.fountainArcDir = 1

@@ -2,8 +2,9 @@ local _, BD = ...
 
 -- UNIT_COMBAT repeats the same wound on every alias (nameplateN, target, …).
 -- UnitIsUnit is often unusable on Modern, so aliases cannot be merged by token.
--- Compare nameplate frames instead, and ignore non-nameplate tokens entirely.
-local lastPersonalPlate
+-- BD.OutgoingUnitKey accepts nameplate tokens (keyed by their plate frame) and, in screen
+-- mode, "target" only while it has no plate; every other token is ignored.
+local lastPersonalKey
 local lastPersonalTime = 0
 local lastPersonalAmount
 local lastPersonalCrit
@@ -13,8 +14,8 @@ local function AmountsEqual(a, b)
     return BD.ValuesEqual(a, b)
 end
 
-local function IsDuplicatePersonalHit(plate, amount, isCrit)
-    if not plate or plate ~= lastPersonalPlate then
+local function IsDuplicatePersonalHit(key, amount, isCrit)
+    if not key or key ~= lastPersonalKey then
         return false
     end
     if (GetTime() - lastPersonalTime) > PERSONAL_DUP_WINDOW then
@@ -29,22 +30,15 @@ local function IsDuplicatePersonalHit(plate, amount, isCrit)
     return AmountsEqual(amount, lastPersonalAmount)
 end
 
-local function RememberPersonalHit(plate, amount, isCrit)
-    lastPersonalPlate = plate
+local function RememberPersonalHit(key, amount, isCrit)
+    lastPersonalKey = key
     lastPersonalTime = GetTime()
     lastPersonalAmount = amount
     lastPersonalCrit = isCrit
 end
 
-local function ShowPersonalDamage(unit, amount, isCrit, schoolMask)
-    if not BD.IsNameplateUnit(unit) then
-        return false
-    end
-    local plate = BD.GetNamePlateFrame(unit)
-    if not plate then
-        return false
-    end
-    if IsDuplicatePersonalHit(plate, amount, isCrit) then
+local function ShowPersonalDamage(unit, key, amount, isCrit, schoolMask)
+    if IsDuplicatePersonalHit(key, amount, isCrit) then
         BD:DebugPrint("personal skip, duplicate")
         return false
     end
@@ -70,24 +64,17 @@ local function ShowPersonalDamage(unit, amount, isCrit, schoolMask)
     end
     local hitKind = isCrit and "crit" or "hit"
     BD:DebugPrint("personal", unit, display, hitKind, usedAuto and "auto" or spellID)
-    RememberPersonalHit(plate, amount, isCrit)
+    RememberPersonalHit(key, amount, isCrit)
     -- Modern-only: spellId comes from attribution, not UNIT_COMBAT.
-    BD:ShowOnNameplate(unit, display, r, g, b, amount, isCrit, false, nil, hitKind, spellID)
+    BD:ShowOutgoing(unit, key, display, r, g, b, amount, isCrit, false, nil, hitKind, spellID)
     return true
 end
 
-local function ShowPersonalHeal(unit, amount, isCrit, schoolMask)
-    if not BD.IsNameplateUnit(unit) then
-        return false
-    end
+local function ShowPersonalHeal(unit, key, amount, isCrit, schoolMask)
     if BD.UnitsMatch(unit, "player") then
         return false
     end
-    local plate = BD.GetNamePlateFrame(unit)
-    if not plate then
-        return false
-    end
-    if IsDuplicatePersonalHit(plate, amount, isCrit) then
+    if IsDuplicatePersonalHit(key, amount, isCrit) then
         BD:DebugPrint("personal heal skip, duplicate")
         return false
     end
@@ -110,8 +97,8 @@ local function ShowPersonalHeal(unit, amount, isCrit, schoolMask)
     local r, g, b = BD.GetSchoolColor(schoolMask)
     local hitKind = isCrit and "crit" or "hit"
     BD:DebugPrint("personal heal", unit, display, hitKind, spellID)
-    RememberPersonalHit(plate, amount, isCrit)
-    BD:ShowOnNameplate(unit, display, r, g, b, amount, isCrit, true, nil, hitKind, spellID)
+    RememberPersonalHit(key, amount, isCrit)
+    BD:ShowOutgoing(unit, key, display, r, g, b, amount, isCrit, true, nil, hitKind, spellID)
     return true
 end
 
@@ -154,36 +141,24 @@ function BD:HandleUnitCombat(unit, action, flagText, amount, schoolMask)
     end
 
     local isCrit = (flagText == "CRITICAL")
+    -- A plate, or "target" without one in screen mode. Never both for one unit:
+    -- GetNamePlateForUnit maps "target" to the same frame, and UnitIsUnit cannot prove the alias.
+    local key = BD.OutgoingUnitKey(unit)
+    if not key then
+        return
+    end
     if self.db.onlyMyDamage then
         if action == "HEAL" then
             if not self.db.showHealing then
                 return
             end
-            if not BD.IsNameplateUnit(unit) then
-                return
-            end
-            if not BD.GetNamePlateFrame(unit) then
-                return
-            end
-            ShowPersonalHeal(unit, amount, isCrit, schoolMask)
+            ShowPersonalHeal(unit, key, amount, isCrit, schoolMask)
             return
         end
         if action ~= "WOUND" then
             return
         end
-        -- Nameplate token only. Do not accept "target": GetNamePlateForUnit
-        -- maps it to the same frame, and UnitIsUnit cannot prove the alias.
-        if not BD.IsNameplateUnit(unit) then
-            return
-        end
-        if not BD.GetNamePlateFrame(unit) then
-            return
-        end
-        ShowPersonalDamage(unit, amount, isCrit, schoolMask)
-        return
-    end
-
-    if not BD.IsNameplateUnit(unit) then
+        ShowPersonalDamage(unit, key, amount, isCrit, schoolMask)
         return
     end
 
@@ -202,7 +177,7 @@ function BD:HandleUnitCombat(unit, action, flagText, amount, schoolMask)
         local display = BD.FormatAmount(amount, self.db.abbreviate)
         local r, g, b = BD.GetSchoolColor(schoolMask)
         local hitKind = isCrit and "crit" or "hit"
-        self:ShowOnNameplate(unit, display, r, g, b, amount, isCrit, false, nil, hitKind)
+        self:ShowOutgoing(unit, key, display, r, g, b, amount, isCrit, false, nil, hitKind)
         return
     end
 
@@ -222,7 +197,7 @@ function BD:HandleUnitCombat(unit, action, flagText, amount, schoolMask)
         local display = BD.FormatAmount(amount, self.db.abbreviate)
         local r, g, b = BD.GetSchoolColor(schoolMask)
         local hitKind = isCrit and "crit" or "hit"
-        self:ShowOnNameplate(unit, display, r, g, b, amount, isCrit, true, nil, hitKind)
+        self:ShowOutgoing(unit, key, display, r, g, b, amount, isCrit, true, nil, hitKind)
         return
     end
 
@@ -230,6 +205,6 @@ function BD:HandleUnitCombat(unit, action, flagText, amount, schoolMask)
         if not self:ShouldShowOutgoingHit(unit) then
             return
         end
-        self:ShowOnNameplate(unit, action, 1, 0.85, 0.2, nil, false, false, nil, "miss")
+        self:ShowOutgoing(unit, key, action, 1, 0.85, 0.2, nil, false, false, nil, "miss")
     end
 end

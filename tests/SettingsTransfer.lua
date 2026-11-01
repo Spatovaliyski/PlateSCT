@@ -13,6 +13,13 @@ local function same(actual, expected)
     for key, value in pairs(expected) do eq(actual[key], value, key) end
     for key in pairs(actual) do eq(actual[key], expected[key], key) end
 end
+local function encodedAreas(BD, list)
+    local records = {}
+    for index, area in ipairs(list or {}) do
+        records[index] = BD.EncodeScreenArea(area) .. "/" .. BD.EncodeScreenAreaMotion(area)
+    end
+    return table.concat(records, ";")
+end
 local function test(name, run)
     run()
     passed = passed + 1
@@ -72,7 +79,7 @@ local function new(flavor)
     load("Locales/frFR.lua", BD)
     load("Core/Constants.lua", BD)
     load("Core/Util.lua", BD)
-    load("Core/Events.lua", BD)
+    load("Core/Layout.lua", BD); load("Core/Events.lua", BD)
     load("Core/SettingsTransfer.lua", BD)
     BD.db = copy(BD.DEFAULTS)
     PlateSCTDB = BD.db
@@ -101,6 +108,9 @@ local function configured(BD)
         incomingFontFace = "lsm:Incoming font",
         numberStyle = "impact", impactPosition = "top", animHit = "rainfall", animCrit = "classicSlap",
         animMiss = "fountain", locale = "frFR", critSoundChannel = "Music", hugeCritSoundChannel = "SFX",
+        displayMode = "screen", screenStyle = "impact", routeOutgoingHit = "incoming", routeOutgoingCrit = "outgoing",
+        routeOutgoingHeal = "incoming", routeOutgoingMiss = "custom1", routeIncomingHit = "outgoing",
+        routeIncomingCrit = "incoming", routeIncomingMiss = "custom1",
     }
     for key, value in pairs(BD.DEFAULTS) do
         if key ~= "layoutRevision" then
@@ -112,6 +122,13 @@ local function configured(BD)
     -- A valid engaged-mode configuration and explicit manual school preferences.
     BD.db.onlyMyDamage, BD.db.allNameplates = false, true
     BD.db.schoolFilterRecommended = false
+    -- A custom screen area whose name needs escaping, and moved built-in areas.
+    local custom = assert(BD:AddScreenArea())
+    custom.name, custom.x, custom.y, custom.stickyCrits = "Crits, 100%; ☆", -333, 245, true
+    custom.path, custom.direction = "static", "down"
+    custom.animation, custom.duration, custom.spacing, custom.alignment = "static", 5.7, 17, "right"
+    BD.FindScreenArea(BD.db, "outgoing").width = 640
+    BD.FindScreenArea(BD.db, "incoming").path = "straight"
 end
 
 -- Golden fixtures have independently calculated checksums (Python zlib.adler32).
@@ -172,6 +189,7 @@ for _, source in ipairs({ "classic", "modern" }) do
                 eq(receiver.db[key], expected, key)
                 if applicable then eq(preview.values[key], original[key], "coverage " .. key) end
             end
+            eq(encodedAreas(receiver, receiver.db.screenAreas), encodedAreas(sender, original.screenAreas), "areas")
             eq(receiver.effects.panel, 1); eq(receiver.effects.minimap, 1)
             eq(receiver.effects.scenario, destination == "modern" and 1 or 0)
             eq(receiver.effects.attribution, destination == "modern" and 1 or 0)
@@ -335,6 +353,7 @@ test("both booleans, numeric boundaries, and Unicode strings", function()
             eq(BD.db.showMisses, value)
         end
         assert(BD:ImportSettings(records("shared.fontSize=n:10;shared.duration=n:0.5;shared.retailOffsetX=n:-200;shared.minDamage=n:0")))
+        eq(BD.db.fontSize, 13, "legacy font import uses readability floor")
         assert(BD:ImportSettings(records("shared.fontSize=n:48;shared.duration=n:4;shared.retailOffsetX=n:200;shared.minDamage=n:1e+20")))
         eq(BD.db.minDamage, 1e20)
     end
@@ -414,8 +433,10 @@ test("reset reuses refresh and imports persist through the login path", function
         local original = copy(BD.db)
         local text = assert(BD:ExportSettings())
         BD:ResetToDefaults()
+        eq(encodedAreas(BD, BD.db.screenAreas), encodedAreas(BD, BD.DEFAULT_SCREEN_AREAS), "reset areas")
         local defaults = copy(BD.DEFAULTS)
         defaults.welcomeSeen = original.welcomeSeen
+        defaults.screenAreas = BD.db.screenAreas
         same(BD.db, defaults)
         assert(BD:ImportSettings(text))
         for _, frame in ipairs(frames) do
@@ -428,6 +449,7 @@ test("reset reuses refresh and imports persist through the login path", function
                 eq(BD.db[key], expected, key)
             end
         end
+        eq(encodedAreas(BD, BD.db.screenAreas), encodedAreas(BD, original.screenAreas), "areas persist")
     end
 end)
 
@@ -559,6 +581,132 @@ test("dialog export, validation, editing, cancellation, and apply", function()
     dialog:Open(true); input:SetText(CLASSIC_V1); validate:Click(); eq(apply:IsEnabled(), true, "no changes still clickable")
     input.scripts.OnEscapePressed(); eq(dialog:IsShown(), false); eq(input.focus, false)
     CreateFrame = originalCreateFrame
+end)
+
+test("screen areas travel one record each and routes must name a real area", function()
+    local sender = new("modern")
+    local custom = assert(sender:AddScreenArea())
+    custom.name = "Heals,%"
+    sender.db.routeOutgoingHeal = custom.id
+    local text = assert(sender:ExportSettings())
+    local receiver = new("classic")
+    local result = assert(receiver:ImportSettings(text))
+    eq(receiver.db.routeOutgoingHeal, custom.id)
+    eq(receiver.FindScreenArea(receiver.db, custom.id).name, "Heals,%")
+    eq(#receiver.db.screenAreas, 3)
+    local changed = false
+    for _, change in ipairs(result.changes) do changed = changed or change.key == "screenAreas" end
+    eq(changed, true, "area change listed")
+    eq(#assert(receiver:ImportSettings(text)).changes, 0, "idempotent area import")
+    -- Strings without area records keep the receiver's areas.
+    assert(receiver:ImportSettings(records("shared.fontSize=n:26")))
+    eq(#receiver.db.screenAreas, 3)
+    -- A route may only name an area that exists after the import.
+    reject(receiver, records("shared.routeOutgoingHit=s:custom7"))
+    reject(receiver, records("shared.displayMode=s:floating"))
+    -- Malformed, out-of-range and duplicate area records are rejected atomically.
+    reject(receiver, records("shared.screenArea1=s:outgoing%2C%2C99999%2C0%2C100%2C100%2Cup%2Cstraight%2C0"))
+    reject(receiver, records("shared.screenArea1=s:outgoing%2C%2C0%2C0%2C100%2C100%2Csideways%2Cstraight%2C0"))
+    reject(receiver, records("shared.screenArea1=s:custom1%2Cx%2C0%2C0%2C100%2C100%2Cup%2Cstraight%2C0;"
+        .. "shared.screenArea2=s:custom1%2Cy%2C0%2C0%2C100%2C100%2Cup%2Cstraight%2C0"))
+    reject(receiver, records("shared.screenArea1=s:custom1%2Cbad%25zz%2C0%2C0%2C100%2C100%2Cup%2Cstraight%2C0"))
+    -- Missing built-in areas come back with their defaults.
+    assert(receiver:ImportSettings(records("shared.screenArea1=s:custom2%2CSolo%2C10%2C20%2C100%2C80%2Cdown%2Cstatic%2C1")))
+    eq(#receiver.db.screenAreas, 3)
+    eq(receiver.db.screenAreas[3].id, "custom2"); eq(receiver.db.screenAreas[3].path, "static")
+    eq(receiver.db.screenAreas[1].id, "outgoing"); eq(receiver.db.screenAreas[2].id, "incoming")
+end)
+
+test("retired incoming offsets move the Incoming screen area", function()
+    local BD = new("classic")
+    local result = assert(BD:ImportSettings(records("shared.incomingOffsetX=n:40;shared.incomingOffsetY=n:-80", "classic")))
+    eq(#result.ignored, 0)
+    local incoming = BD.FindScreenArea(BD.db, "incoming")
+    eq(incoming.x, 40); eq(incoming.y, -20); eq(incoming.height, 120); eq(incoming.direction, "up")
+    eq(BD.db.incomingOffsetX, nil); eq(BD.db.incomingOffsetY, nil)
+    local unchanged = new("classic")
+    unchanged:EnsureScreenAreas()
+    local before = copy(unchanged.FindScreenArea(unchanged.db, "incoming"))
+    assert(unchanged:ImportSettings(records("shared.incomingOffsetX=n:0;shared.incomingOffsetY=n:-100", "classic")))
+    eq(unchanged.FindScreenArea(unchanged.db, "incoming").x, before.x, "default offsets keep the area")
+    reject(unchanged, records("shared.incomingOffsetX=n:999", "classic"))
+end)
+
+test("layout revision 15 migrates custom incoming offsets", function()
+    local BD = new("modern")
+    local login = frames[#frames].scripts.OnEvent
+    PlateSCTDB = { layoutRevision = 14, incomingOffsetX = -60, incomingOffsetY = 30 }
+    login(nil, "PLAYER_LOGIN")
+    local incoming = BD.FindScreenArea(BD.db, "incoming")
+    eq(incoming.x, -60); eq(incoming.y, 90); eq(incoming.path, "straight")
+    eq(BD.db.incomingOffsetX, nil); eq(BD.db.incomingOffsetY, nil); eq(BD.db.layoutRevision, 17)
+    PlateSCTDB = { layoutRevision = 14 }
+    login(nil, "PLAYER_LOGIN")
+    eq(BD.FindScreenArea(BD.db, "incoming").x, BD.DEFAULT_SCREEN_AREAS[2].x, "default offsets keep the area")
+    eq(#BD.db.screenAreas, 2)
+end)
+
+test("per-area motion migrates legacy timing and validates supplementary records", function()
+    local BD = new("modern")
+    local login = frames[#frames].scripts.OnEvent
+    PlateSCTDB = { layoutRevision = 15, duration = 4, scrollSpeed = .5, screenStyle = "impact", screenAreas = {
+        { id = "outgoing", x = 123, y = 42, width = 200, height = 600, path = "curveLeft", direction = "down", stickyCrits = true },
+        { id = "incoming", x = -123, y = 24, width = 200, height = 240, path = "static", direction = "up" },
+    } }
+    login(nil, "PLAYER_LOGIN")
+    local outgoing = BD.FindScreenArea(BD.db, "outgoing")
+    eq(outgoing.animation, "impact"); eq(outgoing.duration, 48); eq(outgoing.x, 123)
+    eq(outgoing.direction, "down"); eq(outgoing.stickyCrits, true)
+    eq(BD.FindScreenArea(BD.db, "incoming").duration, 8)
+    eq(BD.db.duration, 4); eq(BD.db.scrollSpeed, .5)
+    outgoing.animation, outgoing.duration, outgoing.spacing, outgoing.alignment = "curveRight", 3.7, 23, "left"
+    local saved = encodedAreas(BD, BD.db.screenAreas)
+    login(nil, "PLAYER_LOGIN")
+    eq(encodedAreas(BD, BD.db.screenAreas), saved, "migration repeated")
+    local receiver = new("classic")
+    local text = assert(BD:ExportSettings())
+    assert(receiver:ImportSettings(text))
+    eq(encodedAreas(receiver, receiver.db.screenAreas), saved, "motion round trip")
+    eq(#assert(receiver:ImportSettings(text)).changes, 0, "motion import idempotent")
+    assert(receiver:ImportSettings(records("shared.duration=n:2;shared.scrollSpeed=n:2;shared.screenStyle=s:linear;"
+        .. "shared.screenArea1=s:outgoing%2C%2C0%2C0%2C200%2C300%2Cdown%2CcurveLeft%2C1")))
+    outgoing = receiver.FindScreenArea(receiver.db, "outgoing")
+    eq(outgoing.animation, "curveLeft"); eq(outgoing.duration, 3); eq(outgoing.spacing, 4)
+    local before = encodedAreas(receiver, receiver.db.screenAreas)
+    assert(receiver:ImportSettings(records("shared.duration=n:4;shared.screenStyle=s:impact")))
+    eq(encodedAreas(receiver, receiver.db.screenAreas), before, "legacy globals changed areas without records")
+    local base = "shared.screenArea1=s:outgoing%2C%2C0%2C0%2C200%2C300%2Cup%2Cstraight%2C0;"
+    for _, motion in ipairs({ "outgoing,unknown,2,4,center", "outgoing,straight,nan,4,center",
+        "outgoing,straight,49,4,center", "outgoing,straight,2,25,center", "outgoing,straight,2,4,side",
+        "custom9,straight,2,4,center" }) do
+        reject(receiver, records(base .. "shared.screenMotion1=s:" .. motion:gsub(",", "%%2C")))
+    end
+    reject(receiver, records("shared.screenMotion1=s:outgoing%2Cstraight%2C2%2C4%2Ccenter"))
+    reject(receiver, records(base .. "shared.screenMotion1=s:outgoing%2Cstraight%2C2%2C4%2Ccenter;"
+        .. "shared.screenMotion2=s:outgoing%2Cstraight%2C3%2C4%2Ccenter"))
+    local original = receiver.db.screenAreas
+    receiver.RefreshSettings = function() error("motion refresh failure") end
+    eq(receiver:ImportSettings(text), nil)
+    eq(receiver.db.screenAreas, original, "motion rollback replaced saved areas")
+end)
+
+test("minimum font sizes upgrade saved data and old incoming imports", function()
+    local BD = new("modern")
+    local login = frames[#frames].scripts.OnEvent
+    PlateSCTDB = { layoutRevision = 16, fontSize = 10, incomingFontSize = 12 }
+    login(nil, "PLAYER_LOGIN")
+    eq(BD.db.fontSize, 13); eq(BD.db.incomingFontSize, 13); eq(BD.db.layoutRevision, 17)
+    assert(BD:ImportSettings(records("shared.fontSize=n:12;shared.incomingFontSize=n:10")))
+    eq(BD.db.fontSize, 13); eq(BD.db.incomingFontSize, 13)
+    local region = { SetFont = function(self, path, size) self.size = size; return true end }
+    BD.SafeSetFont(region, nil, 8)
+    eq(region.size, 13, "critical labels and counters use the same floor")
+    BD.SafeSetFont(region, nil, 20)
+    eq(region.size, 20, "larger fonts remain unchanged")
+    local text = assert(BD:ExportSettings())
+    local receiver = new("classic")
+    assert(receiver:ImportSettings(text))
+    eq(receiver.db.fontSize, 13); eq(receiver.db.incomingFontSize, 13)
 end)
 
 print(string.format("%d settings transfer tests passed (%s).", passed, _VERSION))

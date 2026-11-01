@@ -38,6 +38,9 @@ Core/Util.lua
 Core/Pool.lua
 Core/Display.lua
 Core/Cap.lua
+Core/Layout.lua
+Core/LayoutNameplate.lua
+Core/LayoutScreen.lua
 Core/Attribution.lua
 Core/Combat.lua
 Core/CombatClassic.lua
@@ -46,6 +49,7 @@ Core/Events.lua
 Core/Perf.lua
 Core/SettingsTransfer.lua
 Options/Widgets.lua
+Options/ScreenAreas.lua
 Options/Pages.lua
 Options/Welcome.lua
 Options/Options.lua

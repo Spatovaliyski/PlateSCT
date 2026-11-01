@@ -17,6 +17,8 @@ local function Choice(id, options, scope)
     for _, option in ipairs(options) do values[type(option) == "table" and option.id or option] = true end
     return { id = id, kind = "string", scope = scope or "shared", values = values }
 end
+-- A screen area id (Layout.lua); preview checks the area exists once the import is applied.
+local function AreaRef(id) return { id = id, kind = "string", scope = "shared", areaRef = true } end
 local strictness = { "loose", "balanced", "strict", "veryStrict" }
 -- Wire IDs are permanent: never renumber/reuse them or change their ownership.
 -- Add new preferences with unused IDs; unknown IDs are safely skipped by readers.
@@ -31,7 +33,6 @@ local schema = {
     fontFace = Choice(11, BD.BUILTIN_FONTS), hideBlizzardFCT = Boolean(12),
     onlyMyDamage = Boolean(13, "modern"), allNameplates = Boolean(14, "modern"),
     includePetDamage = Boolean(15), showHealing = Boolean(16), showIncoming = Boolean(17),
-    incomingOffsetX = Number(18, -200, 200), incomingOffsetY = Number(19, -200, 200),
     debug = Boolean(20), numberStyle = Choice(21, { "retail", "classic", "impact" }),
     retailOffsetX = Number(22, -200, 200), retailOffsetY = Number(23, -200, 200),
     classicOffsetX = Number(24, -200, 200), classicOffsetY = Number(25, -200, 200),
@@ -56,6 +57,24 @@ local schema = {
     incomingFontFace = Choice(62, BD.BUILTIN_FONTS), incomingFontSize = Number(63, 10, 48),
     onlyCriticalDamage = Boolean(64),
     showMisses = Boolean(71),
+    displayMode = Choice(72, BD.Layout.MODES),
+    routeOutgoingHit = AreaRef(73), routeOutgoingCrit = AreaRef(74), routeOutgoingHeal = AreaRef(75),
+    routeOutgoingMiss = AreaRef(76), routeIncomingHit = AreaRef(77), routeIncomingCrit = AreaRef(78),
+    routeIncomingMiss = AreaRef(79),
+    screenStyle = Choice(90, BD.SCREEN_STYLES),
+}
+-- IDs 80-89: one record per saved screen area, in list order. Separate records stay far below
+-- MAX_STRING, so older readers skip them as unknown instead of rejecting the string. A string
+-- without area records leaves the receiver's areas alone.
+for slot = 1, 10 do
+    schema["screenArea" .. slot] = { id = 79 + slot, kind = "string", scope = "shared", areaSlot = slot }
+    schema["screenMotion" .. slot] = { id = 90 + slot, kind = "string", scope = "shared", motionSlot = slot }
+end
+-- Retired IDs, still read: incoming offsets became the Incoming screen area (layout revision 15).
+-- They move that area when a string carries them but no area records.
+local legacy = {
+    incomingOffsetX = { id = 18, minimum = -200, maximum = 200 },
+    incomingOffsetY = { id = 19, minimum = -200, maximum = 200 },
 }
 
 -- Settings-window choices stay on this character. IDs stay reserved so older strings skip them.
@@ -77,8 +96,12 @@ local function CheckSchema()
     end
     fieldsById = {}
     for key, rule in pairs(schema) do
-        if BD.DEFAULTS[key] == nil or type(rule.id) ~= "number" or rule.id < 1 or rule.id > 255
-            or rule.id % 1 ~= 0 or fieldsById[rule.id] then return false end
+        if (BD.DEFAULTS[key] == nil and not rule.areaSlot and not rule.motionSlot) or type(rule.id) ~= "number" or rule.id < 1
+            or rule.id > 255 or rule.id % 1 ~= 0 or fieldsById[rule.id] then return false end
+        fieldsById[rule.id] = key
+    end
+    for key, rule in pairs(legacy) do
+        if fieldsById[rule.id] or schema[key] then return false end
         fieldsById[rule.id] = key
     end
     return true
@@ -100,6 +123,9 @@ local function ValidValue(key, value)
         if #value > MAX_STRING or value:find("[%z\1-\31\127]") then return false end
         if (key == "fontFace" or key == "incomingFontFace") and value:sub(1, 4) == "lsm:"
             and #value > 4 then return true end
+        if rule.areaRef then return BD.IsScreenAreaId(value) end
+        if rule.areaSlot then return BD.DecodeScreenArea(value) ~= nil end
+        if rule.motionSlot then return BD.DecodeScreenAreaMotion(value) ~= nil end
         return rule.values[value] == true
     end
     return true
@@ -286,14 +312,26 @@ function BD:ExportSettings()
     local version = reader and reader(ADDON_NAME, "Version") or "unknown"
     if type(version) ~= "string" or #version > 64 then return Failure("Invalid settings string.") end
     local records = { string.char(source == "classic" and 0 or 1, #version) .. version }
+    local areas = BD.NormalizeScreenAreas(self.db.screenAreas)
     for id = 1, 255 do
         local key = fieldsById[id]
         local rule = key and schema[key]
         if rule and not localPreferences[key] and (rule.scope == "shared" or source == "modern") then
-            local value = self.db[key]
-            if value == nil then value = self.DEFAULTS[key] end
-            if not ValidValue(key, value) then return Failure("Invalid setting: %s.", key) end
-            records[#records + 1] = CompactRecord(key, value)
+            local value
+            if rule.areaSlot then
+                value = areas[rule.areaSlot] and BD.EncodeScreenArea(areas[rule.areaSlot])
+            elseif rule.motionSlot then
+                value = areas[rule.motionSlot] and BD.EncodeScreenAreaMotion(areas[rule.motionSlot])
+            else
+                value = self.db[key]
+                if value == nil then value = self.DEFAULTS[key] end
+            end
+            if value ~= nil then
+                if not ValidValue(key, value) then return Failure("Invalid setting: %s.", key) end
+                -- New exports use today's readability floor without changing permanent wire IDs.
+                if key == "fontSize" or key == "incomingFontSize" then value = math.max(BD.MIN_FONT_SIZE, value) end
+                records[#records + 1] = CompactRecord(key, value)
+            end
         end
     end
     local payload = table.concat(records)
@@ -314,25 +352,80 @@ function BD:PreviewSettingsImport(text)
     local result = { source = records.source, addonVersion = records.addon, values = {}, changes = {}, ignored = {},
         sharedCount = 0, modernCount = 0, preservesModern = destination ~= "modern" or records.source ~= "modern" }
     local seenKeys, schoolSettings, modeSettings = {}, false, false
+    local areaRecords, motionRecords, legacyValues = {}, {}, {}
     for name, value in pairs(records) do
         if name ~= "source" and name ~= "addon" then
             local scope, key = name:match("^([a-z]+)%.([A-Za-z][A-Za-z0-9_]*)$")
             if not key then return Failure("Invalid settings string.") end
             if seenKeys[key] then return Failure("Duplicate or misplaced setting: %s.", key) end
             seenKeys[key] = true
-            local rule = schema[key]
-            if key == "layoutRevision" or (rule and rule.scope ~= scope)
+            local rule, old = schema[key], legacy[key]
+            if key == "layoutRevision" or (rule and rule.scope ~= scope) or (old and scope ~= "shared")
                 or (scope == "modern" and records.source ~= "modern") then
                 return Failure("Duplicate or misplaced setting: %s.", key)
             end
-            if not rule or localPreferences[key] or (scope ~= "shared" and destination ~= "modern") then
+            if old then
+                if type(value) ~= "number" or not Finite(value) or value < old.minimum or value > old.maximum then
+                    return Failure("Invalid setting: %s.", key)
+                end
+                legacyValues[key] = value
+            elseif not rule or localPreferences[key] or (scope ~= "shared" and destination ~= "modern") then
                 result.ignored[#result.ignored + 1] = name
             else
                 if not ValidValue(key, value) then return Failure("Invalid setting: %s.", key) end
-                result.values[key] = value
+                -- Historical strings remain valid; their small fonts are raised on import.
+                if key == "fontSize" or key == "incomingFontSize" then value = math.max(BD.MIN_FONT_SIZE, value) end
+                if rule.areaSlot then
+                    areaRecords[#areaRecords + 1] = { slot = rule.areaSlot, area = BD.DecodeScreenArea(value) }
+                elseif rule.motionSlot then
+                    motionRecords[#motionRecords + 1] = BD.DecodeScreenAreaMotion(value)
+                else
+                    result.values[key] = value
+                end
                 if key:sub(1, 12) == "schoolFilter" then schoolSettings = true end
                 if key == "onlyMyDamage" or key == "allNameplates" then modeSettings = true end
             end
+        end
+    end
+    -- Screen areas arrive one record each; the full list replaces the receiver's areas.
+    local currentAreas = BD.NormalizeScreenAreas(self.db.screenAreas)
+    local areas
+    if #areaRecords > 0 then
+        table.sort(areaRecords, function(a, b) return a.slot < b.slot end)
+        local list, seenAreas = {}, {}
+        for _, record in ipairs(areaRecords) do
+            if seenAreas[record.area.id] then return Failure("Duplicate or misplaced setting: %s.", record.area.id) end
+            seenAreas[record.area.id] = true
+            list[#list + 1] = record.area
+        end
+        local settings = {}
+        for key, value in pairs(self.DEFAULTS) do settings[key] = value end
+        for key, value in pairs(result.values) do settings[key] = value end
+        for _, area in ipairs(list) do
+            -- Base records intentionally contain no new motion fields.
+            area.animation, area.duration = nil, nil
+            BD.UpgradeScreenAreaMotion(area, settings)
+        end
+        areas = BD.NormalizeScreenAreas(list)
+    elseif next(legacyValues) then
+        areas = BD.NormalizeScreenAreas(currentAreas)
+        BD.PlaceIncomingAreaAtOffsets(BD.FindScreenArea({ screenAreas = areas }, "incoming"),
+            legacyValues.incomingOffsetX or 0, legacyValues.incomingOffsetY or -100)
+    end
+    if #motionRecords > 0 then
+        if not areas or #areaRecords == 0 then return Failure("Invalid setting: %s.", "screenMotion") end
+        local seen = {}
+        for _, motion in ipairs(motionRecords) do
+            local area = BD.FindScreenArea({ screenAreas = areas }, motion.id)
+            if not area or seen[motion.id] then return Failure("Invalid setting: %s.", "screenMotion") end
+            seen[motion.id] = true
+            for _, key in ipairs({ "animation", "duration", "spacing", "alignment" }) do area[key] = motion[key] end
+        end
+    end
+    local areaHolder = { screenAreas = areas or currentAreas }
+    for _, route in ipairs(BD.SCREEN_ROUTES) do
+        if result.values[route.key] and not BD.FindScreenArea(areaHolder, result.values[route.key]) then
+            return Failure("Invalid setting: %s.", route.key)
         end
     end
     local candidate = {}
@@ -351,6 +444,21 @@ function BD:PreviewSettingsImport(text)
             result.changes[#result.changes + 1] = { key = key, before = self.db[key], after = value }
             local counter = schema[key].scope == "modern" and "modernCount" or "sharedCount"
             result[counter] = result[counter] + 1
+        end
+    end
+    if areas then
+        local after = {}
+        for _, area in ipairs(areas) do
+            after[#after + 1] = BD.EncodeScreenArea(area) .. "/" .. BD.EncodeScreenAreaMotion(area)
+        end
+        local before = {}
+        for _, area in ipairs(currentAreas) do
+            before[#before + 1] = BD.EncodeScreenArea(area) .. "/" .. BD.EncodeScreenAreaMotion(area)
+        end
+        if table.concat(after, ";") ~= table.concat(before, ";") then
+            result.values.screenAreas = areas
+            result.changes[#result.changes + 1] = { key = "screenAreas", before = self.db.screenAreas, after = areas }
+            result.sharedCount = result.sharedCount + 1
         end
     end
     table.sort(result.changes, function(a, b) return a.key < b.key end)

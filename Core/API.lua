@@ -19,7 +19,8 @@ ARCHITECTURE: one infra + two flavor APIs
   CLASSIC FLAVOR - Core/CombatClassic.lua
     Entry points: AssertClassic(...). Owns CLEU, GUID↔plate, pet flags, spellId.
 
-  Flavor may call infra (ShowOnNameplate, OrphanFramesForUnit, …).
+  Flavor may call infra (ShowOutgoing, ShowIncoming, OutgoingUnitKey,
+  OrphanFramesForUnit, …). Layout.lua picks nameplates or screen areas.
   Infra must not call flavor combat ingest.
 
 =============================================================================

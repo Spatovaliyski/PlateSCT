@@ -2,9 +2,16 @@ local ADDON_NAME, BD = ...
 local L, W = BD.L, BD.OptionsWidgets
 
 local WINDOW_WIDTH, WINDOW_HEIGHT = 840, 640
-local SIDEBAR_WIDTH, DRAWER_HEIGHT = 176, 220
-local GOLD = { 0.92, 0.76, 0.42 }
-local session = { page = "combat", tabs = {}, scroll = {} }
+local SIDEBAR_WIDTH, HEADER_HEIGHT = 200, 64
+local BAR_HEIGHT, STAGE_HEIGHT = 44, 176
+local C = W.COLORS or {}
+local GOLD = C.accent or { 0.85, 0.68, 0.37 }
+local PAGE_ICONS = {
+    general = "General", combat = "Combat", appearance = "Appearance", animation = "Animation",
+    placement = "Placement", sounds = "Sounds", modern = "Modern",
+    help = "Help", diagnostics = "Diagnostics", transfer = "Transfer",
+}
+local session = { page = "general", tabs = {}, scroll = {} }
 
 -- Lua 5.1's lower() only folds ASCII. Keep search usable in the supported locales.
 local searchCase = {}
@@ -131,13 +138,14 @@ local function CreateScrollView(parent, root)
     child:SetSize(598, 1)
     scroll:SetScrollChild(child)
     child.GetRootPanel = function() return root end
-    local track = CreateFrame("Frame", nil, host, "BackdropTemplate")
-    track:SetWidth(8); track:SetPoint("TOPRIGHT", -3, -8); track:SetPoint("BOTTOMRIGHT", -3, 8)
-    W.Backdrop(track, "inset")
+    local track = CreateFrame("Frame", nil, host)
+    track:SetWidth(8); track:SetPoint("TOPRIGHT", -4, -8); track:SetPoint("BOTTOMRIGHT", -4, 8)
     track:EnableMouse(true); track:EnableMouseWheel(true)
-    local thumb = CreateFrame("Button", nil, track, "BackdropTemplate")
+    local thumb = CreateFrame("Button", nil, track)
     thumb:SetWidth(6); thumb:RegisterForDrag("LeftButton")
-    W.Backdrop(thumb, "button")
+    W.Paint(thumb, C.edge, 3)
+    thumb:SetScript("OnEnter", function(self) W.Paint(self, C.radio, 3) end)
+    thumb:SetScript("OnLeave", function(self) W.Paint(self, C.edge, 3) end)
     local function MaxScroll() return math.max(0, child:GetHeight() - scroll:GetHeight()) end
     local function Update()
         local maximum, height = MaxScroll(), track:GetHeight()
@@ -190,28 +198,35 @@ local function CreateScrollView(parent, root)
     return host
 end
 
-local function CreatePreview(root, content)
-    local pane = CreateFrame("Frame", nil, content, "BackdropTemplate")
-    pane:SetPoint("BOTTOMLEFT"); pane:SetPoint("BOTTOMRIGHT"); pane:SetHeight(DRAWER_HEIGHT)
-    W.Backdrop(pane, "inset")
-    W.Text(pane, L["Appearance preview"], 14, -12, 200, "GameFontNormal", GOLD)
-    local scaleLabel = W.Text(pane, string.format(L["Preview scale: %d%%"], 70), 0, 0, nil, "GameFontDisableSmall")
+-- The drawer: a bar with the preview toggle and target test, and the sample stage beneath it.
+-- Collapsed, only the bar remains along the bottom of the window.
+local function CreatePreview(root, content, bar)
+    local pane = CreateFrame("Frame", nil, content)
+    pane:SetPoint("TOPLEFT", bar, "BOTTOMLEFT", 0, 0)
+    pane:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", 0, 0)
+    W.Paint(pane, C.drawer, 9, nil, "124")
+    local scaleLabel = W.Text(pane, string.format(L["Preview scale: %d%%"], 70), 0, 0, nil, nil, C.dim)
     scaleLabel:ClearAllPoints()
-    scaleLabel:SetPoint("TOPLEFT", root.previewToggle, "TOPRIGHT", 12, 12)
-    scaleLabel:SetPoint("TOPRIGHT", pane, "BOTTOMRIGHT", -12, 38)
-    local note = W.Text(pane, L["Appearance only · Test on Target checks gameplay size."], 0, 0, nil, "GameFontDisableSmall")
+    scaleLabel:SetPoint("LEFT", root.previewToggle, "RIGHT", 6, 0)
+    scaleLabel:SetWordWrap(false)
+    local areaLabel = W.Text(pane, "", 0, 0, nil, nil, C.muted)
+    areaLabel:ClearAllPoints()
+    areaLabel:SetPoint("LEFT", scaleLabel, "RIGHT", 12, 0)
+    areaLabel:SetWordWrap(false)
+    local note = W.Text(pane, L["Appearance only · Test on Target checks gameplay size."], 0, 0, nil, nil, C.dim)
     note:ClearAllPoints()
-    note:SetPoint("TOPLEFT", root.previewToggle, "TOPRIGHT", 12, -4)
-    note:SetPoint("TOPRIGHT", pane, "BOTTOMRIGHT", -12, 22)
+    note:SetPoint("BOTTOMRIGHT", pane, "BOTTOMRIGHT", -20, 12)
+    note:SetJustifyH("RIGHT")
+    note:SetWordWrap(false)
     local columnsHost = CreateFrame("Frame", nil, pane)
-    columnsHost:SetPoint("TOPLEFT", 12, -36)
-    columnsHost:SetPoint("BOTTOMRIGHT", -12, 44)
+    columnsHost:SetPoint("TOPLEFT", 20, -10)
+    columnsHost:SetPoint("BOTTOMRIGHT", -20, 36)
     pane.stage, pane.viewport, pane.columns = columnsHost, columnsHost, {}
     local function LayoutColumns()
         local width = columnsHost:GetWidth()
         local count = #pane.columns
         if width <= 0 or count == 0 then return end
-        local gap = 10
+        local gap = 16
         local colWidth = (width - gap * (count - 1)) / count
         for index, column in ipairs(pane.columns) do
             column:ClearAllPoints()
@@ -226,19 +241,16 @@ local function CreatePreview(root, content)
         if index > 1 then
             local divider = column:CreateTexture(nil, "ARTWORK")
             divider:SetWidth(1)
-            divider:SetPoint("TOPLEFT", -5, -2)
-            divider:SetPoint("BOTTOMLEFT", -5, 2)
-            divider:SetColorTexture(GOLD[1], GOLD[2], GOLD[3], 0.2)
+            divider:SetPoint("TOPLEFT", -8, -4)
+            divider:SetPoint("BOTTOMLEFT", -8, 4)
+            divider:SetColorTexture(C.line[1], C.line[2], C.line[3], 1)
         end
-        local caption = column:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        local caption = W.Text(column, L[entry[2]], 0, 0, nil, nil, C.dim)
+        W.SetFont(caption, "semibold", 13)
+        caption:ClearAllPoints()
         caption:SetPoint("TOP", 0, -2)
-        caption:SetText(L[entry[2]])
-        caption:SetTextColor(unpack(GOLD))
-        local rule = column:CreateTexture(nil, "ARTWORK")
-        rule:SetHeight(1)
-        rule:SetPoint("TOPLEFT", 8, -18)
-        rule:SetPoint("TOPRIGHT", -8, -18)
-        rule:SetColorTexture(GOLD[1], GOLD[2], GOLD[3], 0.22)
+        caption:SetJustifyH("CENTER")
+        caption:SetWordWrap(false)
         local clip = CreateFrame("Frame", nil, column)
         clip:SetPoint("TOPLEFT", 2, -22)
         clip:SetPoint("BOTTOMRIGHT", -2, 2)
@@ -251,9 +263,13 @@ local function CreatePreview(root, content)
     end
     function pane:FitStage()
         LayoutColumns()
-        local classic = BD:IsClassicNumberStyle()
+        local area = BD:GetOptionsPreviewArea()
+        note:SetText(area and L["Scaled preview · Test selected area shows actual size."]
+            or L["Appearance only · Test on Target checks gameplay size."])
+        local classic = not area and BD:IsClassicNumberStyle()
         local scale = classic and 0.6 or 0.7
         local offsetX, offsetY = BD:GetNumberStyleOffsets()
+        if area then offsetX, offsetY = 0, 0 end
         local bounds = {}
         for index, column in ipairs(self.columns) do
             local clip = column.clip
@@ -263,23 +279,33 @@ local function CreatePreview(root, content)
             left, right = math.min(-32, left + offsetX), math.max(32, right + offsetX)
             bottom, top = math.min(-3, bottom + offsetY), math.max(3, top + offsetY)
             bounds[index] = { left, right, bottom, top }
+            if area then scale = math.min(scale, clip:GetWidth() / (right - left), clip:GetHeight() / (top - bottom)) end
         end
         for index, column in ipairs(self.columns) do
             local clip, stage = column.clip, column.stage
             local left, right, bottom, top = unpack(bounds[index])
             stage:ClearAllPoints()
             stage:SetScale(scale)
+            stage:SetSize(area and area.width or 1, area and area.height or 1)
             stage:SetPoint("CENTER", clip, "CENTER", -(left + right) * 0.5 * scale, -(bottom + top) * 0.5 * scale)
         end
         scaleLabel:SetText(string.format(L["Preview scale: %d%%"], math.floor(scale * 100 + 0.5)))
+        areaLabel:SetText(area and string.format(L["Selected area: %s"], BD:GetScreenAreaLabel(area)) or "")
     end
     function pane:UpdateLayout()
         local open = BD.db.showOptionsPreview and true or false
         self:SetShown(open)
+        bar:ClearAllPoints()
+        bar:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 0, open and STAGE_HEIGHT or 0)
+        bar:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", 0, open and STAGE_HEIGHT or 0)
+        W.Paint(bar, C.drawer, 9, nil, open and "1234" or "124")
         root.pageArea:ClearAllPoints()
-        root.pageArea:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -74)
-        root.pageArea:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", 0, open and DRAWER_HEIGHT + 8 or 34)
-        root.previewToggle:SetText(open and L["Hide preview"] or L["Show preview"])
+        root.pageArea:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -(root.pageContentTop or 96))
+        root.pageArea:SetPoint("BOTTOMRIGHT", bar, "TOPRIGHT", 0, 0)
+        local toggle = root.previewToggle
+        toggle:SetText(open and L["Hide preview"] or L["Show preview"])
+        W.SetIcon(toggle.optionsIcon, open and "ChevronDown" or "ChevronUp")
+        toggle:SetWidth(toggle:GetFontString():GetStringWidth() + 50)
         for _, view in pairs(root.views) do view:UpdateScroll() end
     end
     columnsHost:SetScript("OnSizeChanged", function() if pane:IsShown() then pane:FitStage() end end)
@@ -305,22 +331,24 @@ local function CreateSettingsTransferDialog(root)
     local panel = CreateFrame("Frame", nil, dialog, "BackdropTemplate")
     panel:SetSize(640, 480); panel:SetPoint("CENTER"); panel:EnableMouse(true)
     W.Backdrop(panel, "window")
-    local title = W.Text(panel, "", 16, -16, 570, "GameFontNormalLarge", GOLD)
-    local instruction = W.Text(panel, "", 16, -48, 608)
+    local title = W.Text(panel, "", 24, -22, 560, "GameFontNormalLarge", C.bright or GOLD)
+    if W.SetFont then W.SetFont(title, "display", 18) end
+    local instruction = W.Text(panel, "", 24, -56, 592, nil, C.muted)
     local scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", 16, -90); scroll:SetSize(580, 180)
+    scroll:SetPoint("TOPLEFT", 24, -90); scroll:SetSize(570, 180)
     W.Backdrop(scroll, "control")
-    local input = W.EditBox(scroll, 580, 180)
+    local input = W.EditBox(scroll, 570, 180)
     input:SetMultiLine(true)
     -- Stay inside a 16-bit letter cap. The wire format is a few thousand characters.
     input:SetMaxLetters(math.min(BD.SETTINGS_STRING_MAX_BYTES, 32767))
     input:SetTextInsets(8, 8, 8, 8); input:SetSpacing(3)
     -- Multiline height follows the text, so this backdrop's bottom edge cuts the viewport.
+    if W.Unpaint then W.Unpaint(input) end
     if input.SetBackdrop then input:SetBackdrop(nil) end
     scroll:SetScrollChild(input)
     -- A tall multiline child otherwise keeps the mouse over the buttons below the viewport.
     if scroll.SetClipsChildren then scroll:SetClipsChildren(true) end
-    local status = W.Text(panel, "", 16, -286, 608, "GameFontHighlightSmall")
+    local status = W.Text(panel, "", 24, -290, 592, nil, C.text)
     local apply, validate
     local holdingFocus = false
     local function SettingsText()
@@ -359,11 +387,8 @@ local function CreateSettingsTransferDialog(root)
     end
     local function PaintApply(enabled)
         apply:SetEnabled(enabled and true or false)
+        -- The action face already dims a disabled button's label.
         if W.PaintAction then W.PaintAction(apply, "idle") end
-        local font = apply.GetFontString and apply:GetFontString()
-        if font and font.SetTextColor then
-            font:SetTextColor(unpack(enabled and GOLD or { 0.42, 0.42, 0.42 }))
-        end
     end
     local function Invalidate()
         dialog.validatedText = nil
@@ -388,7 +413,7 @@ local function CreateSettingsTransferDialog(root)
         }
         if preview.preservesModern then lines[#lines + 1] = L["Your Modern API settings will stay unchanged."] end
         if preview.recommendedSchools then lines[#lines + 1] = L["Recommended damage schools will follow your current class."] end
-        status:SetTextColor(0.88, 0.86, 0.80)
+        status:SetTextColor(0.93, 0.90, 0.85)
         status:SetText(table.concat(lines, "\n"))
         -- A disabled Button never receives hover, tooltip, or clicks.
         PaintApply(true)
@@ -399,10 +424,10 @@ local function CreateSettingsTransferDialog(root)
     if footer.SetFrameStrata then footer:SetFrameStrata("FULLSCREEN_DIALOG") end
     footer:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT")
     footer:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT")
-    footer:SetHeight(52)
-    validate = W.Button(footer, L["Validate string"], 184, 28, ValidateInput)
+    footer:SetHeight(60)
+    validate = W.Button(footer, L["Validate string"], 184, 34, ValidateInput, "flat")
     ClickDespiteFocus(validate, ValidateInput)
-    validate:SetPoint("BOTTOMLEFT", 16, 16)
+    validate:SetPoint("BOTTOMLEFT", 24, 20)
     local function ApplyInput()
         if not dialog.validatedText or dialog.validatedText ~= SettingsText() then Invalidate(); return end
         local result, err = BD:ImportSettings(dialog.validatedText)
@@ -416,20 +441,20 @@ local function CreateSettingsTransferDialog(root)
         local message = #result.changes == 0 and L["No settings changed."] or L["Settings imported."]
         print("PlateSCT: " .. message)
     end
-    apply = W.Button(footer, L["Apply settings"], 184, 28, ApplyInput)
+    apply = W.Button(footer, L["Apply settings"], 184, 34, ApplyInput)
     ClickDespiteFocus(apply, ApplyInput)
-    apply:SetPoint("BOTTOM", 0, 16); PaintApply(false)
+    apply:SetPoint("BOTTOM", 0, 20); PaintApply(false)
     local function CancelInput() dialog:Hide() end
-    local cancel = W.Button(footer, CANCEL, 184, 28, CancelInput)
+    local cancel = W.Button(footer, CANCEL, 184, 34, CancelInput, "flat")
     ClickDespiteFocus(cancel, CancelInput)
-    cancel:SetPoint("BOTTOMRIGHT", -16, 16)
+    cancel:SetPoint("BOTTOMRIGHT", -24, 20)
     local buttonLevel = panel:GetFrameLevel() + 40
     if footer.SetFrameLevel then footer:SetFrameLevel(buttonLevel) end
     if validate.SetFrameLevel then validate:SetFrameLevel(buttonLevel + 2) end
     if apply.SetFrameLevel then apply:SetFrameLevel(buttonLevel + 2) end
     if cancel.SetFrameLevel then cancel:SetFrameLevel(buttonLevel + 2) end
     local close = W.CloseButton(panel, function() dialog:Hide() end)
-    close:SetPoint("TOPRIGHT", -4, -4)
+    close:SetPoint("TOPRIGHT", -14, -14)
     local validateSerial = 0
     local function ScheduleValidate()
         validateSerial = validateSerial + 1
@@ -486,6 +511,10 @@ local function CreateSettingsTransferDialog(root)
     return dialog
 end
 
+local function PageLabel(page)
+    return page.label and page.label() or L[page.labelKey]
+end
+
 local function BuildConfigFrame()
     local frame = CreateFrame("Frame", "PlateSCTConfigFrame", UIParent, "BackdropTemplate")
     frame:Hide(); frame:SetSize(WINDOW_WIDTH, WINDOW_HEIGHT); frame:SetPoint("CENTER")
@@ -497,6 +526,7 @@ local function BuildConfigFrame()
     W.Backdrop(frame, "window")
     frame.controls, frame.searchIndex, frame.refreshers = {}, {}, {}
     frame.views, frame.pages, frame.navButtons = {}, {}, {}
+    frame.utilityButtons = {}
     frame.motionGroups, frame.motionTargets, frame.tabButtons = {}, {}, {}
     function frame:RegisterControl(control, meta)
         self.controls[#self.controls + 1] = control
@@ -535,60 +565,154 @@ local function BuildConfigFrame()
         if self.previewPane then BD:RequestOptionsPreview() end
     end
     frame.UpdateDependentStates = frame.Refresh
+    -- Header: identity on the left, layout switch and close on the right.
     local titleBar = CreateFrame("Frame", nil, frame)
-    titleBar:SetPoint("TOPLEFT", 2, -2); titleBar:SetPoint("TOPRIGHT", -2, -2); titleBar:SetHeight(48)
+    titleBar:SetPoint("TOPLEFT", 1, -1); titleBar:SetPoint("TOPRIGHT", -1, -1); titleBar:SetHeight(HEADER_HEIGHT)
     titleBar:EnableMouse(true)
     -- Move from mouse down/up: dragging a child shifts the parent cursor offset.
     titleBar:SetScript("OnMouseDown", function(_, button) if button == "LeftButton" then frame:StartMoving(true) end end)
     titleBar:SetScript("OnMouseUp", function() frame:StopMovingOrSizing(); frame:SetUserPlaced(false) end)
+    local headerLine = W.Line(titleBar, C.line)
+    headerLine:SetHeight(1)
+    headerLine:SetPoint("BOTTOMLEFT"); headerLine:SetPoint("BOTTOMRIGHT")
     local logo = titleBar:CreateTexture(nil, "ARTWORK")
     logo:SetTexture("Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\psct-logo-mini.png")
-    logo:SetSize(32, 32); logo:SetPoint("LEFT", 12, 0)
-    W.Text(titleBar, "PlateSCT", 52, -9, 135, "GameFontNormalLarge", GOLD)
-    W.Text(titleBar, Version(), 52, -29, 130, "GameFontDisableSmall")
-    W.Text(titleBar, FlavorLabel(), 216, -18, 520, "GameFontHighlightSmall", GOLD)
+    logo:SetSize(32, 32); logo:SetPoint("LEFT", 20, 0)
+    local name = W.Text(titleBar, "PlateSCT", 64, -15, 200, nil, C.bright)
+    W.SetFont(name, "semibold", 14)
+    local version = Version()
+    frame.apiLabel = W.Text(titleBar, (version ~= "" and (version .. "  ·  ") or "") .. FlavorLabel(), 64, -34, 360, nil, C.muted)
+    frame.apiLabel:SetWordWrap(false)
     local close = W.CloseButton(frame, function() frame:Hide() end)
-    close:SetPoint("TOPRIGHT", -4, -4)
+    close:SetPoint("TOPRIGHT", -16, -16)
     close:SetFrameLevel(titleBar:GetFrameLevel() + 5)
     W.Tooltip(close, L["Close"])
-    local sidebar = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-    sidebar:SetWidth(SIDEBAR_WIDTH); sidebar:SetPoint("TOPLEFT", 12, -60); sidebar:SetPoint("BOTTOMLEFT", 12, 12)
-    W.Backdrop(sidebar, "inset")
+    -- Segmented layout switch; the same choice as the General page cards.
+    local layoutBadge = CreateFrame("Frame", nil, titleBar)
+    layoutBadge:SetHeight(36)
+    layoutBadge:SetPoint("RIGHT", close, "LEFT", -12, 0)
+    W.Paint(layoutBadge, C.field, 9)
+    frame.layoutBadge, frame.layoutButtons = layoutBadge, {}
+    for _, mode in ipairs({ { "nameplates", "Nameplates" }, { "screen", "Screen" } }) do
+        local id = mode[1]
+        local segment = W.Button(layoutBadge, L[mode[2]], 100, 30, function()
+            if BD.db.displayMode == id then return end
+            BD.db.displayMode = id
+            BD:RefreshScreenAreas()
+            frame:Refresh()
+        end, "segment")
+        segment.optionsRadius = 7
+        frame.layoutButtons[id] = segment
+    end
+    frame.layoutCaption = W.Text(titleBar, L["Active layout"], 0, 0, nil, nil, C.muted)
+    frame.layoutCaption:ClearAllPoints()
+    frame.layoutCaption:SetPoint("RIGHT", layoutBadge, "LEFT", -10, 0)
+    frame.layoutCaption:SetWordWrap(false)
+    -- Text widths are only reliable once the bundled fonts have loaded, so size the header
+    -- controls again whenever the window opens.
+    frame.chromeTexts = { name, frame.apiLabel, frame.layoutCaption }
+    function frame:SizeChrome()
+        for _, text in ipairs(self.chromeTexts) do W.RefreshText(text) end
+        local x = 3
+        for _, id in ipairs({ "nameplates", "screen" }) do
+            local segment = self.layoutButtons[id]
+            W.RefreshText(segment:GetFontString())
+            local width = math.ceil(segment:GetFontString():GetStringWidth() + 28)
+            segment:SetWidth(width)
+            segment:ClearAllPoints()
+            segment:SetPoint("LEFT", self.layoutBadge, "LEFT", x, 0)
+            x = x + width + 2
+        end
+        self.layoutBadge:SetWidth(x + 1)
+        if self.targetTest then
+            W.RefreshText(self.targetTest:GetFontString())
+            self.targetTest:SetWidth(math.ceil(self.targetTest:GetFontString():GetStringWidth() + 32))
+        end
+        if self.previewToggle then
+            W.RefreshText(self.previewToggle:GetFontString())
+            self.previewToggle:SetWidth(self.previewToggle:GetFontString():GetStringWidth() + 50)
+        end
+        for _, button in pairs(self.cachedTabs or {}) do
+            W.RefreshText(button:GetFontString())
+            button:SetWidth(math.ceil(button:GetFontString():GetStringWidth() + 32))
+        end
+    end
+
+    -- Sidebar: search, pages, then quiet utilities pinned to the bottom.
+    local sidebar = CreateFrame("Frame", nil, frame)
+    sidebar:SetWidth(SIDEBAR_WIDTH)
+    sidebar:SetPoint("TOPLEFT", titleBar, "BOTTOMLEFT", 0, 0)
+    sidebar:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 1, 1)
+    W.Paint(sidebar, C.sidebar, 9, nil, "123")
+    local sidebarLine = W.Line(sidebar, C.line)
+    sidebarLine:SetWidth(1)
+    sidebarLine:SetPoint("TOPRIGHT"); sidebarLine:SetPoint("BOTTOMRIGHT")
     local content = CreateFrame("Frame", nil, frame)
-    content:SetPoint("TOPLEFT", sidebar, "TOPRIGHT", 12, 0); content:SetPoint("BOTTOMRIGHT", -12, 12)
-    frame.pageTitle = W.Text(content, "", 16, -4, 590, "GameFontNormalLarge", GOLD)
-    frame.subtitle = W.Text(content, "", 16, -28, 590, "GameFontDisableSmall")
+    content:SetPoint("TOPLEFT", sidebar, "TOPRIGHT", 0, 0); content:SetPoint("BOTTOMRIGHT", -1, 1)
+    frame.pageTitle = W.Text(content, "", 32, -24, 560, nil, C.bright)
+    W.SetFont(frame.pageTitle, "display", 20)
+    frame.pageTitle:SetWordWrap(false)
+    frame.subtitle = W.Text(content, "", 32, -52, 560, nil, C.muted)
     frame.tabBar = CreateFrame("Frame", nil, content)
-    frame.tabBar:SetPoint("TOPLEFT", 16, -48); frame.tabBar:SetPoint("TOPRIGHT", -16, -48); frame.tabBar:SetHeight(24)
+    frame.tabBar:SetPoint("TOPLEFT", 32, -96); frame.tabBar:SetHeight(36)
+    W.Paint(frame.tabBar, C.field, 9)
     frame.pageArea = CreateFrame("Frame", nil, content)
     frame.pageArea:SetClipsChildren(true)
-    frame.previewToggle = W.Button(content, L["Show preview"], 130, 24, function()
+    local previewBar = CreateFrame("Frame", nil, content)
+    previewBar:SetHeight(BAR_HEIGHT)
+    local barLine = W.Line(previewBar, C.line)
+    barLine:SetHeight(1)
+    barLine:SetPoint("TOPLEFT"); barLine:SetPoint("TOPRIGHT")
+    frame.previewBar = previewBar
+    frame.previewToggle = W.NavButton(previewBar, L["Show preview"], "ChevronUp", 140, 30, function()
         BD.db.showOptionsPreview = not BD.db.showOptionsPreview
         frame:Refresh()
-    end)
-    frame.previewToggle:SetPoint("BOTTOMLEFT", 0, 2)
+    end, "ghost")
+    frame.previewToggle:SetPoint("LEFT", 12, 0)
     W.Tooltip(frame.previewToggle, L["Show sample hits, crits, and misses inside this window."])
-    local targetTest = W.Button(sidebar, L["Test on Target"], 152, 26, function() BD:ShowTestNumbers() end)
-    targetTest:SetPoint("BOTTOMLEFT", 12, 48)
-    W.Tooltip(targetTest, L["Target an enemy, then spawn sample numbers on its nameplate."])
-    local hint = W.Text(sidebar, L["/platesct  ·  ESC to close"], 12, -532, 154, "GameFontDisableSmall")
-    -- Pinned to the bottom so it stays under the test button when the window is taller.
+    -- A quiet secondary button: the preview bar is a utility strip, not a call to action.
+    local targetTest = W.Button(previewBar, L["Test on Target"], 140, 30, function() BD:ShowTestNumbers() end, "flat")
+    targetTest:GetFontString():SetJustifyH("CENTER")
+    targetTest:SetPoint("RIGHT", -16, 0)
+    W.Tooltip(targetTest, function()
+        return BD.Layout.IsScreen() and L["Spawn sample numbers in your screen areas."]
+            or L["Target an enemy, then spawn sample numbers on its nameplate."]
+    end)
+    frame.targetTest = targetTest
+    -- Screen areas need no target, so the button names what it does in each layout.
+    frame.refreshers[#frame.refreshers + 1] = function()
+        targetTest:SetText(BD.Layout.IsScreen() and L["Test numbers"] or L["Test on Target"])
+        targetTest:SetWidth(math.ceil(targetTest:GetFontString():GetStringWidth() + 32))
+    end
+    local hint = W.Text(sidebar, L["/platesct  ·  ESC to close"], 0, 0, 176, nil, C.dim)
     hint:ClearAllPoints()
-    hint:SetPoint("BOTTOMLEFT", 12, 22)
-    local footer = sidebar:CreateTexture(nil, "ARTWORK")
-    footer:SetColorTexture(GOLD[1], GOLD[2], GOLD[3], 0.25); footer:SetHeight(1)
-    footer:SetPoint("BOTTOMLEFT", 12, 88); footer:SetPoint("BOTTOMRIGHT", -12, 88)
+    hint:SetPoint("BOTTOMLEFT", 22, 14)
+    hint:SetWordWrap(false)
+    frame.chromeTexts[#frame.chromeTexts + 1] = hint
+    frame.chromeTexts[#frame.chromeTexts + 1] = frame.subtitle
+    frame.chromeTexts[#frame.chromeTexts + 1] = frame.pageTitle
+    local divider = W.Line(sidebar, C.line)
+    divider:SetHeight(1)
+    divider:SetPoint("BOTTOMLEFT", 16, 176); divider:SetPoint("BOTTOMRIGHT", -16, 176)
 
-    local search = W.EditBox(sidebar, 152, 26)
-    search:SetPoint("TOPLEFT", 12, -32)
-    W.Text(sidebar, L["Find a setting"], 12, -12, 152, "GameFontDisableSmall")
+    local search = W.EditBox(sidebar, SIDEBAR_WIDTH - 24, 34)
+    search:SetPoint("TOPLEFT", 12, -16)
+    search:SetTextInsets(32, 10, 0, 0)
+    W.SetFont(search, "regular", 13)
+    local searchIcon = W.Icon(search, "Search", 15, C.dim, "OVERLAY")
+    searchIcon:SetPoint("LEFT", 10, 0)
+    local placeholder = W.Text(search, L["Find a setting"], 0, 0, SIDEBAR_WIDTH - 70, nil, C.dim)
+    placeholder:ClearAllPoints()
+    placeholder:SetPoint("LEFT", 32, 0)
+    placeholder:SetWordWrap(false)
+    search.placeholder = placeholder
     frame.searchBox = search
-    local results = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-    results:SetPoint("TOPLEFT", sidebar, "TOPRIGHT", 12, -30); results:SetSize(410, 1)
+    local results = CreateFrame("Frame", nil, frame)
+    results:SetPoint("TOPLEFT", sidebar, "TOPRIGHT", 8, -16); results:SetSize(420, 1)
     results:SetFrameLevel(frame:GetFrameLevel() + 40); results:EnableMouse(true)
-    W.Backdrop(results, "window"); results:Hide()
+    W.Backdrop(results, "menu"); results:Hide()
     local resultView = CreateScrollView(results, frame)
-    resultView:ClearAllPoints(); resultView:SetPoint("TOPLEFT", 8, -8); resultView:SetPoint("BOTTOMRIGHT", -8, 8)
+    resultView:ClearAllPoints(); resultView:SetPoint("TOPLEFT", 6, -6); resultView:SetPoint("BOTTOMRIGHT", -6, 6)
     resultView:Show()
     frame.searchResults, frame.resultButtons, frame.searchMatches = results, {}, {}
     frame.searchSelection = 1
@@ -598,7 +722,7 @@ local function BuildConfigFrame()
     end
     function frame:SelectPage(pageId, tabId, immediate)
         local page = self.pages[pageId]
-        if not page then pageId, page = "combat", self.pages.combat end
+        if not page or (page.visible and not page.visible()) then pageId, page = "general", self.pages.general end
         if not page then return end
         local previous, previousPage = self.activeView, session.page
         self:DismissTransient(); SaveScroll(); StopMotion(self)
@@ -631,35 +755,65 @@ local function BuildConfigFrame()
             Dismiss(previous, -ox * 0.7, -oy * 0.7)
         end
         self.activeView = view
-        self.pageTitle:SetText(L[page.labelKey]); self.subtitle:SetText(L[page.subtitleKey or ""])
-        for id, button in pairs(self.navButtons) do
-            button:SetBackdropBorderColor(unpack(id == pageId and GOLD or { 0.35, 0.28, 0.17 }))
-        end
+        self.pageTitle:SetText(PageLabel(page)); self.subtitle:SetText(L[page.subtitleKey or ""])
+        local tabY = 52 + math.max(17, self.subtitle:GetStringHeight()) + 16
+        self.tabBar:ClearAllPoints()
+        self.tabBar:SetPoint("TOPLEFT", 32, -tabY)
+        self.tabBar:SetShown(page.tabs ~= nil)
+        self.pageContentTop = page.tabs and (tabY + 36 + 20) or tabY
+        for id, button in pairs(self.navButtons) do W.SetSelected(button, id == pageId) end
+        for id, button in pairs(self.utilityButtons) do W.SetSelected(button, id == pageId) end
         if page.tabs then
-            for index, tab in ipairs(tabs) do
+            local x = 3
+            for _, tab in ipairs(tabs) do
                 local tabKey = pageId .. ":" .. tab.id
                 local button = self.cachedTabs[tabKey]
                 if not button then
                     local id = tab.id
-                    button = W.Button(self.tabBar, L[tab.labelKey], 176, 24, function() self:SelectPage(pageId, id) end, "flat")
-                    button:SetPoint("TOPLEFT", (index - 1) * 184, 0)
+                    button = W.Button(self.tabBar, L[tab.labelKey], 120, 30, function() self:SelectPage(pageId, id) end, "segment")
+                    button.optionsRadius = 7
+                    button:SetWidth(math.ceil(button:GetFontString():GetStringWidth() + 32))
                     self.cachedTabs[tabKey] = button
                 end
-                button:SetBackdropBorderColor(unpack(tab.id == tabId and GOLD or { 0.35, 0.28, 0.17 }))
+                button:ClearAllPoints()
+                button:SetPoint("LEFT", self.tabBar, "LEFT", x, 0)
+                x = x + button:GetWidth() + 2
+                W.SetSelected(button, tab.id == tabId)
                 button:Show(); self.tabButtons[#self.tabButtons + 1] = button
             end
+            self.tabBar:SetWidth(x + 1)
         end
+        if self.previewPane then self.previewPane:UpdateLayout() end
         view:SetScroll(session.scroll[view.key] or 0)
         if animate then Reveal(self, view, ox, oy) end
+        if self.previewPane then BD:RequestOptionsPreview() end
     end
     frame.cachedTabs = {}
-    for index, page in ipairs(BD.OptionsPages) do
+    local NAV_TOP, NAV_STEP, NAV_HEIGHT = 62, 38, 36
+    local UTILITY_STEP, UTILITY_HEIGHT = 32, 30
+    local definitions = {}
+    for _, page in ipairs(BD.OptionsPages) do definitions[#definitions + 1] = page end
+    for _, page in ipairs(BD.OptionsUtilities) do definitions[#definitions + 1] = page end
+    local utilityCount = #BD.OptionsUtilities + 1
+    for index, page in ipairs(definitions) do
         if not page.supported or page.supported() then
             frame.pages[page.id] = page
             local id = page.id
-            local button = W.Button(sidebar, L[page.labelKey], 152, 34, function() frame:SelectPage(id) end, "flat")
-            button:SetPoint("TOPLEFT", 12, -76 - (index - 1) * 42)
-            frame.navButtons[id] = button
+            local utility = index > #BD.OptionsPages
+            local width = SIDEBAR_WIDTH - 24
+            local button
+            if utility then
+                local slot = index - #BD.OptionsPages
+                button = W.NavButton(sidebar, PageLabel(page), PAGE_ICONS[id] or "Help", width, UTILITY_HEIGHT,
+                    function() frame:SelectPage(id) end, "utility")
+                button:SetPoint("BOTTOMLEFT", 12, 38 + (utilityCount - slot) * UTILITY_STEP)
+                frame.utilityButtons[id] = button
+            else
+                button = W.NavButton(sidebar, PageLabel(page), PAGE_ICONS[id] or "General", width, NAV_HEIGHT,
+                    function() frame:SelectPage(id) end, "nav")
+                button:SetPoint("TOPLEFT", 12, -NAV_TOP - (index - 1) * NAV_STEP)
+                frame.navButtons[id] = button
+            end
             local tabs = page.tabs or { { id = "main" } }
             for _, tab in ipairs(tabs) do
                 local view = CreateScrollView(frame.pageArea, frame)
@@ -669,19 +823,46 @@ local function BuildConfigFrame()
             end
         end
     end
-    frame.previewPane = CreatePreview(frame, content)
+    frame.utilityButtons.resetDefaults = W.NavButton(sidebar, L["Reset Defaults"], "Reset", SIDEBAR_WIDTH - 24,
+        UTILITY_HEIGHT, function() frame:ConfirmReset() end, "utility")
+    frame.utilityButtons.resetDefaults:SetPoint("BOTTOMLEFT", 12, 38)
+    W.Tooltip(frame.utilityButtons.resetDefaults, L["Restore every PlateSCT setting to its default."])
+    frame.refreshers[#frame.refreshers + 1] = function()
+        local index = 0
+        for _, page in ipairs(BD.OptionsPages) do
+            local button = frame.navButtons[page.id]
+            if button then
+                local visible = not page.visible or page.visible()
+                button:SetShown(visible)
+                button:SetText(PageLabel(page))
+                if visible then
+                    button:ClearAllPoints()
+                    button:SetPoint("TOPLEFT", 12, -NAV_TOP - index * NAV_STEP)
+                    index = index + 1
+                end
+            end
+        end
+        local screen = BD.Layout.IsScreen()
+        W.SetSelected(frame.layoutButtons.nameplates, not screen)
+        W.SetSelected(frame.layoutButtons.screen, screen)
+        local page = frame.pages[session.page]
+        if not page or (page.visible and not page.visible()) then frame:SelectPage("general", nil, true) end
+        page = frame.pages[session.page]
+        frame.pageTitle:SetText(PageLabel(page))
+    end
+    frame.previewPane = CreatePreview(frame, content, previewBar)
     frame.previewPane:UpdateLayout()
 
     function frame:ChooseSearchResult(index)
         local meta = self.searchMatches[index]
         if not meta then return end
         self:SelectPage(meta.page, meta.tab, true)
+        local row = meta.control.row or meta.control
         search:SetText(""); search:ClearFocus()
         self.activeView:SetScroll(math.max(0, -(meta.y or 0) - 14))
-        local row = meta.control.row or meta.control
         if not row.searchHighlight then
             local highlight = row:CreateTexture(nil, "BACKGROUND")
-            highlight:SetAllPoints(); highlight:SetColorTexture(GOLD[1], GOLD[2], GOLD[3], 0.22)
+            highlight:SetAllPoints(); highlight:SetColorTexture(GOLD[1], GOLD[2], GOLD[3], 0.12)
             row.searchHighlight = highlight
         end
         local highlight = row.searchHighlight
@@ -702,7 +883,15 @@ local function BuildConfigFrame()
             end)
         end
     end
+    local function UpdatePlaceholder()
+        search.placeholder:SetShown((search:GetText() or "") == "" and not search:HasFocus())
+    end
+    local RESULT_STEP = 38
+    local function PaintResults()
+        for index, button in ipairs(frame.resultButtons) do W.SetSelected(button, index == frame.searchSelection) end
+    end
     local function UpdateSearch()
+        UpdatePlaceholder()
         local query = SearchText((search:GetText() or ""):match("^%s*(.-)%s*$"))
         for _, button in ipairs(frame.resultButtons) do button:Hide() end
         frame.searchMatches, frame.searchSelection = {}, 1
@@ -713,7 +902,9 @@ local function BuildConfigFrame()
             if type(aliases) == "table" then aliases = table.concat(aliases, " ") end
             local searchable = meta.searchText .. " " .. SearchText(aliases or "")
             local row = meta.control.row or meta.control
-            if row:IsShown() and searchable:find(query, 1, true) then
+            local page = frame.pages[meta.page]
+            local available = not row.isVisible or row.isVisible()
+            if page and (not page.visible or page.visible()) and available and searchable:find(query, 1, true) then
                 frame.searchMatches[#frame.searchMatches + 1] = meta
             end
         end
@@ -722,19 +913,20 @@ local function BuildConfigFrame()
             local button = frame.resultButtons[index]
             if not button then
                 local resultIndex = index
-                button = W.Button(resultView.child, "", 368, 38, function() frame:ChooseSearchResult(resultIndex) end, "flat")
-                button:SetPoint("TOPLEFT", 2, -(index - 1) * 42)
+                button = W.Button(resultView.child, "", 380, 36, function() frame:ChooseSearchResult(resultIndex) end, "result")
+                button.optionsRadius = 6
+                button:SetPoint("TOPLEFT", 0, -(index - 1) * RESULT_STEP)
                 frame.resultButtons[index] = button
             end
             local page = frame.pages[meta.page]
-            button:SetText((meta.label or "") .. "  |cffb8a784" .. L[page.labelKey] .. "|r")
-            button:SetBackdropBorderColor(unpack(index == 1 and GOLD or { 0.35, 0.28, 0.17 }))
+            button:SetText((meta.label or "") .. "   |cff8c8475" .. PageLabel(page) .. "|r")
             button:Show()
         end
-        if not results.empty then results.empty = W.Text(resultView.child, L["No matching settings"], 4, -8, 368, "GameFontHighlightSmall") end
+        PaintResults()
+        if not results.empty then results.empty = W.Text(resultView.child, L["No matching settings"], 12, -10, 368, nil, C.muted) end
         results.empty:SetShown(#matches == 0)
-        resultView.child:SetHeight(#matches == 0 and 32 or #matches * 42)
-        results:SetHeight(#matches == 0 and 48 or 16 + math.min(8, #matches) * 42)
+        resultView.child:SetHeight(#matches == 0 and 36 or #matches * RESULT_STEP)
+        results:SetHeight(#matches == 0 and 48 or 12 + math.min(8, #matches) * RESULT_STEP)
         resultView:SetScroll(0); results:Show()
     end
     frame.refreshers[#frame.refreshers + 1] = UpdateSearch
@@ -744,22 +936,21 @@ local function BuildConfigFrame()
     search:SetScript("OnArrowPressed", function(_, direction)
         if #frame.searchMatches == 0 then return end
         frame.searchSelection = math.max(1, math.min(#frame.searchMatches, frame.searchSelection + (direction == "UP" and -1 or 1)))
-        for index, button in ipairs(frame.resultButtons) do
-            button:SetBackdropBorderColor(unpack(index == frame.searchSelection and GOLD or { 0.35, 0.28, 0.17 }))
-        end
-        local selectedTop = (frame.searchSelection - 1) * 42
+        PaintResults()
+        local selectedTop = (frame.searchSelection - 1) * RESULT_STEP
         local top = resultView.scroll:GetVerticalScroll()
         if selectedTop < top then resultView:SetScroll(selectedTop)
-        elseif selectedTop + 42 > top + resultView.scroll:GetHeight() then
-            resultView:SetScroll(selectedTop + 42 - resultView.scroll:GetHeight())
+        elseif selectedTop + RESULT_STEP > top + resultView.scroll:GetHeight() then
+            resultView:SetScroll(selectedTop + RESULT_STEP - resultView.scroll:GetHeight())
         end
     end)
     search:SetScript("OnEditFocusGained", function()
-        W.Backdrop(search, "selected")
+        W.Backdrop(search, "focus")
         UpdateSearch()
     end)
     search:SetScript("OnEditFocusLost", function()
         W.Backdrop(search, "control")
+        UpdatePlaceholder()
     end)
     frame:SetScript("OnMouseDown", function() frame:DismissTransient(); search:ClearFocus() end)
     function frame:FitToScreen()
@@ -787,7 +978,13 @@ local function BuildConfigFrame()
         self:RegisterEvent("UI_SCALE_CHANGED"); self:RegisterEvent("DISPLAY_SIZE_CHANGED")
         self:RegisterEvent("CVAR_UPDATE")
         self:RegisterEvent("PLAYER_ENTERING_WORLD"); self:RegisterEvent("ZONE_CHANGED_NEW_AREA")
-        self:FitToScreen(); self:SelectPage(session.page, session.tabs[session.page], true); self:Refresh()
+        self:FitToScreen(); self:SizeChrome()
+        self:SelectPage(session.page, session.tabs[session.page], true); self:Refresh()
+        -- Measure again next frame, after any font loaded during this one.
+        C_Timer.After(0, function()
+            if not self:IsShown() or self.disposed then return end
+            self:SizeChrome(); self:SelectPage(session.page, session.tabs[session.page], true)
+        end)
         if BD.db.settingsAnimations then
             if not self.openFade then
                 local group = self:CreateAnimationGroup()
