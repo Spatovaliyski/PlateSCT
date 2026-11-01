@@ -57,6 +57,7 @@ local C = {
     radio = { 0.353, 0.318, 0.267, 1 },
     health = { 0.722, 0.196, 0.165, 1 },
     number = { 1, 0.827, 0.302 },
+    incoming = { 1, 0.420, 0.369 },
 }
 W.COLORS = C
 local GOLD, TEXT, MUTED = C.accent, C.text, C.muted
@@ -81,11 +82,11 @@ local function RGB(color) return color[1], color[2], color[3] end
 
 -- Fonts -------------------------------------------------------------------------------------
 
--- Inter and Marcellus cover Latin and (Inter only) Cyrillic. Korean and Chinese use the
--- client font, which also keeps user-entered names in those scripts readable.
+-- Source Sans 3 covers Latin and Cyrillic; page titles use its SemiBold. Korean and Chinese
+-- use the client font, which also keeps user-entered names in those scripts readable.
 local FONT_FILES = {
-    regular = "Inter-Regular.ttf", medium = "Inter-Medium.ttf",
-    semibold = "Inter-SemiBold.ttf", display = "Marcellus-Regular.ttf",
+    regular = "SourceSans3-Regular.ttf", medium = "SourceSans3-Medium.ttf",
+    semibold = "SourceSans3-Semibold.ttf", display = "SourceSans3-Semibold.ttf",
 }
 local CJK = { koKR = true, zhCN = true, zhTW = true }
 
@@ -95,7 +96,6 @@ function W.FontPath(role)
     if CJK[code] or CJK[client] then
         return BD.GetDefaultFontPath and BD.GetDefaultFontPath() or STANDARD_TEXT_FONT
     end
-    if role == "display" and (code == "ruRU" or client == "ruRU") then role = "semibold" end
     return MEDIA .. "Fonts\\" .. (FONT_FILES[role] or FONT_FILES.regular)
 end
 
@@ -120,17 +120,32 @@ function W.RefreshText(region)
 end
 
 -- Supporting text under a label (descriptions, notes, disabled reasons) sits one step below
--- the 13pt label size. This floor applies to the settings window only; combat text keeps
--- BD.MIN_FONT_SIZE.
-W.SMALL_SIZE = 12
+-- the 14pt label size. Lower this to let it go under BD.MIN_FONT_SIZE in the settings
+-- window only; combat text always keeps BD.MIN_FONT_SIZE.
+W.SMALL_SIZE = 13
 
 local function FontFloor(region)
     return region.optionsSmall and W.SMALL_SIZE or BD.MIN_FONT_SIZE
 end
 
+-- Blizzard's font templates add a 1px drop shadow. Set to true to bring it back.
+W.TEXT_SHADOW = false
+
+local function ApplyShadow(region)
+    if W.TEXT_SHADOW or not region.SetShadowOffset then return end
+    region:SetShadowOffset(0, 0)
+end
+
 local function ApplyFont(region, path, size, flags)
+    ApplyShadow(region)
     if size >= BD.MIN_FONT_SIZE then
         BD.SafeSetFont(region, path, size, flags)
+        -- A font file the client rejects can leave the old font in place without an error.
+        -- Keep the intended size by falling back to the client font.
+        local _, current = region:GetFont()
+        if current and math.abs(current - size) > 0.5 then
+            BD.SafeSetFont(region, BD.GetDefaultFontPath and BD.GetDefaultFontPath() or STANDARD_TEXT_FONT, size, flags)
+        end
         return
     end
     -- SafeSetFont clamps to the combat-text minimum, so set the small size directly.
@@ -470,7 +485,7 @@ function W.Button(parent, label, width, height, onClick, style)
     button:SetText(label or "")
     local role = (style == "action" or style == "black") and "semibold" or "medium"
     if style == "utility" or style == "menu" or style == "result" then role = "regular" end
-    local size = 13
+    local size = 14
     W.SetFont(font, role, size)
     font:ClearAllPoints()
     local centered = style == "action" or style == "segment" or style == "black"
@@ -522,7 +537,7 @@ function W.TextLink(parent, label, onClick)
     local link = CreateFrame("Button", nil, parent)
     local font = link:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     link:SetFontString(font); link:SetText(label)
-    W.SetFont(font, "medium", 13)
+    W.SetFont(font, "medium", 14)
     font:SetPoint("CENTER"); font:SetWordWrap(false); font:SetTextColor(RGB(GOLD))
     link:SetSize(font:GetStringWidth() + 8, font:GetStringHeight() + 8)
     local underline = link:CreateTexture(nil, "ARTWORK")
@@ -561,7 +576,7 @@ function W.EditBox(parent, width, height)
     box:SetAutoFocus(false)
     W.Backdrop(box, "control")
     box:SetFontObject("GameFontHighlight")
-    W.SetFont(box, "medium", 13)
+    W.SetFont(box, "medium", 14)
     box:SetTextInsets(12, 12, 0, 0)
     box:SetJustifyH("LEFT")
     box:SetTextColor(RGB(C.bright))
@@ -980,11 +995,13 @@ local function OpenValueEntry(control, root, request)
 end
 
 -- Display-mode card artwork, drawn with textures so it needs no extra image files.
-local function ArtNumber(parent, text, size, x, y, alpha)
+local function ArtNumber(parent, text, size, x, y, alpha, color)
     local number = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    number.optionsSmall = size < BD.MIN_FONT_SIZE
     W.SetFont(number, "semibold", size, "OUTLINE")
     number:SetText(text)
-    number:SetTextColor(C.number[1], C.number[2], C.number[3], alpha or 1)
+    color = color or C.number
+    number:SetTextColor(color[1], color[2], color[3], alpha or 1)
     number:SetPoint("BOTTOM", parent, "BOTTOM", x, y)
     return number
 end
@@ -1001,23 +1018,66 @@ local ART = {
         ArtNumber(art, "24,800", 21, 4, 40)
         ArtNumber(art, "3,404", 13, -34, 66, 0.5)
     end,
+    -- A screen with two areas: incoming hits on the left, outgoing on the right. The newest
+    -- number sits at the bottom; older ones fade as they scroll up.
     screen = function(art)
         local screen = CreateFrame("Frame", nil, art)
-        screen:SetSize(150, 68); screen:SetPoint("CENTER")
+        screen:SetSize(176, 74); screen:SetPoint("CENTER")
         W.Paint(screen, C.drawer, 6, C.radio)
-        for side = -1, 1, 2 do
+        local areas = {
+            { side = -1, color = C.incoming, numbers = { "-842", "-1.2k", "-96" } },
+            { side = 1, color = C.number, numbers = { "2,410", "918", "4,375" } },
+        }
+        for _, area in ipairs(areas) do
             local column = CreateFrame("Frame", nil, screen)
-            column:SetSize(30, 52); column:SetPoint("CENTER", side * 46, 0)
+            column:SetSize(54, 60); column:SetPoint("CENTER", area.side * 50, 0)
             W.Paint(column, { 0.118, 0.102, 0.078, 1 }, 3)
-            for line = 1, 3 do
-                local bar = column:CreateTexture(nil, "ARTWORK")
-                bar:SetSize(line == 2 and 12 or 18, 4); bar:SetPoint("BOTTOM", 0, 6 + (line - 1) * 8)
-                bar:SetColorTexture(0.43, 0.39, 0.33, 1)
+            for line, text in ipairs(area.numbers) do
+                ArtNumber(column, text, 12, 0, 4 + (3 - line) * 17, 0.4 + (line - 1) * 0.3, area.color)
             end
         end
     end,
 }
 W.ART = ART
+
+-- Switch motion -------------------------------------------------------------------------------
+
+local KNOB_SIZE, KNOB_INSET, SWITCH_DURATION = 16, 4, 0.16
+local THUMB_SIZE = 14
+
+local function Mix(from, to, t)
+    return { from[1] + (to[1] - from[1]) * t, from[2] + (to[2] - from[2]) * t,
+        from[3] + (to[3] - from[3]) * t, 1 }
+end
+
+local function SwitchFrame(control, x, track, knobColor)
+    control.knobX, control.trackColor, control.knobColor = x, track, knobColor
+    W.Paint(control, track, 12)
+    control.knob:SetVertexColor(RGB(knobColor))
+    control.knob:ClearAllPoints()
+    control.knob:SetPoint("LEFT", control, "LEFT", x, 0)
+end
+
+local function FinishSwitch(control)
+    local motion = control.motion
+    if not motion then return end
+    control.motion = nil
+    control:SetScript("OnUpdate", nil)
+    SwitchFrame(control, motion.toX, motion.toTrack, motion.toKnob)
+end
+
+-- Ease out: quick start, gentle settle.
+local function SwitchStep(control, elapsed)
+    local motion = control.motion
+    if not motion then control:SetScript("OnUpdate", nil); return end
+    motion.elapsed = motion.elapsed + (elapsed or 0)
+    local t = math.min(1, motion.elapsed / SWITCH_DURATION)
+    if t >= 1 then FinishSwitch(control); return end
+    local e = 1 - (1 - t) * (1 - t) * (1 - t)
+    local x = motion.fromX + (motion.toX - motion.fromX) * e
+    SwitchFrame(control, x, Mix(motion.fromTrack, motion.toTrack, e), Mix(motion.fromKnob, motion.toKnob, e))
+    control.knobX = x
+end
 
 function W.NewLayout(parent, root, pageId, tabId, width)
     local PAD_LEFT, PAD_RIGHT, TOP = 32, 14, -4
@@ -1065,7 +1125,7 @@ function W.NewLayout(parent, root, pageId, tabId, width)
         row:SetSize(self.width, 28)
         row:SetPoint("TOPLEFT", self.x, self.y)
         local label = W.Text(row, W.Title(text), 0, -2, self.width, nil, GOLD)
-        W.SetFont(label, "semibold", 14)
+        W.SetFont(label, "semibold", 15)
         local line = row:CreateTexture(nil, "ARTWORK")
         line:SetPoint("BOTTOMLEFT", 0, 2)
         line:SetPoint("BOTTOMRIGHT", 0, 2)
@@ -1120,7 +1180,7 @@ function W.NewLayout(parent, root, pageId, tabId, width)
         local controlWidth = ControlWidth(self.width)
         local textWidth = self.width - controlWidth - 24
         local caption = W.Text(row, label, 0, -ROW_PAD, textWidth, nil, TEXT)
-        W.SetFont(caption, "medium", 13)
+        W.SetFont(caption, "medium", 14)
         local description = W.SetSmall(W.Text(row, Evaluate(tip) or "", 0, 0, textWidth, nil, MUTED))
         description:SetShown(description:GetText() ~= nil)
         row.layoutDescription, row.descriptionSource = description, tip
@@ -1158,22 +1218,38 @@ function W.NewLayout(parent, root, pageId, tabId, width)
         control:SetPoint("TOPRIGHT", 0, -ROW_PAD)
         control.layoutType = "switch"
         if control.SetHitRectInsets then control:SetHitRectInsets(-6, -6, -8, -8) end
-        local knob = Circle(control, 18, C.knobOff, "ARTWORK")
+        local knob = Circle(control, KNOB_SIZE, C.knobOff, "ARTWORK")
         control.knob = knob
         self:Register(control, key, row, caption, reason, y, tip, enabledPredicate, onChanged, disabledReason)
+        -- Set the switch to its final look, or slide toward it after a click.
         function control:Paint()
             local on = self:GetChecked() and true or false
             local enabled = self:IsEnabled()
             local over = enabled and self.IsMouseOver and self:IsMouseOver()
             local track = not enabled and (on and C.switchOnDisabled or C.switchDisabled)
                 or on and (over and C.accentHover or C.accent) or (over and C.switchOffHover or C.switchOff)
-            W.Paint(self, track, 12)
             local knobColor = not enabled and C.knobDisabled or on and C.knobOn or C.knobOff
-            self.knob:SetVertexColor(RGB(knobColor))
-            self.knob:ClearAllPoints()
-            self.knob:SetPoint("LEFT", self, "LEFT", on and 19 or 3, 0)
+            local x = on and (40 - KNOB_SIZE - KNOB_INSET) or KNOB_INSET
+            local animate = self.animateNext and self.knobX and self.knobX ~= x
+                and BD.db and BD.db.settingsAnimations and self:IsVisible()
+            self.animateNext = nil
+            if self.motion and not animate then
+                -- Mid-slide (e.g. hover): keep sliding, but toward the current colors.
+                self.motion.toX, self.motion.toTrack, self.motion.toKnob = x, track, knobColor
+                return
+            end
+            if animate then
+                self.motion = { elapsed = 0, fromX = self.knobX, toX = x,
+                    fromTrack = self.trackColor or track, toTrack = track,
+                    fromKnob = self.knobColor or knobColor, toKnob = knobColor }
+                self:SetScript("OnUpdate", SwitchStep)
+                return
+            end
+            SwitchFrame(self, x, track, knobColor)
         end
+        control:SetScript("OnHide", FinishSwitch)
         control:SetScript("OnClick", function(self)
+            self.animateNext = true
             if self:IsEnabled() then Changed(root, key, self:GetChecked() and true or false, onChanged) end
             self:Paint()
         end)
@@ -1181,6 +1257,7 @@ function W.NewLayout(parent, root, pageId, tabId, width)
         control:SetScript("OnLeave", function(self) self:Paint() end)
         row:SetScript("OnMouseUp", function(_, mouseButton)
             if mouseButton == "LeftButton" and control:IsEnabled() then
+                control.animateNext = true
                 Changed(root, key, not GetBinding(key), onChanged)
             end
         end)
@@ -1205,7 +1282,7 @@ function W.NewLayout(parent, root, pageId, tabId, width)
         if control.SetThumbTexture then
             control:SetThumbTexture(ROUND)
             local thumb = control.GetThumbTexture and control:GetThumbTexture()
-            if thumb then thumb:SetSize(16, 16); thumb:SetVertexColor(RGB(C.bright)); NoSnap(thumb) end
+            if thumb then thumb:SetSize(THUMB_SIZE, THUMB_SIZE); thumb:SetVertexColor(RGB(C.bright)); NoSnap(thumb) end
             control.thumb = thumb
         end
         local rail = CreateFrame("Frame", nil, control)
@@ -1218,7 +1295,7 @@ function W.NewLayout(parent, root, pageId, tabId, width)
         W.Paint(fill, GOLD, 2)
         control.rail, control.fill = rail, fill
         local valueText = W.Text(row, "", 0, 0, 52, nil, C.bright)
-        W.SetFont(valueText, "medium", 13)
+        W.SetFont(valueText, "medium", 14)
         valueText:ClearAllPoints()
         valueText:SetPoint("TOPRIGHT", row, "TOPRIGHT", 0, -ROW_PAD)
         valueText:SetJustifyH("RIGHT")
@@ -1281,7 +1358,7 @@ function W.NewLayout(parent, root, pageId, tabId, width)
             local width = self:GetWidth()
             if not width or width <= 0 then return end
             local ratio = maximum > minimum and (math.max(minimum, math.min(maximum, value)) - minimum) / (maximum - minimum) or 0
-            self.fill:SetWidth(math.max(4, 8 + ratio * (width - 16)))
+            self.fill:SetWidth(math.max(4, THUMB_SIZE / 2 + ratio * (width - THUMB_SIZE)))
         end
         local function Display(value)
             valueText:SetText(Format(value))
@@ -1410,7 +1487,7 @@ function W.NewLayout(parent, root, pageId, tabId, width)
         local font = control:GetFontString()
         font:ClearAllPoints(); font:SetPoint("LEFT", 14, 0); font:SetPoint("RIGHT", -14, 0)
         font:SetJustifyH("CENTER")
-        W.SetFont(font, "medium", 13)
+        W.SetFont(font, "medium", 14)
         caption:Hide()
         control:SetPoint("TOPRIGHT", 0, -ROW_PAD)
         control.layoutType = "action"
@@ -1501,7 +1578,7 @@ function W.NewLayout(parent, root, pageId, tabId, width)
             card.badge = Circle(card, 6, C.knobOn, "ARTWORK", 3)
             card.badge:SetPoint("CENTER", card.radio, "CENTER")
             card.title = W.Text(card, info.title, 40, 0, nil, nil, C.bright)
-            W.SetFont(card.title, "semibold", 14)
+            W.SetFont(card.title, "semibold", 15)
             card.body = W.SetSmall(W.Text(card, info.body, 16, 0, nil, nil, MUTED))
             card.id = info.id
             card:SetScript("OnClick", function()

@@ -80,7 +80,6 @@ local BuildPreferences
 local function BuildCombat(parent, root)
     local layout = NewLayout(parent, root, "combat")
     layout:Heading(L["Display settings"])
-    layout:Checkbox("showIncoming", L["Show incoming hits"], L["Incoming hits use screen areas in either layout."])
     layout:Checkbox("onlyCriticalDamage", L["Show only critical damage"],
         L["Hide non-critical outgoing and incoming damage. Healing and miss text are unaffected."])
     layout:Checkbox("showMisses", L["Show misses and avoidance"],
@@ -89,7 +88,10 @@ local function BuildCombat(parent, root)
         layout:When(function() return BD.db.onlyMyDamage and BD.db.showMisses end, function()
             layout:Warning(L["Personal mode can't tell whose attack missed, so misses, dodges, and parries from your attacks are hidden. Misses against you still show when Show incoming hits is on."])
         end)
-    else
+    end
+
+    layout:Heading(L["Outgoing"])
+    if not IsModernAPI() then
         layout:Note(L["Shows your outgoing damage. Source is read from the combat log."])
     end
     layout:Checkbox("includePetDamage", L["Include pet damage"],
@@ -103,12 +105,14 @@ local function BuildCombat(parent, root)
         end)
     end
 
+    layout:Heading(L["Incoming hits"])
+    layout:Checkbox("showIncoming", L["Show incoming hits"], L["Incoming hits use screen areas in either layout."])
+
     layout:Heading(L["Healing"])
     layout:Checkbox("showHealing", L["Show healing"],
         L["Show your outgoing heals using the selected layout. Heals on you are skipped. Nameplate events require friendly nameplates."])
     layout:Note(L["Screen healing follows its destination area's motion. Fonts, icons, and filters are shared with damage."])
 
-    -- Everything that limits how many numbers appear lives under one heading.
     layout:Heading(L["Reduce clutter"])
     layout:Input("minDamage", L["Minimum damage threshold"],
         L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be displayed."], function()
@@ -118,6 +122,7 @@ local function BuildCombat(parent, root)
         layout:Note(L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."])
     end
 
+    layout:Heading(L["Combine hits"])
     layout:Checkbox("combineHits", L["Combine rapid hits"],
         L["Combine rapid hits against the same enemy into one number."])
     layout:When(function() return BD.db.combineHits end, function()
@@ -127,6 +132,8 @@ local function BuildCombat(parent, root)
             L["Same spell keeps each spell's number separate. All hits merges every hit on the target; its icon shows the spell that did the most damage."])
         layout:Checkbox("combineShowCount", L["Show hit count"],
             L["Show how many hits were combined, e.g. 37,200 (3). With spell icons on, the count sits on the icon."])
+        layout:Checkbox("combinePulse", L["Pop on each merge"],
+            L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."])
         layout:Note(IsModernAPI()
             and L["Crits, normal hits, and heals combine separately. Secret amounts cannot be added, so those hits still show individually."]
             or L["Crits, normal hits, and heals combine separately."])
@@ -273,11 +280,6 @@ local function BuildAnimation(parent, root)
     BD.OptionsAreas.BuildSelector(layout)
     layout:When(function() return not BD.OptionsAreas.UsesArea() end, function() BuildNameplateAnimation(layout) end)
     layout:When(BD.OptionsAreas.UsesArea, function() BD.OptionsAreas.BuildMotion(layout) end)
-    layout:When(function() return BD.db.combineHits end, function()
-        layout:Heading(L["Combining"])
-        layout:Checkbox("combinePulse", L["Pop on each merge"],
-            L["Briefly enlarge the number every time another hit merges into it. Turn off for a calmer display."])
-    end)
     layout:Finish()
 end
 
