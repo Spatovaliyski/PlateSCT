@@ -3,6 +3,12 @@ local _, BD = ...
 local L = {}
 BD.RegisterLocale("esES", L)
 
+-- What's new: 1.3.0
+L["The redesigned settings window has clearer pages, search, and live previews. The new welcome flow helps you choose a layout and get started."] = "La ventana de ajustes rediseñada ofrece páginas más claras, búsqueda y vistas previas en directo. La nueva configuración de bienvenida te ayuda a elegir una disposición y empezar."
+L["Choose Screen under General to place and resize combat text areas. Customize each area's animation, direction, alignment, spacing, and duration, and route damage and healing to different areas."] = "Elige Pantalla en General para colocar y redimensionar zonas de texto de combate. Personaliza la animación, dirección, alineación, separación y duración de cada zona, y envía el daño y la sanación a zonas distintas."
+L["Show scroll area repeats sample hits while you move and resize areas. Done or Escape returns to your previous settings page."] = "Mostrar zona de desplazamiento repite golpes de ejemplo mientras mueves y redimensionas las zonas. Listo o Escape te devuelve a la página de ajustes anterior."
+L["Larger text areas make strings easier to copy, paste, and review. Imports now include screen areas, their motion, and routing."] = "Los campos de texto más grandes facilitan copiar, pegar y revisar las cadenas. Las importaciones ahora incluyen las zonas de pantalla, sus movimientos y los destinos de los efectos."
+
 -- What's new: 1.2.5
 L["Show or hide outgoing and incoming miss, dodge, parry, and similar text under Combat → Display settings. Enabled by default on Midnight and Classic APIs."] = "Muestra u oculta fallos, esquivas, paradas y resultados similares de ataques realizados y recibidos en Combate → Ajustes de visualización. Activado por defecto en las API de Midnight y Classic."
 L["Midnight Personal mode still omits outgoing misses."] = "El modo Personal de Midnight sigue sin mostrar los fallos de tus ataques."

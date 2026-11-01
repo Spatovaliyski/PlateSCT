@@ -551,12 +551,15 @@ local function BuildDiagnostics(layout)
 end
 
 local function BuildWhatsNew(layout)
-    layout:Heading("1.2.5")
-    layout:Heading(L["Show misses and avoidance"])
-    layout:Note(L["Show or hide outgoing and incoming miss, dodge, parry, and similar text under Combat → Display settings. Enabled by default on Midnight and Classic APIs."])
-    layout:Note(L["Midnight Personal mode still omits outgoing misses."])
-    layout:Heading(L["Impact number style"])
-    layout:Note(L["Impact now leaves room for CRITICAL labels, icons, and enlarged crits when stacking damage numbers."])
+    layout:Heading("1.3.0")
+    layout:Heading(L["Settings window"])
+    layout:Note(L["The redesigned settings window has clearer pages, search, and live previews. The new welcome flow helps you choose a layout and get started."])
+    layout:Heading(L["Screen areas"])
+    layout:Note(L["Choose Screen under General to place and resize combat text areas. Customize each area's animation, direction, alignment, spacing, and duration, and route damage and healing to different areas."])
+    layout:Heading(L["Show scroll area"])
+    layout:Note(L["Show scroll area repeats sample hits while you move and resize areas. Done or Escape returns to your previous settings page."])
+    layout:Heading(L["Import & Export"])
+    layout:Note(L["Larger text areas make strings easier to copy, paste, and review. Imports now include screen areas, their motion, and routing."])
 end
 
 local function BuildHelp(parent, root, tabId)

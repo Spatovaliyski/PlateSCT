@@ -3,6 +3,12 @@ local _, BD = ...
 local L = {}
 BD.RegisterLocale("ruRU", L)
 
+-- What's new: 1.3.0
+L["The redesigned settings window has clearer pages, search, and live previews. The new welcome flow helps you choose a layout and get started."] = "Обновлённое окно настроек предлагает более понятные страницы, поиск и предварительный просмотр в реальном времени. Новый мастер приветствия поможет выбрать размещение и начать работу."
+L["Choose Screen under General to place and resize combat text areas. Customize each area's animation, direction, alignment, spacing, and duration, and route damage and healing to different areas."] = "Выберите Экран в разделе Общие, чтобы размещать области боевого текста и менять их размер. Для каждой области можно настроить анимацию, направление, выравнивание, интервалы и длительность, а также направить урон и исцеление в разные области."
+L["Show scroll area repeats sample hits while you move and resize areas. Done or Escape returns to your previous settings page."] = "Показать область прокрутки повторяет примеры попаданий, пока вы перемещаете области и меняете их размер. Готово или Escape возвращает на предыдущую страницу настроек."
+L["Larger text areas make strings easier to copy, paste, and review. Imports now include screen areas, their motion, and routing."] = "Увеличенные текстовые поля упрощают копирование, вставку и проверку строк. При импорте теперь передаются экранные области, их движение и распределение событий по областям."
+
 -- What's new: 1.2.5
 L["Show or hide outgoing and incoming miss, dodge, parry, and similar text under Combat → Display settings. Enabled by default on Midnight and Classic APIs."] = "Показывайте или скрывайте промахи, уклонения, парирования и подобные результаты исходящих и входящих атак в разделе Бой → Настройки отображения. Включено по умолчанию для API Midnight и Classic."
 L["Midnight Personal mode still omits outgoing misses."] = "Личный режим Midnight по-прежнему не показывает исходящие промахи."

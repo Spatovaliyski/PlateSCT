@@ -3,6 +3,12 @@ local _, BD = ...
 local L = {}
 BD.RegisterLocale("deDE", L)
 
+-- What's new: 1.3.0
+L["The redesigned settings window has clearer pages, search, and live previews. The new welcome flow helps you choose a layout and get started."] = "Das überarbeitete Einstellungsfenster bietet übersichtlichere Seiten, eine Suche und Live-Vorschauen. Der neue Einrichtungsassistent hilft dir bei der Layoutauswahl und beim Einstieg."
+L["Choose Screen under General to place and resize combat text areas. Customize each area's animation, direction, alignment, spacing, and duration, and route damage and healing to different areas."] = "Wähle unter Allgemein die Option Bildschirm, um Kampftextbereiche zu platzieren und ihre Größe zu ändern. Passe Animation, Richtung, Ausrichtung, Abstand und Dauer für jeden Bereich an und leite Schaden und Heilung in unterschiedliche Bereiche."
+L["Show scroll area repeats sample hits while you move and resize areas. Done or Escape returns to your previous settings page."] = "Scrollbereich anzeigen wiederholt Beispieltreffer, während du Bereiche verschiebst und ihre Größe änderst. Mit Fertig oder Escape kehrst du zur vorherigen Einstellungsseite zurück."
+L["Larger text areas make strings easier to copy, paste, and review. Imports now include screen areas, their motion, and routing."] = "Größere Textfelder erleichtern das Kopieren, Einfügen und Prüfen von Einstellungszeichenfolgen. Importe enthalten jetzt auch Bildschirmbereiche, ihre Bewegungen und die Zuordnung der Treffer."
+
 -- What's new: 1.2.5
 L["Show or hide outgoing and incoming miss, dodge, parry, and similar text under Combat → Display settings. Enabled by default on Midnight and Classic APIs."] = "Verfehlen, Ausweichen, Parieren und ähnliche Meldungen für ausgehende und eingehende Angriffe unter Kampf → Anzeigeeinstellungen ein- oder ausblenden. Auf den APIs Midnight und Classic standardmäßig aktiviert."
 L["Midnight Personal mode still omits outgoing misses."] = "Der persönliche Modus von Midnight zeigt weiterhin keine verfehlten ausgehenden Angriffe an."

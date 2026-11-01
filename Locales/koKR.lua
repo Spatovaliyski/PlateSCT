@@ -3,6 +3,12 @@ local _, BD = ...
 local L = {}
 BD.RegisterLocale("koKR", L)
 
+-- What's new: 1.3.0
+L["The redesigned settings window has clearer pages, search, and live previews. The new welcome flow helps you choose a layout and get started."] = "새롭게 디자인한 설정 창에서 더 명확한 페이지, 검색 및 실시간 미리 보기를 제공합니다. 새로운 시작 안내를 통해 배치를 선택하고 사용을 시작할 수 있습니다."
+L["Choose Screen under General to place and resize combat text areas. Customize each area's animation, direction, alignment, spacing, and duration, and route damage and healing to different areas."] = "일반에서 화면을 선택하면 전투 문자 영역을 배치하고 크기를 조절할 수 있습니다. 영역별로 애니메이션, 방향, 정렬, 간격 및 지속 시간을 설정하고 피해와 치유를 서로 다른 영역에 표시할 수 있습니다."
+L["Show scroll area repeats sample hits while you move and resize areas. Done or Escape returns to your previous settings page."] = "스크롤 영역 표시를 사용하면 영역을 이동하고 크기를 조절하는 동안 예시 공격이 반복됩니다. 완료 또는 Escape를 누르면 이전 설정 페이지로 돌아갑니다."
+L["Larger text areas make strings easier to copy, paste, and review. Imports now include screen areas, their motion, and routing."] = "더 넓어진 입력란에서 설정 문자열을 쉽게 복사하고 붙여넣고 검토할 수 있습니다. 이제 가져오기에 화면 영역, 영역별 이동 방식 및 이벤트 대상 영역 설정이 포함됩니다."
+
 -- What's new: 1.2.5
 L["Show or hide outgoing and incoming miss, dodge, parry, and similar text under Combat → Display settings. Enabled by default on Midnight and Classic APIs."] = "전투 → 표시 설정에서 가하거나 받은 공격의 빗나감, 회피, 무기 막기 및 유사한 결과를 표시하거나 숨길 수 있습니다. Midnight 및 클래식 API에서 기본으로 활성화됩니다."
 L["Midnight Personal mode still omits outgoing misses."] = "Midnight 개인 모드에서는 여전히 가한 공격의 빗나감을 표시하지 않습니다."

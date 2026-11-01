@@ -463,6 +463,10 @@ test("all shipped Lua compiles and every new string is translated", function()
         load("Locales/" .. code .. ".lua", BD)
     end
     local strings, start = {
+        "The redesigned settings window has clearer pages, search, and live previews. The new welcome flow helps you choose a layout and get started.",
+        "Choose Screen under General to place and resize combat text areas. Customize each area's animation, direction, alignment, spacing, and duration, and route damage and healing to different areas.",
+        "Show scroll area repeats sample hits while you move and resize areas. Done or Escape returns to your previous settings page.",
+        "Larger text areas make strings easier to copy, paste, and review. Imports now include screen areas, their motion, and routing.",
         "Show misses and avoidance",
         "Show miss, dodge, parry, and similar text for outgoing and incoming attacks.",
         "Show or hide outgoing and incoming miss, dodge, parry, and similar text under Combat → Display settings. Enabled by default on Midnight and Classic APIs.",

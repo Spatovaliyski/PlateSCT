@@ -3,6 +3,12 @@ local _, BD = ...
 local L = {}
 BD.RegisterLocale("enUS", L)
 
+-- What's new: 1.3.0
+L["The redesigned settings window has clearer pages, search, and live previews. The new welcome flow helps you choose a layout and get started."] = "The redesigned settings window has clearer pages, search, and live previews. The new welcome flow helps you choose a layout and get started."
+L["Choose Screen under General to place and resize combat text areas. Customize each area's animation, direction, alignment, spacing, and duration, and route damage and healing to different areas."] = "Choose Screen under General to place and resize combat text areas. Customize each area's animation, direction, alignment, spacing, and duration, and route damage and healing to different areas."
+L["Show scroll area repeats sample hits while you move and resize areas. Done or Escape returns to your previous settings page."] = "Show scroll area repeats sample hits while you move and resize areas. Done or Escape returns to your previous settings page."
+L["Larger text areas make strings easier to copy, paste, and review. Imports now include screen areas, their motion, and routing."] = "Larger text areas make strings easier to copy, paste, and review. Imports now include screen areas, their motion, and routing."
+
 -- What's new: 1.2.5
 L["Show or hide outgoing and incoming miss, dodge, parry, and similar text under Combat → Display settings. Enabled by default on Midnight and Classic APIs."] = "Show or hide outgoing and incoming miss, dodge, parry, and similar text under Combat → Display settings. Enabled by default on Midnight and Classic APIs."
 L["Midnight Personal mode still omits outgoing misses."] = "Midnight Personal mode still omits outgoing misses."

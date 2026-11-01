@@ -3,6 +3,12 @@ local _, BD = ...
 local L = {}
 BD.RegisterLocale("frFR", L)
 
+-- What's new: 1.3.0
+L["The redesigned settings window has clearer pages, search, and live previews. The new welcome flow helps you choose a layout and get started."] = "La fenêtre des réglages repensée propose des pages plus claires, une recherche et des aperçus en direct. Le nouveau parcours d’accueil vous aide à choisir une disposition et à démarrer."
+L["Choose Screen under General to place and resize combat text areas. Customize each area's animation, direction, alignment, spacing, and duration, and route damage and healing to different areas."] = "Choisissez Écran dans Général pour placer et redimensionner les zones de texte de combat. Personnalisez l’animation, la direction, l’alignement, l’espacement et la durée de chaque zone, et envoyez les dégâts et les soins vers des zones différentes."
+L["Show scroll area repeats sample hits while you move and resize areas. Done or Escape returns to your previous settings page."] = "Afficher la zone de défilement répète des exemples de coups pendant que vous déplacez et redimensionnez les zones. Terminé ou Échap vous ramène à la page de réglages précédente."
+L["Larger text areas make strings easier to copy, paste, and review. Imports now include screen areas, their motion, and routing."] = "Des champs de texte plus grands facilitent la copie, le collage et la vérification des chaînes. Les importations incluent désormais les zones à l’écran, leurs mouvements et les destinations des effets."
+
 -- What's new: 1.2.5
 L["Show or hide outgoing and incoming miss, dodge, parry, and similar text under Combat → Display settings. Enabled by default on Midnight and Classic APIs."] = "Affichez ou masquez les ratés, esquives, parades et résultats similaires des attaques infligées et reçues dans Combat → Réglages d’affichage. Activé par défaut sur les API Midnight et Classic."
 L["Midnight Personal mode still omits outgoing misses."] = "Le mode Personnel de Midnight n’affiche toujours pas les ratés des attaques infligées."

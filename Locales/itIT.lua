@@ -3,6 +3,12 @@ local _, BD = ...
 local L = {}
 BD.RegisterLocale("itIT", L)
 
+-- What's new: 1.3.0
+L["The redesigned settings window has clearer pages, search, and live previews. The new welcome flow helps you choose a layout and get started."] = "La finestra delle impostazioni rinnovata offre pagine più chiare, ricerca e anteprime in tempo reale. La nuova configurazione di benvenuto ti aiuta a scegliere una disposizione e iniziare."
+L["Choose Screen under General to place and resize combat text areas. Customize each area's animation, direction, alignment, spacing, and duration, and route damage and healing to different areas."] = "Scegli Schermo in Generale per posizionare e ridimensionare le aree del testo di combattimento. Personalizza animazione, direzione, allineamento, spaziatura e durata di ogni area e indirizza danni e cure verso aree diverse."
+L["Show scroll area repeats sample hits while you move and resize areas. Done or Escape returns to your previous settings page."] = "Mostra area di scorrimento ripete colpi di esempio mentre sposti e ridimensioni le aree. Fine o Escape ti riporta alla pagina delle impostazioni precedente."
+L["Larger text areas make strings easier to copy, paste, and review. Imports now include screen areas, their motion, and routing."] = "I campi di testo più grandi semplificano la copia, l'inserimento e la verifica delle stringhe. Le importazioni ora includono le aree sullo schermo, i loro movimenti e le destinazioni degli eventi."
+
 -- What's new: 1.2.5
 L["Show or hide outgoing and incoming miss, dodge, parry, and similar text under Combat → Display settings. Enabled by default on Midnight and Classic APIs."] = "Mostra o nascondi colpi mancati, schivate, parate e risultati simili degli attacchi inflitti e ricevuti in Combattimento → Impostazioni di visualizzazione. Attivo per impostazione predefinita sulle API Midnight e Classic."
 L["Midnight Personal mode still omits outgoing misses."] = "La modalità Personale di Midnight continua a non mostrare i tuoi attacchi mancati."

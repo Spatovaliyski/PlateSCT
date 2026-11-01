@@ -3,6 +3,12 @@ local _, BD = ...
 local L = {}
 BD.RegisterLocale("zhCN", L)
 
+-- What's new: 1.3.0
+L["The redesigned settings window has clearer pages, search, and live previews. The new welcome flow helps you choose a layout and get started."] = "重新设计的设置窗口提供更清晰的页面、搜索和实时预览。全新的欢迎引导可帮助你选择布局并开始使用。"
+L["Choose Screen under General to place and resize combat text areas. Customize each area's animation, direction, alignment, spacing, and duration, and route damage and healing to different areas."] = "在常规中选择屏幕，即可放置战斗文字区域并调整大小。每个区域都可单独设置动画、方向、对齐、间距和持续时间，还可将伤害与治疗分配到不同区域。"
+L["Show scroll area repeats sample hits while you move and resize areas. Done or Escape returns to your previous settings page."] = "显示滚动区域会在你移动区域和调整大小时持续重复示例攻击。点击完成或按 Escape 可返回之前的设置页面。"
+L["Larger text areas make strings easier to copy, paste, and review. Imports now include screen areas, their motion, and routing."] = "更大的文本框让设置字符串更易于复制、粘贴和检查。导入内容现在包含屏幕区域、各区域的运动方式及事件分配设置。"
+
 -- What's new: 1.2.5
 L["Show or hide outgoing and incoming miss, dodge, parry, and similar text under Combat → Display settings. Enabled by default on Midnight and Classic APIs."] = "在战斗 → 显示设置中，显示或隐藏对外攻击和受到攻击时的未命中、躲闪、招架等文字。在 Midnight 和经典 API 客户端中默认启用。"
 L["Midnight Personal mode still omits outgoing misses."] = "Midnight 的个人模式仍不显示对外攻击的未命中文字。"
