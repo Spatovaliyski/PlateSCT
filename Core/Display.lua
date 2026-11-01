@@ -5,9 +5,10 @@ local Anim = BD.Anim
 local ICON_GAP = 4
 local CRIT_LABEL_GAP = 3
 
-local function GetFrameStyle(self, hitKind, isIncoming, isHeal)
+-- On plates Impact slams outgoing damage only: incoming, healing and misses use Modern instead.
+local function GetFrameStyle(self, hitKind, useModern, isHeal)
     local override
-    if self.db.numberStyle == "impact" and (isIncoming or isHeal or hitKind == "miss") then
+    if self.db.numberStyle == "impact" and (useModern or isHeal or hitKind == "miss") then
         override = "retail"
     end
     return self:GetStylePreset(override)
@@ -136,31 +137,37 @@ local function ImpactTextBounds(textW, textH, labelW, labelH, iconSize, iconPosi
 end
 
 local function RecordClassicBounds(frame, fontSize, iconSize, iconPosition)
-    if not frame.usesClassicShove then
+    if not frame.usesClassicShove and not frame.areaRuntime then
         return
     end
     local width, height = AccessibleTextSize(frame.text, fontSize)
     local labelW, labelH = 0, 0
     if frame.critLabel and frame.critLabel:IsShown() then
-        labelW, labelH = AccessibleTextSize(frame.critLabel, math.max(8, math.floor(fontSize * 0.55 + 0.5)))
+        labelW, labelH = AccessibleTextSize(frame.critLabel, math.max(BD.MIN_FONT_SIZE, math.floor(fontSize * 0.55 + 0.5)))
     end
-    frame.classicBounds = ClassicTextBounds(width, height, labelW, labelH, iconSize, iconPosition)
+    local bounds = ClassicTextBounds(width, height, labelW, labelH, iconSize, iconPosition)
+    if frame.areaRuntime then frame.areaBounds = bounds else frame.classicBounds = bounds end
 end
 
 local function PlaceFrame(frame, anchor, baseX, baseY, owner)
-    if not frame.incoming then
+    if not frame.staticAnchor then
         -- Placement follows the selected style, including Impact's Modern-motion fallback.
         local offsetX, offsetY = (owner or BD):GetNumberStyleOffsets()
         baseX, baseY = baseX + offsetX, baseY + offsetY
     end
-    frame.startX, frame.startY = BD.Pool.PickClearSpawn(anchor, frame, baseX, baseY,
-        frame.isCrit, frame.usesClassicShove)
+    if frame.fixedSpawn then
+        -- Scrolling screen-area numbers keep their lane; the area spaces them in time instead.
+        frame.startX, frame.startY = baseX, baseY
+    else
+        frame.startX, frame.startY = BD.Pool.PickClearSpawn(anchor, frame, baseX, baseY,
+            frame.isCrit, frame.usesClassicShove)
+    end
     if frame.animMode == "impactSlam" then
         BD.Pool.RelayerImpact(frame:GetParent())
         BD.Pool.ApplyMotion(frame)
         return
     end
-    if frame.usesClassicShove then
+    if frame.usesClassicShove and not frame.fixedSpawn then
         frame.classicReady = true
     end
     frame:ClearAllPoints()
@@ -168,6 +175,8 @@ local function PlaceFrame(frame, anchor, baseX, baseY, owner)
     local scale = 1
     if frame.usesClassicShove then
         scale = frame.isCrit and (frame.critPowStartScale or 1) or (frame.popScale or 1)
+    elseif frame.areaRuntime then
+        scale = frame.isCrit and (frame.critPopStartScale or 0.72) or (frame.popScale or 1)
     end
     frame:SetPoint("CENTER", at, frame.lingerHost and "CENTER" or (frame.anchorRelPoint or "TOP"),
         frame.startX / scale, frame.startY / scale)
@@ -193,7 +202,7 @@ local function ApplyTextLayout(frame, fontSize, fontPath, fontFlags, preset, lay
 
     local critLabelW = 0
     if showCritLabel and frame.critLabel then
-        local critSize = math.max(8, math.floor(fontSize * 0.55 + 0.5))
+        local critSize = math.max(BD.MIN_FONT_SIZE, math.floor(fontSize * 0.55 + 0.5))
         BD.SafeSetFont(frame.critLabel, fontPath, critSize, fontFlags)
         frame.critLabel:SetText(L["CRITICAL"])
         frame.critLabel:SetTextColor(r, g, b, 1)
@@ -224,7 +233,7 @@ local function ApplyTextLayout(frame, fontSize, fontPath, fontFlags, preset, lay
 
     if frame.animMode == "impactSlam" then
         -- Top placement centers the number and side icon together.
-        local textX = ImpactTextOffset(BD, resolvedIcon and size, iconPosition)
+        local textX = not frame.areaRuntime and ImpactTextOffset(BD, resolvedIcon and size, iconPosition) or 0
         frame.text:SetPoint("CENTER", frame, "CENTER", textX, 0)
         local labelAnchor = frame.text
         if resolvedIcon then
@@ -250,9 +259,10 @@ local function ApplyTextLayout(frame, fontSize, fontPath, fontFlags, preset, lay
         local width, height = AccessibleTextSize(frame.text, fontSize)
         local labelW, labelH = 0, 0
         if frame.critLabel and frame.critLabel:IsShown() then
-            labelW, labelH = AccessibleTextSize(frame.critLabel, math.max(8, math.floor(fontSize * 0.55 + 0.5)))
+            labelW, labelH = AccessibleTextSize(frame.critLabel, math.max(BD.MIN_FONT_SIZE, math.floor(fontSize * 0.55 + 0.5)))
         end
-        local _, _, bottom, top = ImpactTextBounds(width, height, labelW, labelH, resolvedIcon and size, iconPosition)
+        local left, right, bottom, top = ImpactTextBounds(width, height, labelW, labelH, resolvedIcon and size, iconPosition)
+        if frame.areaRuntime then frame.areaBounds = { left, right, bottom, top } end
         local peak = frame.isCrit and math.max(1, frame.critSlapScale, frame.critRestScale) or 1
         -- Leave room for a combined-hit pulse as well as the crit's entrance peak.
         peak = peak * (1 + BD.COMBINE_PULSE_SCALE)
@@ -313,7 +323,9 @@ local function ApplyMotionSpawnParams(frame, motionStyle, floatDistance)
     end
 end
 
-local function ConfigureFrameCommon(self, frame, preset, isCrit, hitKind, isIncoming, measureOnly, numberStyle)
+-- motionOverride replaces the saved motion style (screen areas move along their own path).
+local function ConfigureFrameCommon(self, frame, preset, isCrit, hitKind, isIncoming, measureOnly, numberStyle,
+    motionOverride)
     frame.isCrit = isCrit and true or false
     frame.incoming = isIncoming and true or false
     frame.hitKind = hitKind or (isCrit and "crit" or "hit")
@@ -324,9 +336,9 @@ local function ConfigureFrameCommon(self, frame, preset, isCrit, hitKind, isInco
     if frame.isCrit and preset.critDurationMult then
         durationMult = durationMult * preset.critDurationMult
     end
-    frame.duration = (self.db.duration or self.DEFAULTS.duration) * durationMult
-    frame.floatDistance = (self.db.floatDistance or self.DEFAULTS.floatDistance) * preset.floatMult
-    frame.scrollSpeed = self.db.scrollSpeed or self.DEFAULTS.scrollSpeed or 1
+    frame.duration = (motionOverride == "area" and 2.4 or (self.db.duration or self.DEFAULTS.duration)) * durationMult
+    frame.floatDistance = motionOverride == "area" and 0 or (self.db.floatDistance or self.DEFAULTS.floatDistance) * preset.floatMult
+    frame.scrollSpeed = motionOverride == "area" and 1 or (self.db.scrollSpeed or self.DEFAULTS.scrollSpeed or 1)
     frame.baseAlpha = 1
     frame.popScale = preset.popScale
     frame.popDuration = preset.popDuration
@@ -351,7 +363,7 @@ local function ConfigureFrameCommon(self, frame, preset, isCrit, hitKind, isInco
     if defaultFontSize < 1 then
         defaultFontSize = 14
     end
-    local fontSize = (isIncoming and self.db.incomingFontSize) or self.db.fontSize or defaultFontSize
+    local fontSize = math.max(BD.MIN_FONT_SIZE, (isIncoming and self.db.incomingFontSize) or self.db.fontSize or defaultFontSize)
     local spacingScale = fontSize / defaultFontSize
     frame.impactSpacingScale = frame.numberStyle == "impact" and fontSize / 14 or nil
     if frame.impactSpacingScale then
@@ -363,7 +375,7 @@ local function ConfigureFrameCommon(self, frame, preset, isCrit, hitKind, isInco
     frame.spawnJitter = (preset.spawnJitter or 10) * spacingScale
     frame.spawnCritY = preset.spawnCritY
 
-    local motionStyle = self:ResolveMotionStyle(frame.hitKind, frame.numberStyle)
+    local motionStyle = motionOverride or self:ResolveMotionStyle(frame.hitKind, frame.numberStyle)
 
     -- Classic Slap: Modern look, Classic grow-and-settle crit pow.
     if motionStyle == "classicSlap" and frame.isCrit then
@@ -395,10 +407,13 @@ local function ConfigureFrameCommon(self, frame, preset, isCrit, hitKind, isInco
     end
 end
 
--- Combine hits: a new hit folds into a live number on the same plate when it
--- shares the combine key and lands inside the window since that number spawned.
--- Secret amounts cannot be summed, so they always spawn their own number.
+-- Combine hits: a new hit folds into a live number with the same owner (its plate,
+-- or a screen area) when it shares the combine key and lands inside the window
+-- since that number spawned. Secret amounts cannot be summed, so they always
+-- spawn their own number.
 local combineTargets = setmetatable({}, { __mode = "k" })
+local combineSizes = setmetatable({}, { __mode = "k" })
+local COMBINE_SWEEP_SIZE = 64
 
 local function CombinableAmount(amount)
     return type(amount) == "number" and not BD.IsSecret(amount) and BD.CanAccessValue(amount)
@@ -434,7 +449,7 @@ local function UpdateIconCount(self, frame, onIcon)
         return
     end
     local layout = frame.combineLayout
-    local size = math.max(9, math.floor((layout.opts.iconSize or 12) * 0.63 + 0.5))
+    local size = math.max(BD.MIN_FONT_SIZE, math.floor((layout.opts.iconSize or 12) * 0.63 + 0.5))
     BD.SafeSetFont(label, layout.fontPath, size, "OUTLINE")
     label:SetText(frame.combineCount)
     label:Show()
@@ -466,6 +481,7 @@ local function ApplyCombine(self, frame, amount, icon)
     local onIcon = layout.opts.showIcon and layout.opts.iconTexture ~= nil
     frame.text:SetText(CombinedText(self, frame.combineTotal, frame.combineCount, onIcon))
     ApplyTextLayout(frame, layout.fontSize, layout.fontPath, layout.fontFlags, layout.preset, layout.opts)
+    if frame.areaRuntime then self:RefreshAreaNumber(frame) end
     UpdateIconCount(self, frame, onIcon and frame.icon:IsShown())
     if frame.usesClassicShove then
         BD.Pool.RelayoutClassic(frame.anchor)
@@ -475,15 +491,19 @@ local function ApplyCombine(self, frame, amount, icon)
     end
 end
 
-local function TryCombine(self, plate, key, amount, icon)
-    local byKey = combineTargets[plate]
+local function CombineLive(self, frame, owner, key)
+    local window = self.db.combineWindow or self.DEFAULTS.combineWindow
+    return frame.combineKey == key and frame.combineOwner == owner and frame.anchor and not frame.lingerFrozen
+        and frame:IsShown() and (GetTime() - (frame.spawnTime or 0)) <= window
+end
+
+local function TryCombine(self, owner, key, amount, icon)
+    local byKey = combineTargets[owner]
     local frame = byKey and byKey[key]
     if not frame then
         return false
     end
-    local window = self.db.combineWindow or self.DEFAULTS.combineWindow
-    if frame.combineKey ~= key or frame.anchor ~= plate or frame.lingerFrozen
-        or not frame:IsShown() or (GetTime() - (frame.spawnTime or 0)) > window then
+    if not CombineLive(self, frame, owner, key) then
         byKey[key] = nil
         return false
     end
@@ -579,7 +599,7 @@ end
 local function ClassicPreviewSamples(self, sampleKind)
     local samples = {}
     local preset = self:GetStylePreset()
-    local fontSize = (self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale
+    local fontSize = math.max(BD.MIN_FONT_SIZE, (self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale)
     local fontPath = BD.ResolveFontPath(self.db.fontFace)
     for _, sample in ipairs(self.previewSamples or PREVIEW_SAMPLES) do
         if MatchesPreviewKind(sample, sampleKind) then
@@ -590,7 +610,7 @@ local function ClassicPreviewSamples(self, sampleKind)
             local width, height = MeasurePreviewText(text, fontPath, fontSize, preset.fontFlags)
             local labelW, labelH = 0, 0
             if isCrit and self:GetCritLabelSetting("classic") then
-                local critSize = math.max(8, math.floor(fontSize * 0.55 + 0.5))
+                local critSize = math.max(BD.MIN_FONT_SIZE, math.floor(fontSize * 0.55 + 0.5))
                 labelW, labelH = MeasurePreviewText(L["CRITICAL"], fontPath, critSize, preset.fontFlags)
             end
             local icon = sample.hitKind ~= "miss" and
@@ -639,7 +659,7 @@ end
 
 local function ImpactPreviewBounds(self, sampleKind)
     local preset = self.STYLE_PRESETS.impact
-    local fontSize = (self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale
+    local fontSize = math.max(BD.MIN_FONT_SIZE, (self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale)
     local fontPath = BD.ResolveFontPath(self.db.fontFace)
     local spacing = fontSize / 14
     local distance = (self.db.floatDistance or self.DEFAULTS.floatDistance) * preset.floatMult
@@ -655,7 +675,7 @@ local function ImpactPreviewBounds(self, sampleKind)
             local labelW, labelH = 0, 0
             if sample.hitKind == "crit" and self:GetCritLabelSetting("impact") then
                 labelW, labelH = MeasurePreviewText(L["CRITICAL"], fontPath,
-                    math.max(8, math.floor(fontSize * 0.55 + 0.5)), preset.fontFlags)
+                    math.max(BD.MIN_FONT_SIZE, math.floor(fontSize * 0.55 + 0.5)), preset.fontFlags)
             end
             local iconSize = self.db.showSpellIcon and math.max(12, math.floor(fontSize * 1.1 + 0.5)) or nil
             local l, r, b, t = ImpactTextBounds(width, height, labelW, labelH, iconSize, self.db.iconPosition)
@@ -686,6 +706,8 @@ local function ImpactPreviewBounds(self, sampleKind)
 end
 
 function BD:GetOptionsPreviewBounds(sampleKind, styleOverride)
+    local area = not styleOverride and self:GetOptionsPreviewArea()
+    if area then return -area.width * 0.5 - 100, area.width * 0.5 + 100, -area.height * 0.5 - 40, area.height * 0.5 + 40 end
     local preset, numberStyle = self:GetStylePreset(styleOverride)
     if numberStyle == "impact" then
         return ImpactPreviewBounds(self, sampleKind)
@@ -696,7 +718,7 @@ function BD:GetOptionsPreviewBounds(sampleKind, styleOverride)
         return BD.Pool.GetClassicPreviewBounds(samples, self.previewStagger or PreviewStagger(self, sampleKind))
     end
     local baseFontSize = self.db.fontSize or self.DEFAULTS.fontSize
-    local fontSize = baseFontSize * preset.fontScale
+    local fontSize = math.max(BD.MIN_FONT_SIZE, baseFontSize * preset.fontScale)
     local fontPath = BD.ResolveFontPath(self.db.fontFace)
     local spacingScale = baseFontSize / math.max(1, self.DEFAULTS.fontSize or 14)
     local left, right, bottom, top = 0, 0, 0, 0
@@ -724,7 +746,7 @@ function BD:GetOptionsPreviewBounds(sampleKind, styleOverride)
             local critLabelWidth = 0
             local iconYOffset = 0
             if isCrit and self:GetCritLabelSetting(numberStyle) then
-                local critSize = math.max(8, math.floor(fontSize * 0.55 + 0.5))
+                local critSize = math.max(BD.MIN_FONT_SIZE, math.floor(fontSize * 0.55 + 0.5))
                 local labelWidth, labelHeight = MeasurePreviewText(L["CRITICAL"], fontPath, critSize, preset.fontFlags)
                 critLabelWidth = labelWidth + CRIT_LABEL_GAP
                 width = width + critLabelWidth
@@ -785,6 +807,213 @@ function BD:GetOptionsPreviewBounds(sampleKind, styleOverride)
     return left, right, bottom, top
 end
 
+-- Shared number pipeline. Layouts decide where a number lives (Core/LayoutNameplate.lua,
+-- Core/LayoutScreen.lua); these steps decide how it looks, in the same order for all.
+local Render = {}
+BD.Render = Render
+Render.GetImpactPlacement = GetImpactPlacement
+
+-- Miss text and non-critical damage can be switched off for every layout.
+function Render.PassesFilters(self, hitKind, isCrit, isHeal)
+    if hitKind == "miss" and not self.db.showMisses then
+        return false
+    end
+    if self.db.onlyCriticalDamage and not isHeal and hitKind ~= "miss" and not isCrit then
+        return false
+    end
+    return true
+end
+
+-- Fold a hit into a live number when combining is on. Returns true when it was
+-- folded; otherwise false plus the key a new number keeps for later hits (or nil).
+-- keySuffix separates destinations that share one owner, such as a screen area.
+function Render.Combine(self, owner, kind, isHeal, spellIcon, spellId, amount, keySuffix)
+    if not (self.db.combineHits and kind ~= "miss" and CombinableAmount(amount)) then
+        return false, nil
+    end
+    local key = CombineKey(self, kind, isHeal, spellIcon, spellId)
+    if keySuffix then
+        key = key .. "@" .. keySuffix
+    end
+    local icon = self.db.combineMode == "target" and self:ResolveOutgoingSpellIcon(spellIcon, spellId) or nil
+    if TryCombine(self, owner, key, amount, icon) then
+        return true
+    end
+    return false, key
+end
+
+-- Screen areas ("area" motion) use the screen style for every kind of number; nameplate
+-- number styles (Modern, Classic, Impact) apply on plates only.
+function Render.Begin(self, kind, isCrit, isHeal, isIncoming, motionOverride, area)
+    local preset, numberStyle
+    if motionOverride == "area" then
+        preset, numberStyle = self:GetStylePreset(area and area.animation == "impact" and "impact" or "linear")
+    else
+        preset, numberStyle = GetFrameStyle(self, kind, isIncoming, isHeal)
+    end
+    local frame = BD.Pool.Acquire()
+    ConfigureFrameCommon(self, frame, preset, isCrit, kind, isIncoming, nil, numberStyle, motionOverride)
+    return frame, preset, numberStyle
+end
+
+-- Live numbers float on UIParent but ignore its scale and alpha.
+function Render.ParentToScreen(frame, level)
+    frame:SetParent(UIParent)
+    frame:SetIgnoreParentScale(true)
+    pcall(function()
+        frame:SetIgnoreParentAlpha(true)
+    end)
+    frame:SetFrameStrata("HIGH")
+    frame:SetFrameLevel(level)
+end
+
+function Render.OutgoingColor(self, preset, r, g, b, isHeal)
+    if isHeal then
+        if self:ShouldUseSchoolColors() then
+            if not r then
+                r, g, b = BD.GetSchoolColor(nil)
+            end
+        else
+            local heal = BD.HEAL_COLOR
+            r, g, b = heal[1], heal[2], heal[3]
+        end
+    elseif self:ShouldUseSchoolColors() then
+        if not r then
+            r, g, b = BD.GetSchoolColor(nil)
+        end
+    else
+        r, g, b = preset.defaultColor[1], preset.defaultColor[2], preset.defaultColor[3]
+    end
+    return r, g, b
+end
+
+-- Font, text, icon, CRITICAL label, color and threshold alpha. Returns the font size,
+-- font path and layout used, or nil when the threshold hides the number (the frame
+-- is released then).
+function Render.Paint(self, frame, preset, numberStyle, text, r, g, b, amount, icon)
+    local fontSize, fontFace
+    if frame.incoming then
+        fontSize = self.db.incomingFontSize or self.db.fontSize or self.DEFAULTS.fontSize
+        fontFace = self.db.incomingFontFace or self.db.fontFace
+    else
+        fontSize = self.db.fontSize or self.DEFAULTS.fontSize
+        fontFace = self.db.fontFace
+    end
+    fontSize = math.max(BD.MIN_FONT_SIZE, fontSize * preset.fontScale)
+    local fontPath = BD.SafeSetFont(frame.text, BD.ResolveFontPath(fontFace), fontSize, preset.fontFlags)
+    if preset.shadowOffset then
+        frame.text:SetShadowOffset(preset.shadowOffset[1], preset.shadowOffset[2])
+        frame.text:SetShadowColor(0, 0, 0, 1)
+    else
+        frame.text:SetShadowOffset(0, 0)
+    end
+    frame.text:SetText(text)
+
+    local layoutOpts = {
+        showIcon = icon ~= nil,
+        iconSize = math.max(12, math.floor((fontSize * 1.1) + 0.5)),
+        iconTexture = icon,
+        iconPosition = self.db.iconPosition or "left",
+        showCritLabel = frame.isCrit and self:GetCritLabelSetting(numberStyle) and true or false,
+        r = r,
+        g = g,
+        b = b,
+    }
+    ApplyTextLayout(frame, fontSize, fontPath, preset.fontFlags, preset, layoutOpts)
+    frame.text:SetTextColor(r, g, b, 1)
+
+    local thresholdCurve = self:GetThresholdCurve()
+    if amount and self.db.minDamage and self.db.minDamage > 0 and BD.IsSecret(amount) and thresholdCurve then
+        local ok = pcall(function()
+            local color = thresholdCurve:Evaluate(amount)
+            frame.baseAlpha = select(4, color:GetRGBA())
+        end)
+        if not ok then
+            frame.baseAlpha = 1
+        end
+    end
+    if frame.baseAlpha <= 0 then
+        BD.Pool.Release(frame)
+        return nil
+    end
+    -- No amount (misses, incoming, previews) keeps the neutral scale and the live average untouched.
+    if frame.usesClassicShove and amount ~= nil then
+        frame.amountScale = BD.ComputeClassicAmountScale(amount)
+    end
+    return fontSize, fontPath, layoutOpts
+end
+
+-- Make a fresh number the one later hits with the same key fold into.
+function Render.RememberCombine(self, frame, owner, key, amount, icon, fontSize, fontPath, preset, layoutOpts)
+    frame.combineKey = key
+    frame.combineOwner = owner
+    frame.combineTotal = amount
+    frame.combineCount = 1
+    frame.combineLayout = {
+        fontSize = fontSize,
+        fontPath = fontPath,
+        fontFlags = preset.fontFlags,
+        preset = preset,
+        opts = layoutOpts,
+    }
+    if self.db.combineMode == "target" then
+        frame.combineSources = {}
+        if icon and not BD.IsSecret(icon) then
+            frame.combineSources[icon] = amount
+            frame.combineTopIcon = icon
+        end
+    end
+    local byKey = combineTargets[owner]
+    if not byKey then
+        byKey = {}
+        combineTargets[owner] = byKey
+    end
+    if not byKey[key] then
+        -- Screen areas see a new key per enemy: drop finished entries now and then.
+        local size = (combineSizes[owner] or 0) + 1
+        if size > COMBINE_SWEEP_SIZE then
+            size = 1
+            for staleKey, other in pairs(byKey) do
+                if CombineLive(self, other, owner, staleKey) then
+                    size = size + 1
+                else
+                    byKey[staleKey] = nil
+                end
+            end
+        end
+        combineSizes[owner] = size
+    end
+    byKey[key] = frame
+end
+
+-- Place, scale and show a painted number, then settle Classic-style neighbors.
+function Render.Present(self, frame, anchor, baseX, baseY, owner)
+    PlaceFrame(frame, anchor, baseX, baseY, owner)
+    frame:SetAlpha(frame.baseAlpha)
+    if frame.isCrit then
+        if frame.animMode == "classicPow" then
+            frame:SetScale(frame.critPowStartScale or 1)
+        else
+            frame:SetScale(frame.critPopStartScale or 0.72)
+        end
+    else
+        frame:SetScale(frame.popScale or 1)
+    end
+    frame:Show()
+    -- All visible geometry is ready before the shared Classic layout runs.
+    if frame.usesClassicShove then
+        BD.Pool.RelayoutClassic(anchor)
+    end
+end
+
+-- Outgoing crit sound. A combined crit replays it only when its total reaches a higher tier.
+function Render.CritSound(self, frame, amount, combineKey)
+    local tier = self:PlayOutgoingCritSound(amount, frame.isCrit)
+    if combineKey then
+        frame.combineSoundTier = tier
+    end
+end
+
 local function SpawnMotionPreviewFrame(anchor, sample, owner)
     local self = owner or BD
     sample = sample or PREVIEW_SAMPLES[1]
@@ -792,9 +1021,7 @@ local function SpawnMotionPreviewFrame(anchor, sample, owner)
     local isCrit = kind == "crit"
     local isMiss = kind == "miss"
 
-    local preset, numberStyle = GetFrameStyle(self, kind, false, false)
-    local frame = BD.Pool.Acquire()
-    ConfigureFrameCommon(self, frame, preset, isCrit, kind, false, nil, numberStyle)
+    local frame, preset, numberStyle = Render.Begin(self, kind, isCrit, false, false)
 
     frame.isPreview = true
     frame.previewSpeed = self.previewSpeed
@@ -820,23 +1047,13 @@ local function SpawnMotionPreviewFrame(anchor, sample, owner)
         end
     end
 
-    local fontSize = (self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale
-    local fontPath = BD.ResolveFontPath(self.db.fontFace)
-    fontPath = BD.SafeSetFont(frame.text, fontPath, fontSize, preset.fontFlags)
-    if preset.shadowOffset then
-        frame.text:SetShadowOffset(preset.shadowOffset[1], preset.shadowOffset[2])
-        frame.text:SetShadowColor(0, 0, 0, 1)
-    else
-        frame.text:SetShadowOffset(0, 0)
-    end
-
-    local r, g, b
+    local text, r, g, b
     local resolvedIcon
     if isMiss then
-        frame.text:SetText(sample.text or "MISS")
+        text = sample.text or "MISS"
         r, g, b = 1, 0.85, 0.2
     else
-        frame.text:SetText(BD.FormatAmount(sample.amount, self.db.abbreviate))
+        text = BD.FormatAmount(sample.amount, self.db.abbreviate)
         if self:ShouldUseSchoolColors() then
             r, g, b = BD.GetSchoolColor(sample.school)
         else
@@ -848,22 +1065,8 @@ local function SpawnMotionPreviewFrame(anchor, sample, owner)
         end
     end
 
-    local iconSize = math.max(12, math.floor((fontSize * 1.1) + 0.5))
-    local showCritLabel = isCrit and self:GetCritLabelSetting(numberStyle) and true or false
-    local layoutOpts = {
-        showIcon = resolvedIcon ~= nil,
-        iconSize = iconSize,
-        iconTexture = resolvedIcon,
-        iconPosition = self.db.iconPosition or "left",
-        showCritLabel = showCritLabel,
-        r = r,
-        g = g,
-        b = b,
-    }
-    ApplyTextLayout(frame, fontSize, fontPath, preset.fontFlags, preset, layoutOpts)
-
-    frame.text:SetTextColor(r, g, b, 1)
-    frame.baseAlpha = 1
+    local fontSize, fontPath, layoutOpts = Render.Paint(self, frame, preset, numberStyle, text, r, g, b, nil,
+        resolvedIcon)
     if frame.usesClassicShove then
         -- Template comparisons must not feed synthetic damage into the live average.
         frame.amountScale = self.previewSamples and 1 or BD.ComputeClassicAmountScale(sample.amount)
@@ -894,21 +1097,7 @@ local function SpawnMotionPreviewFrame(anchor, sample, owner)
         end
     end
 
-    PlaceFrame(frame, anchor, spawnX, spawnY, self)
-    frame:SetAlpha(1)
-    if frame.isCrit then
-        if frame.animMode == "classicPow" then
-            frame:SetScale(frame.critPowStartScale or 1)
-        else
-            frame:SetScale(frame.critPopStartScale or 0.72)
-        end
-    else
-        frame:SetScale(frame.popScale or 1)
-    end
-    frame:Show()
-    if frame.usesClassicShove then
-        BD.Pool.RelayoutClassic(anchor)
-    end
+    Render.Present(self, frame, anchor, spawnX, spawnY, self)
     return frame
 end
 
@@ -934,6 +1123,33 @@ function BD:ShowStyleSample(anchor, style, kind)
     return SpawnMotionPreviewFrame(anchor, STYLE_SAMPLES[kind == "crit" and 2 or 1], StyleSampleOwner(style))
 end
 
+-- The same comparison for screen areas: the live area spawn, with default appearance settings.
+function BD:ShowScreenAreaSample(anchor, area, kind, incoming)
+    local frame = self.ShowScreenAreaPreview(StyleSampleOwner("retail"), anchor, kind, area, incoming)
+    if frame then frame.previewSpeed = STYLE_SAMPLE_SPEED end
+    return frame
+end
+
+function BD:GetOptionsPreviewArea()
+    local view = self.configFrame and self.configFrame.activeView
+    local editing = view and (view.key == "animation:main" or view.key == "placement:main")
+    local incoming = editing and self.OptionsAreas and self.OptionsAreas.UsesArea()
+        and not self.Layout.IsScreen()
+    if (self.Layout and self.Layout.IsScreen()) or incoming then
+        local area = self.OptionsAreas and self.OptionsAreas.Selected()
+        if area and not incoming then
+            local outgoing, receivesIncoming = false, false
+            for _, route in ipairs(self.SCREEN_ROUTES) do
+                if (self.db[route.key] or route.fallback) == area.id then
+                    if route.fallback == "incoming" then receivesIncoming = true else outgoing = true end
+                end
+            end
+            incoming = receivesIncoming and not outgoing
+        end
+        return area, incoming
+    end
+end
+
 function BD:ShowMotionPreview(columns)
     if type(columns) ~= "table" then
         return
@@ -957,7 +1173,9 @@ function BD:ShowMotionPreview(columns)
         local index, stagger = 1, PreviewStagger(self, column.kind)
         local function PlaySample()
             if generation ~= previewGeneration or not anchor:IsShown() then return end
-            SpawnMotionPreviewFrame(anchor, samples[index])
+            local area, incoming = self:GetOptionsPreviewArea()
+            if area then self:ShowScreenAreaPreview(anchor, column.kind, area, incoming)
+            else SpawnMotionPreviewFrame(anchor, samples[index]) end
             index = index % #samples + 1
             -- Schedule from the actual spawn so delayed timers cannot bunch samples.
             C_Timer.After(stagger, PlaySample)
@@ -1033,294 +1251,10 @@ function BD:ReleaseMotionPreviews()
     BD.Pool.ReleasePreviewFrames()
 end
 
-function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isHeal, spellIcon, hitKind, spellId)
-    if hitKind == "miss" and not self.db.showMisses then
-        return
-    end
-    if self.db.onlyCriticalDamage and not isHeal and hitKind ~= "miss" and not isCrit then
-        return
-    end
-    local plate = BD.GetNamePlateFrame(unit)
-    if not plate then
-        self:DebugPrint("No nameplate for", unit)
-        return
-    end
-
-    local kind = hitKind
-    if not kind then
-        kind = isCrit and "crit" or "hit"
-    end
-
-    local combineKey
-    if self.db.combineHits and kind ~= "miss" and CombinableAmount(amountForThreshold) then
-        combineKey = CombineKey(self, kind, isHeal, spellIcon, spellId)
-        local icon = self.db.combineMode == "target" and self:ResolveOutgoingSpellIcon(spellIcon, spellId) or nil
-        if TryCombine(self, plate, combineKey, amountForThreshold, icon) then
-            return
-        end
-    end
-
-    local preset, numberStyle = GetFrameStyle(self, kind, false, isHeal)
-    local frame = BD.Pool.Acquire()
-    ConfigureFrameCommon(self, frame, preset, isCrit, kind, false, nil, numberStyle)
-
-    frame.anchor = plate
-    frame.anchorRelPoint = "TOP"
-    local baseX, baseY = 0, preset.spawnBaseY or 8
-    if frame.animMode == "impactSlam" then
-        baseX, baseY, frame.anchorRelPoint = GetImpactPlacement(self, frame.impactSpacingScale)
-    end
-    -- Parent UIParent. Host follows the plate while live. Death/reuse freezes
-    -- at last world pin (do not read the plate). anchorGuid only when plaintext;
-    -- Modern secrets: orphan on hide / NAME_PLATE_UNIT_REMOVED (see API.lua).
-    do
-        local guid = UnitGUID(unit)
-        if guid and BD.CanAccessValue(guid) and not BD.IsSecret(guid) then
-            frame.anchorGuid = guid
-        else
-            frame.anchorGuid = nil
-        end
-    end
-    frame:SetParent(UIParent)
-    frame:SetIgnoreParentScale(true)
-    pcall(function()
-        frame:SetIgnoreParentAlpha(true)
-    end)
-    frame:SetFrameStrata("HIGH")
-    frame:SetFrameLevel(100)
-    frame.unitToken = unit
-    BD.Pool.AttachLingerHost(frame, plate)
-
-    if frame.isCrit and frame.critsHold then
-        baseY = frame.spawnCritY or preset.spawnCritY or 8
-    end
-
-    local fontSize = (self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale
-    local fontPath = BD.ResolveFontPath(self.db.fontFace)
-    fontPath = BD.SafeSetFont(frame.text, fontPath, fontSize, preset.fontFlags)
-    if preset.shadowOffset then
-        frame.text:SetShadowOffset(preset.shadowOffset[1], preset.shadowOffset[2])
-        frame.text:SetShadowColor(0, 0, 0, 1)
-    else
-        frame.text:SetShadowOffset(0, 0)
-    end
-    frame.text:SetText(text)
-
-    local resolvedIcon = self:ResolveOutgoingSpellIcon(spellIcon, spellId)
-    local iconSize = math.max(12, math.floor((fontSize * 1.1) + 0.5))
-    local showCritLabel = frame.isCrit and self:GetCritLabelSetting(numberStyle) and true or false
-
-    if isHeal then
-        if self:ShouldUseSchoolColors() then
-            if not r then
-                r, g, b = BD.GetSchoolColor(nil)
-            end
-        else
-            local heal = BD.HEAL_COLOR
-            r, g, b = heal[1], heal[2], heal[3]
-        end
-    elseif self:ShouldUseSchoolColors() then
-        if not r then
-            r, g, b = BD.GetSchoolColor(nil)
-        end
-    else
-        r, g, b = preset.defaultColor[1], preset.defaultColor[2], preset.defaultColor[3]
-    end
-
-    local layoutOpts = {
-        showIcon = resolvedIcon ~= nil,
-        iconSize = iconSize,
-        iconTexture = resolvedIcon,
-        iconPosition = self.db.iconPosition or "left",
-        showCritLabel = showCritLabel,
-        r = r,
-        g = g,
-        b = b,
-    }
-    ApplyTextLayout(frame, fontSize, fontPath, preset.fontFlags, preset, layoutOpts)
-
-    frame.text:SetTextColor(r, g, b, 1)
-
-    local thresholdCurve = self:GetThresholdCurve()
-    if amountForThreshold and self.db.minDamage and self.db.minDamage > 0 and BD.IsSecret(amountForThreshold) and thresholdCurve then
-        local ok = pcall(function()
-            local color = thresholdCurve:Evaluate(amountForThreshold)
-            frame.baseAlpha = select(4, color:GetRGBA())
-        end)
-        if not ok then
-            frame.baseAlpha = 1
-        end
-    end
-
-    if frame.baseAlpha <= 0 then
-        BD.Pool.Release(frame)
-        return
-    end
-
-    if frame.usesClassicShove then
-        frame.amountScale = BD.ComputeClassicAmountScale(amountForThreshold)
-    end
-
-    if combineKey then
-        frame.combineKey = combineKey
-        frame.combineTotal = amountForThreshold
-        frame.combineCount = 1
-        frame.combineLayout = {
-            fontSize = fontSize,
-            fontPath = fontPath,
-            fontFlags = preset.fontFlags,
-            preset = preset,
-            opts = layoutOpts,
-        }
-        if self.db.combineMode == "target" then
-            frame.combineSources = {}
-            if resolvedIcon and not BD.IsSecret(resolvedIcon) then
-                frame.combineSources[resolvedIcon] = amountForThreshold
-                frame.combineTopIcon = resolvedIcon
-            end
-        end
-        local byKey = combineTargets[plate]
-        if not byKey then
-            byKey = {}
-            combineTargets[plate] = byKey
-        end
-        byKey[combineKey] = frame
-    end
-
-    PlaceFrame(frame, plate, baseX, baseY)
-    frame:SetAlpha(frame.baseAlpha)
-    if frame.isCrit then
-        if frame.animMode == "classicPow" then
-            frame:SetScale(frame.critPowStartScale or 1)
-        else
-            frame:SetScale(frame.critPopStartScale or 0.72)
-        end
-    else
-        frame:SetScale(frame.popScale or 1)
-    end
-    frame:Show()
-    -- All visible geometry is ready before the shared Classic layout runs.
-    if frame.usesClassicShove then
-        BD.Pool.RelayoutClassic(plate)
-    end
-    -- Layout exists now. Snapshot before death can hide the plate this frame.
-    BD.Pool.SnapshotLingerHost(frame, true)
-
-    if not isHeal and kind ~= "miss" then
-        local tier = self:PlayOutgoingCritSound(amountForThreshold, frame.isCrit)
-        if combineKey then
-            frame.combineSoundTier = tier
-        end
-    end
-end
-
-function BD:ShowIncoming(text, r, g, b, amountForThreshold, isCrit, hitKind)
-    if hitKind == "miss" and not self.db.showMisses then
-        return
-    end
-    if self.db.onlyCriticalDamage and hitKind ~= "miss" and not isCrit then
-        return
-    end
-    local anchor, relPoint, unitToken = BD.GetIncomingAnchor()
-    if not anchor then
-        return
-    end
-
-    local kind = hitKind
-    if not kind then
-        kind = isCrit and "crit" or "hit"
-    end
-
-    local preset, numberStyle = GetFrameStyle(self, kind, true, false)
-    local frame = BD.Pool.Acquire()
-    ConfigureFrameCommon(self, frame, preset, isCrit, kind, true, nil, numberStyle)
-
-    frame.anchor = anchor
-    frame.anchorRelPoint = relPoint or "CENTER"
-    frame:SetParent(UIParent)
-    frame:SetIgnoreParentScale(true)
-    pcall(function()
-        frame:SetIgnoreParentAlpha(true)
-    end)
-    frame:SetFrameStrata("HIGH")
-    frame:SetFrameLevel(120)
-    frame.unitToken = unitToken
-
-    local ox = self.db.incomingOffsetX or self.DEFAULTS.incomingOffsetX or 0
-    local oy = self.db.incomingOffsetY or self.DEFAULTS.incomingOffsetY or -100
-    -- On personal nameplate, keep spawn tight; offsets alone place the cluster.
-    -- On UIParent, offsets are the whole placement (default center + Y -100).
-    local baseY = 0
-    if frame.isCrit and frame.critsHold then
-        baseY = (frame.spawnCritY or -8) * 0.15
-    end
-    local spawnY = oy + baseY
-
-    local fontSize = (self.db.incomingFontSize or self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale
-    local fontPath = BD.ResolveFontPath(self.db.incomingFontFace or self.db.fontFace)
-    fontPath = BD.SafeSetFont(frame.text, fontPath, fontSize, preset.fontFlags)
-    if preset.shadowOffset then
-        frame.text:SetShadowOffset(preset.shadowOffset[1], preset.shadowOffset[2])
-        frame.text:SetShadowColor(0, 0, 0, 1)
-    else
-        frame.text:SetShadowOffset(0, 0)
-    end
-    frame.text:SetText(text)
-
-    local color = BD.INCOMING_COLOR
-    local textR = r or color[1]
-    local textG = g or color[2]
-    local textB = b or color[3]
-    local showCritLabel = frame.isCrit and self:GetCritLabelSetting(numberStyle) and true or false
-
-    ApplyTextLayout(frame, fontSize, fontPath, preset.fontFlags, preset, {
-        showCritLabel = showCritLabel,
-        r = textR,
-        g = textG,
-        b = textB,
-    })
-
-    frame.text:SetTextColor(textR, textG, textB, 1)
-
-    local thresholdCurve = self:GetThresholdCurve()
-    if amountForThreshold and self.db.minDamage and self.db.minDamage > 0 and BD.IsSecret(amountForThreshold) and thresholdCurve then
-        local ok = pcall(function()
-            local colorCurve = thresholdCurve:Evaluate(amountForThreshold)
-            frame.baseAlpha = select(4, colorCurve:GetRGBA())
-        end)
-        if not ok then
-            frame.baseAlpha = 1
-        end
-    end
-
-    if frame.baseAlpha <= 0 then
-        BD.Pool.Release(frame)
-        return
-    end
-
-    if frame.usesClassicShove then
-        frame.amountScale = BD.ComputeClassicAmountScale(amountForThreshold)
-    end
-
-    PlaceFrame(frame, anchor, ox, spawnY)
-    frame:SetAlpha(frame.baseAlpha)
-    if frame.isCrit then
-        if frame.animMode == "classicPow" then
-            frame:SetScale(frame.critPowStartScale or 1)
-        else
-            frame:SetScale(frame.critPopStartScale or 0.72)
-        end
-    else
-        frame:SetScale(frame.popScale or 1)
-    end
-    frame:Show()
-    if frame.usesClassicShove then
-        BD.Pool.RelayoutClassic(anchor)
-    end
-end
-
 function BD:ShowTestNumbers()
-    if not UnitExists("target") then
+    -- Screen areas need no target: the samples scroll in their routed areas.
+    local onScreen = BD.Layout.IsScreen()
+    if not onScreen and not UnitExists("target") then
         print("|cff66ccffPlateSCT:|r", L["Target something to preview test numbers."])
         return
     end
@@ -1335,16 +1269,18 @@ function BD:ShowTestNumbers()
         { miss = true, text = "DODGE", hitKind = "miss" },
         { miss = true, text = "IMMUNE", hitKind = "miss" },
     }
+    local unit = not onScreen and "target" or nil
     for index, sample in ipairs(samples) do
         C_Timer.After((index - 1) * 0.12, function()
             if sample.miss then
-                self:ShowOnNameplate("target", sample.text, 1, 0.85, 0.2, nil, false, false, nil, "miss")
+                self:ShowOutgoing(unit, "test", sample.text, 1, 0.85, 0.2, nil, false, false, nil, "miss")
                 return
             end
             local display = BD.FormatAmount(sample.amount, self.db.abbreviate)
             local r, g, b = 1, 0.92, 0.35
             local spellIcon = self.db.showSpellIcon and BD.GetSpellIconTexture(sample.spellID) or nil
-            self:ShowOnNameplate("target", display, r, g, b, sample.amount, sample.crit, false, spellIcon, sample.hitKind, sample.spellID)
+            self:ShowOutgoing(unit, "test", display, r, g, b, sample.amount, sample.crit, false, spellIcon,
+                sample.hitKind, sample.spellID)
         end)
     end
 

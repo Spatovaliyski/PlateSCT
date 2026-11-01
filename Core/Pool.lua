@@ -157,6 +157,17 @@ local function ComputeMotion(frame)
 
     local scale, introDuration = ComputeIntroScale(frame)
     scale = scale * (frame.amountScale or 1)
+
+    if frame.areaRuntime then
+        -- Screen areas: held crits stay at the area's center; the rest follow its path.
+        local dx, dy = 0, 0
+        if not (frame.isCrit and frame.critsHold) then
+            dx, dy = Anim.ComputeAreaPath(motionProgress, frame.areaTravel, frame.areaCurve)
+        end
+        return (frame.startX or 0) + dx, (frame.startY or 0) + dy + (frame.areaStack or 0), scale,
+            Anim.ComputeAlpha(frame, progress)
+    end
+
     local extraY = 0
     local motionStyle = frame.motionStyle or "platesct"
     local useExtraPath = BD.IsExtraMotionPath(motionStyle)
@@ -485,9 +496,20 @@ local function ReleaseFrame(frame)
     end
     frame.isPreview = nil
     frame.previewSpeed = nil
+    frame.previewOwner = nil
     frame.anchor = nil
     frame.unitToken = nil
     frame.incoming = nil
+    frame.staticAnchor = nil
+    frame.capPlate = nil
+    frame.fixedSpawn = nil
+    frame.areaRuntime = nil
+    frame.areaTravel = nil
+    frame.areaCurve = nil
+    frame.areaStack = nil
+    frame.areaLine = nil
+    frame.areaBounds = nil
+    frame.areaSpacing = nil
     frame.motionStyle = nil
     frame.animMode = nil
     frame.numberStyle = nil
@@ -511,6 +533,7 @@ local function ReleaseFrame(frame)
     frame.lingerWorldY = nil
     frame.anchorGuid = nil
     frame.combineKey = nil
+    frame.combineOwner = nil
     frame.combineTotal = nil
     frame.combineCount = nil
     frame.combineLayout = nil
@@ -560,7 +583,7 @@ local function GetClassicLayoutScale(frame)
 end
 
 local function ClassicOrigin(frame)
-    if frame.isPreview or frame.incoming then
+    if frame.isPreview or frame.staticAnchor then
         return nil, nil, 1
     end
     -- Measure our host, never the nameplate. Remove the frame's animation
@@ -588,13 +611,13 @@ local function BuildClassicEntries(frames)
     local entries, localAnchors = {}, {}
     for _, frame in ipairs(frames) do
         local ox, oy, factor = ClassicOrigin(frame)
-        if not ox and frame.anchor and not frame.isPreview and not frame.incoming then
+        if not ox and frame.anchor and not frame.isPreview and not frame.staticAnchor then
             localAnchors[frame.anchor] = true
         end
         entries[#entries + 1] = {
             frame = frame, ox = ox, oy = oy, factor = factor,
             order = frame.spawnOrder, anchor = frame.anchor,
-            preview = frame.isPreview, incoming = frame.incoming,
+            preview = frame.isPreview, static = frame.staticAnchor,
             frozen = frame.lingerFrozen, shove = IsClassicShoveFrame(frame),
         }
     end
@@ -618,7 +641,7 @@ end
 local function ClassicSpace(obstacles, entry, create)
     local frame = entry.frame
     local domain = frame.isPreview and obstacles.preview
-        or (frame.incoming and obstacles.incoming or obstacles.outgoing)
+        or (frame.staticAnchor and obstacles.static or obstacles.outgoing)
     local key = entry.ox and classicWorldSpace or frame.anchor or frame
     local space = domain[key]
     if not space and create then
@@ -650,7 +673,7 @@ local function AddClassicObstacle(obstacles, entry)
 end
 
 local function ClassicObstacles(entries)
-    local obstacles = { preview = {}, incoming = {}, outgoing = {}, query = 0 }
+    local obstacles = { preview = {}, static = {}, outgoing = {}, query = 0 }
     for _, entry in ipairs(entries or {}) do
         AddClassicObstacle(obstacles, entry)
     end
@@ -735,7 +758,7 @@ local function ClassicLayoutUnchanged(entries)
     for _, entry in ipairs(entries) do
         local old = lastClassicLayout[entry.frame]
         if not old or old.order ~= entry.order or old.anchor ~= entry.anchor
-            or old.preview ~= entry.preview or old.incoming ~= entry.incoming
+            or old.preview ~= entry.preview or old.static ~= entry.static
             or old.frozen ~= entry.frozen or old.shove ~= entry.shove
             or old.ox ~= entry.ox or old.oy ~= entry.oy or old.factor ~= entry.factor
             or old.left ~= entry.left or old.right ~= entry.right
@@ -755,7 +778,7 @@ local function LayoutClassicFrames(frames, useCache)
     end
     table.sort(entries, NewestClassicFirst)
     local obstacles, crits = ClassicObstacles(), {}
-    local domains = { preview = {}, incoming = {}, outgoing = {} }
+    local domains = { preview = {}, static = {}, outgoing = {} }
     for _, entry in ipairs(entries) do
         if IsClassicShoveFrame(entry.frame) and not entry.frame.lingerFrozen then
             crits[#crits + 1] = entry
@@ -766,7 +789,7 @@ local function LayoutClassicFrames(frames, useCache)
     for _, entry in ipairs(crits) do
         local frame = entry.frame
         local clusters = frame.isPreview and domains.preview
-            or (frame.incoming and domains.incoming or domains.outgoing)
+            or (frame.staticAnchor and domains.static or domains.outgoing)
         local cluster = clusters[frame.anchor]
         local x = (entry.ox or 0) + (frame.classicBaseX or 0) * entry.factor
         local y = (entry.oy or 0) + (frame.classicBaseY or 0) * entry.factor
@@ -942,14 +965,14 @@ local function SpawnSlotBlocked(frame, anchor, cx, cy, minDistSq, acrossAnchors)
     return false
 end
 
-local function GetImpactStackSpacing(bottom, top)
-    return math.max(IMPACT_STACK_OFFSET, top - bottom + 4)
+local function GetImpactStackSpacing(bottom, top, spacing)
+    return math.max(spacing and 0 or IMPACT_STACK_OFFSET, top - bottom + (spacing or 4))
 end
 
 local function PushImpactFrames(anchor, frame, spawnY)
     frame.impactPushTo = 0
     local frames = {}
-    local push = IMPACT_STACK_OFFSET
+    local push = frame.areaSpacing and 0 or IMPACT_STACK_OFFSET
     for other in pairs(active) do
         if other ~= frame and other.animMode == "impactSlam" and other.impactPushTo ~= nil
             and other.anchor == anchor and other.anchorRelPoint == frame.anchorRelPoint
@@ -957,7 +980,7 @@ local function PushImpactFrames(anchor, frame, spawnY)
             and other.elapsed < other.duration then
             frames[#frames + 1] = other
             push = math.max(push, GetImpactStackSpacing(other.startY + other.impactBottom + other.impactPushTo,
-                spawnY + frame.impactTop))
+                spawnY + frame.impactTop, frame.areaSpacing))
         end
     end
     -- Move the existing stack together so a larger new hit preserves older gaps.
@@ -1020,7 +1043,7 @@ local function ApplyFrameMotion(frame)
             frame.combinePulseAt = nil
         end
     end
-    if frame.classicReady or frame.animMode == "impactSlam" then
+    if frame.classicReady or frame.animMode == "impactSlam" or frame.areaRuntime then
         -- Keep placement in logical pixels while text size changes.
         frame:SetScale(scale)
         x, y = x / scale, y / scale
@@ -1063,7 +1086,7 @@ local function FrameOnUpdate(frame, elapsed)
             ReleaseFrame(frame)
             return
         end
-    elseif not frame.incoming and not frame.lingerFrozen then
+    elseif not frame.staticAnchor and not frame.lingerFrozen then
         -- Death / hide / reuse: freeze at last world pin so the number cannot
         -- ride a recycled plate. GUID check before rebind.
         if AnchorGuidChanged(frame) or not frame.anchor or not AnchorIsShown(frame.anchor) then
@@ -1084,7 +1107,7 @@ local function FrameOnUpdate(frame, elapsed)
     -- layout pass, so it is read every SNAPSHOT_INTERVAL (and fresh when the plate is removed).
     local t1 = clock and clock()
     local now = GetTime()
-    if not frame.incoming and not frame.isPreview and not frame.lingerFrozen
+    if not frame.staticAnchor and not frame.isPreview and not frame.lingerFrozen
         and (not frame.snapshotAt or now - frame.snapshotAt >= BD.SNAPSHOT_INTERVAL) then
         frame.snapshotAt = now
         SnapshotLingerHost(frame, true)
@@ -1155,7 +1178,7 @@ end
 
 local function ReleasePreviewFrames(anchor)
     for frame in pairs(active) do
-        if frame.isPreview and (not anchor or frame.anchor == anchor) then
+        if frame.isPreview and (not anchor or frame.anchor == anchor or frame.previewOwner == anchor) then
             ReleaseFrame(frame)
         end
     end
@@ -1181,7 +1204,7 @@ BD.Pool = {
 
 function BD:OrphanFramesForUnit(unit)
     for frame in pairs(active) do
-        if not frame.incoming and not frame.isPreview and not frame.lingerFrozen then
+        if not frame.staticAnchor and not frame.isPreview and not frame.lingerFrozen then
             local matches = frame.unitToken == unit
             if not matches then
                 matches = GetPlateUnitToken(frame.anchor) == unit
@@ -1198,7 +1221,7 @@ end
 
 function BD:ReleaseFramesForUnit(unit)
     for frame in pairs(active) do
-        if frame.unitToken == unit and not frame.incoming then
+        if frame.unitToken == unit and not frame.staticAnchor then
             ReleaseFrame(frame)
         end
     end

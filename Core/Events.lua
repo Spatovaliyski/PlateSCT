@@ -14,6 +14,9 @@ function BD:ResetToDefaults()
     end
     -- Onboarding is a first-visit marker, not an appearance preference.
     self.db.welcomeSeen = welcomeSeen
+    -- Screen areas live outside DEFAULTS; reset brings back the two built-in areas only.
+    self.db.screenAreas = nil
+    self:EnsureScreenAreas()
     self:RefreshSettings()
 end
 
@@ -32,6 +35,9 @@ function BD:RefreshSettings()
     if BD.API.IsModern() and self.ClearAttributionState then
         self:ClearAttributionState()
     end
+    if self.RefreshScreenAreas then
+        self:RefreshScreenAreas()
+    end
     if self.RebuildOptionsPanel then
         self:RebuildOptionsPanel()
     elseif self.optionsPanel and self.optionsPanel.Refresh then
@@ -43,6 +49,7 @@ function BD:RefreshSettings()
 end
 
 local function ApplyLayoutMigrations()
+    local previousRevision = BD.db.layoutRevision or 1
     if (BD.db.layoutRevision or 1) < 2 then
         BD.db.fontSize = BD.DEFAULTS.fontSize
         BD.db.floatDistance = BD.DEFAULTS.floatDistance
@@ -128,6 +135,30 @@ local function ApplyLayoutMigrations()
         BD.db.incomingFontSize = BD.db.fontSize
         BD.db.layoutRevision = 14
     end
+    if (BD.db.layoutRevision or 1) < 15 then
+        -- Incoming numbers moved from fixed offsets into the Incoming screen area.
+        BD:EnsureScreenAreas()
+        BD.PlaceIncomingAreaAtOffsets(BD.FindScreenArea(BD.db, "incoming"),
+            tonumber(BD.db.incomingOffsetX) or 0, tonumber(BD.db.incomingOffsetY) or -100)
+        BD.db.incomingOffsetX, BD.db.incomingOffsetY = nil, nil
+        BD.db.layoutRevision = 15
+    end
+    if (BD.db.layoutRevision or 1) < 16 then
+        for _, area in ipairs(type(BD.db.screenAreas) == "table" and BD.db.screenAreas or {}) do
+            if type(area) == "table" then
+                -- Earlier migrations can seed areas and change incoming geometry first.
+                if previousRevision < 15 then area.animation, area.duration = nil, nil end
+                BD.UpgradeScreenAreaMotion(area, BD.db)
+            end
+        end
+        BD.db.layoutRevision = 16
+    end
+    if (BD.db.layoutRevision or 1) < 17 then
+        BD.db.fontSize = math.max(BD.MIN_FONT_SIZE, tonumber(BD.db.fontSize) or BD.DEFAULTS.fontSize)
+        BD.db.incomingFontSize = math.max(BD.MIN_FONT_SIZE, tonumber(BD.db.incomingFontSize) or BD.DEFAULTS.incomingFontSize)
+        BD.db.layoutRevision = 17
+    end
+    BD:EnsureScreenAreas()
     if BD.API.IsModern() and BD.db.onlyMyDamage then
         BD.db.allNameplates = false
     end

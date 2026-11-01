@@ -17,6 +17,7 @@ local CONTROL_PLAYER = COMBATLOG_OBJECT_CONTROL_PLAYER or 0x00000100
 local TYPE_NPC = COMBATLOG_OBJECT_TYPE_NPC or 0x00000800
 local TYPE_PET = COMBATLOG_OBJECT_TYPE_PET or 0x00001000
 local TYPE_GUARDIAN = COMBATLOG_OBJECT_TYPE_GUARDIAN or 0x00002000
+local REACTION_FRIENDLY = COMBATLOG_OBJECT_REACTION_FRIENDLY or 0x00000010
 local PET_SOURCE_MASK = 0x1111
 
 local SWING_SUBEVENTS = {
@@ -274,8 +275,23 @@ local function IconForOutgoing(sourceGUID, spellId)
     return spellId, nil
 end
 
-local function ShowOutgoingOnPlate(unit, text, amount, isCrit, school, spellId, hitKind, spellIcon, isHeal)
-    if isHeal then
+-- Without a plate (screen mode only), the combat log flags stand in for the unit checks:
+-- damage needs a destination that is not friendly; heals already skip the player.
+local function PlatelessDestinationAllowed(destFlags, isHeal)
+    if BD.Layout.OutgoingSource() ~= "any" then
+        return false
+    end
+    return isHeal or bit.band(NormalizeFlags(destFlags), REACTION_FRIENDLY) == 0
+end
+
+-- unit is the destination's nameplate token, or nil when it has no plate.
+local function ShowOutgoingNumber(unit, destGUID, destFlags, text, amount, isCrit, school, spellId, hitKind,
+    spellIcon, isHeal)
+    if not unit then
+        if not PlatelessDestinationAllowed(destFlags, isHeal) then
+            return
+        end
+    elseif isHeal then
         if not BD:ShouldShowOutgoingHeal(unit) then
             return
         end
@@ -298,10 +314,10 @@ local function ShowOutgoingOnPlate(unit, text, amount, isCrit, school, spellId, 
     end
 
     -- Classic: spellId from CLEU; pet melee uses the pet icon, not auto-attack.
-    BD:ShowOnNameplate(unit, text, r, g, b, amount, isCrit, isHeal and true or false, spellIcon, hitKind, spellId)
+    BD:ShowOutgoing(unit, destGUID, text, r, g, b, amount, isCrit, isHeal and true or false, spellIcon, hitKind, spellId)
 end
 
-local function HandleHeal(sourceGUID, sourceFlags, destGUID, spellId, spellSchool, amount, critical)
+local function HandleHeal(sourceGUID, sourceFlags, destGUID, destFlags, spellId, spellSchool, amount, critical)
     if not BD.db.showHealing then
         return
     end
@@ -313,15 +329,13 @@ local function HandleHeal(sourceGUID, sourceFlags, destGUID, spellId, spellSchoo
     end
 
     local unit = GetNameplateTokenForGUID(destGUID)
-    if not unit then
-        return
-    end
-
     local display = BD.FormatAmount(amount, BD.db.abbreviate)
     local outSpellId, outIcon = IconForOutgoing(sourceGUID, spellId)
     local isCrit = critical and true or false
-    ShowOutgoingOnPlate(
+    ShowOutgoingNumber(
         unit,
+        destGUID,
+        destFlags,
         display,
         amount,
         isCrit,
@@ -340,7 +354,7 @@ local function HandleSummon(sourceGUID, destGUID)
     end
 end
 
-local function HandleSwing(subEvent, sourceGUID, sourceFlags, destGUID, amount, overkill, school, resisted, blocked, absorbed, critical)
+local function HandleSwing(subEvent, sourceGUID, sourceFlags, destGUID, destFlags, amount, overkill, school, resisted, blocked, absorbed, critical)
     if not IsAllowedSource(sourceGUID, sourceFlags) then
         return
     end
@@ -355,23 +369,20 @@ local function HandleSwing(subEvent, sourceGUID, sourceFlags, destGUID, amount, 
     end
 
     local unit = GetNameplateTokenForGUID(destGUID)
-    if not unit then
-        return
-    end
-
     if subEvent == "SWING_MISSED" then
         local display = MISS_DISPLAY[amount] or amount or "MISS"
         local missSpellId, missIcon = IconForOutgoing(sourceGUID, nil)
-        ShowOutgoingOnPlate(unit, display, nil, false, school, missSpellId, "miss", missIcon)
+        ShowOutgoingNumber(unit, destGUID, destFlags, display, nil, false, school, missSpellId, "miss", missIcon)
         return
     end
 
     local display = BD.FormatAmount(amount, BD.db.abbreviate)
     local swingSpellId, swingIcon = IconForOutgoing(sourceGUID, BD.AUTO_ATTACK_SPELL_ID)
-    ShowOutgoingOnPlate(unit, display, amount, critical, school, swingSpellId, critical and "crit" or "hit", swingIcon)
+    ShowOutgoingNumber(unit, destGUID, destFlags, display, amount, critical, school, swingSpellId,
+        critical and "crit" or "hit", swingIcon)
 end
 
-local function HandleSpell(subEvent, sourceGUID, sourceFlags, destGUID, spellId, spellName, spellSchool, amount, overkill, school, resisted, blocked, absorbed, critical, glancing, crushing, isOffHand, missType)
+local function HandleSpell(subEvent, sourceGUID, sourceFlags, destGUID, destFlags, spellId, spellName, spellSchool, amount, overkill, school, resisted, blocked, absorbed, critical, glancing, crushing, isOffHand, missType)
     if not IsAllowedSource(sourceGUID, sourceFlags) then
         return
     end
@@ -386,20 +397,17 @@ local function HandleSpell(subEvent, sourceGUID, sourceFlags, destGUID, spellId,
     end
 
     local unit = GetNameplateTokenForGUID(destGUID)
-    if not unit then
-        return
-    end
-
     if subEvent == "SPELL_MISSED" or subEvent == "RANGE_MISSED" then
         local display = MISS_DISPLAY[missType] or missType or "MISS"
         local missSpellId, missIcon = IconForOutgoing(sourceGUID, spellId)
-        ShowOutgoingOnPlate(unit, display, nil, false, spellSchool, missSpellId, "miss", missIcon)
+        ShowOutgoingNumber(unit, destGUID, destFlags, display, nil, false, spellSchool, missSpellId, "miss", missIcon)
         return
     end
 
     local display = BD.FormatAmount(amount, BD.db.abbreviate)
     local outSpellId, outIcon = IconForOutgoing(sourceGUID, spellId)
-    ShowOutgoingOnPlate(unit, display, amount, critical, school or spellSchool, outSpellId, critical and "crit" or "hit", outIcon)
+    ShowOutgoingNumber(unit, destGUID, destFlags, display, amount, critical, school or spellSchool, outSpellId,
+        critical and "crit" or "hit", outIcon)
 end
 
 function BD:HandleClassicCombatLog()
@@ -425,7 +433,8 @@ function BD:HandleClassicCombatLog()
     end
 
     if SWING_SUBEVENTS[subEvent] then
-        HandleSwing(subEvent, sourceGUID, sourceFlags, destGUID, arg12, arg13, arg14, arg15, arg16, arg17, arg18)
+        HandleSwing(subEvent, sourceGUID, sourceFlags, destGUID, destFlags, arg12, arg13, arg14, arg15, arg16, arg17,
+            arg18)
         return
     end
 
@@ -435,6 +444,7 @@ function BD:HandleClassicCombatLog()
             sourceGUID,
             sourceFlags,
             destGUID,
+            destFlags,
             arg12,
             arg13,
             arg14,
@@ -454,7 +464,7 @@ function BD:HandleClassicCombatLog()
 
     -- SPELL_HEAL / SPELL_PERIODIC_HEAL: amount, overhealing, absorbed, critical
     if HEAL_SUBEVENTS[subEvent] then
-        HandleHeal(sourceGUID, sourceFlags, destGUID, arg12, arg14, arg15, arg18)
+        HandleHeal(sourceGUID, sourceFlags, destGUID, destFlags, arg12, arg14, arg15, arg18)
     end
 end
 

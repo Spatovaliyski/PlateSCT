@@ -94,6 +94,7 @@ function BD.GetFontFaceOptions()
 end
 
 function BD.SafeSetFont(fontString, path, size, flags)
+    size = math.max(BD.MIN_FONT_SIZE, tonumber(size) or BD.MIN_FONT_SIZE)
     if not fontString then
         return BD.GetDefaultFontPath()
     end
@@ -646,29 +647,6 @@ function BD.IsExtraMotionPath(motionStyle)
         or motionStyle == "verticalDown"
 end
 
-function BD.GetIncomingAnchor()
-    local plate = BD.GetNamePlateFrame("player")
-    if plate then
-        return plate, "CENTER", "player"
-    end
-
-    -- Some clients expose the personal plate as nameplateN rather than unit "player".
-    if C_NamePlate and C_NamePlate.GetNamePlates then
-        local ok, plates = pcall(C_NamePlate.GetNamePlates)
-        if ok and plates then
-            for _, candidate in ipairs(plates) do
-                local token = candidate.namePlateUnitToken
-                if token and BD.UnitsMatch(token, "player") then
-                    return candidate, "CENTER", "player"
-                end
-            end
-        end
-    end
-
-    -- No personal nameplate: screen-center on UIParent (not PlayerFrame).
-    return UIParent, "CENTER", "player"
-end
-
 function BD.GetNamePlateFrame(unit)
     if not unit or not C_NamePlate or not C_NamePlate.GetNamePlateForUnit then
         return nil
@@ -745,11 +723,9 @@ function BD:IsNameplateInConfiguredScope(unit, allowFriendly)
     return true
 end
 
+-- The unit must carry outgoing numbers in this layout (BD.OutgoingUnitKey), then be in scope.
 function BD:ShouldShowOutgoingHit(unit)
-    if not BD.IsNameplateUnit(unit) then
-        return false
-    end
-    if not BD.GetNamePlateFrame(unit) then
+    if not BD.OutgoingUnitKey(unit) then
         return false
     end
     if not BD.UnitLooksHostile(unit) then
@@ -762,10 +738,7 @@ function BD:ShouldShowOutgoingHit(unit)
 end
 
 function BD:ShouldShowOutgoingHeal(unit)
-    if not BD.IsNameplateUnit(unit) then
-        return false
-    end
-    if not BD.GetNamePlateFrame(unit) then
+    if not BD.OutgoingUnitKey(unit) then
         return false
     end
     if BD.UnitsMatch(unit, "player") then

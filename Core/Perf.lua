@@ -74,7 +74,7 @@ function BD:TogglePerf()
     if perfOn then
         perfOn = false
         if originalShow then
-            BD.ShowOnNameplate, originalShow = originalShow, nil
+            BD.ShowOutgoing, originalShow = originalShow, nil
         end
         if originalCombat then
             BD.HandleUnitCombat, originalCombat = originalCombat, nil
@@ -83,8 +83,8 @@ function BD:TogglePerf()
         print("|cff66ccffPlateSCT perf:|r off")
         return
     end
-    originalShow = BD.ShowOnNameplate
-    BD.ShowOnNameplate = function(...)
+    originalShow = BD.ShowOutgoing
+    BD.ShowOutgoing = function(...)
         requests = requests + 1
         return originalShow(...)
     end

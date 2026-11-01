@@ -1,4 +1,4 @@
-local _, BD = ...
+local ADDON_NAME, BD = ...
 local L = BD.L
 local W = BD.OptionsWidgets
 
@@ -53,40 +53,27 @@ local function RefreshScenario()
     end
 end
 
-local function EnemyNameplatesEnabled()
-    local reader = (C_CVar and (C_CVar.GetCVarBool or C_CVar.GetCVar)) or GetCVarBool or GetCVar
-    if not reader then
-        return true
-    end
-    local ok, enabled = pcall(reader, "nameplateShowEnemies")
-    return not ok or enabled == nil or (enabled ~= false and enabled ~= "0" and enabled ~= 0)
+local function ScreenMode()
+    return BD.Layout.IsScreen()
 end
+
+-- Settings that only the current layout uses are hidden in the other one.
+local function Supports(feature)
+    return function() return BD.Layout.Supports(feature) end
+end
+
+local function NeedsEnemyNameplates()
+    return BD.Layout.NeedsEnemyNameplates()
+end
+
+local function EnemyNameplatesEnabled()
+    return BD.Layout.EnemyNameplatesShown()
+end
+
+local BuildPreferences
 
 local function BuildCombat(parent, root)
     local layout = NewLayout(parent, root, "combat")
-    layout:Heading(L["Combat text"])
-    layout:Checkbox("enabled", L["Enable PlateSCT"], L["Show floating damage numbers on nameplates."])
-    layout:Checkbox("hideBlizzardFCT", L["Hide Blizzard floating combat text"],
-        L["Turns off default in-world damage numbers."], nil, function(checked)
-            if checked then
-                BD:ApplyBlizzardFCTSetting()
-            else
-                BD:RestoreBlizzardFCTSetting()
-            end
-        end)
-    layout:Checkbox("showMinimapButton", L["Show minimap button"],
-        L["Show the PlateSCT icon on the minimap. Click it to open settings."], nil, function()
-            BD:RefreshMinimapButton()
-        end)
-
-    layout:When(EnemyNameplatesEnabled, function()
-        local nameplateNote = layout:Note(L["PlateSCT needs enemy nameplates. Press V (default) or enable them in the game's nameplate settings."])
-        nameplateNote:SetTextColor(0.65, 0.61, 0.53)
-    end)
-    layout:When(function() return not EnemyNameplatesEnabled() end, function()
-        layout:Warning(L["Enemy nameplates are off, so PlateSCT cannot show any numbers. Press V (default) or enable them in the game's nameplate settings."])
-    end)
-
     layout:Heading(L["Display settings"])
     layout:Checkbox("onlyCriticalDamage", L["Show only critical damage"],
         L["Hide non-critical outgoing and incoming damage. Healing and miss text are unaffected."])
@@ -96,12 +83,15 @@ local function BuildCombat(parent, root)
         layout:When(function() return BD.db.onlyMyDamage and BD.db.showMisses end, function()
             layout:Warning(L["Personal mode can't tell whose attack missed, so misses, dodges, and parries from your attacks are hidden. Misses against you still show when Show incoming hits is on."])
         end)
-    else
-        layout:Note(L["Shows your damage on hostile nameplates. Source is read from the combat log."])
+    end
+
+    layout:Heading(L["Outgoing"])
+    if not IsModernAPI() then
+        layout:Note(L["Shows your outgoing damage. Source is read from the combat log."])
     end
     layout:Checkbox("includePetDamage", L["Include pet damage"],
         IsModernAPI() and L["In Only my damage mode, also treat a recent pet cast as your hit."]
-            or L["Also show damage from your pet and guardians on nameplates."],
+            or L["Also show damage from your pet and guardians."],
         PersonalModeAvailable, nil,
         L["Choose Personal - experimental under Modern API → Damage mode to use pet matching."])
     if IsModernAPI() then
@@ -110,35 +100,26 @@ local function BuildCombat(parent, root)
         end)
     end
 
+    layout:Heading(L["Incoming hits"])
+    layout:Checkbox("showIncoming", L["Show incoming hits"], L["Incoming hits use screen areas in either layout."])
+
     layout:Heading(L["Healing"])
     layout:Checkbox("showHealing", L["Show healing"],
-        L["Show your outgoing heals on the recipient's nameplate. Friendly nameplates must be enabled in the game."])
-    layout:Note(L["Uses the same size, motion, duration, icons, and threshold as damage. Skips heals on you."])
+        L["Show your outgoing heals using the selected layout. Heals on you are skipped. Nameplate events require friendly nameplates."])
+    layout:Note(L["Screen healing follows its destination area's motion. Fonts, icons, and filters are shared with damage."])
 
-    layout:Heading(L["Incoming"])
-    layout:Checkbox("showIncoming", L["Show incoming hits"],
-        L["Show damage you take near your character. Independent of the outgoing damage mode."])
-    layout:Note(L["Uses your personal nameplate when available; otherwise floats near screen center."])
-    local incomingEnabled = function() return BD.db.showIncoming end
-    local incomingReason = L["Enable Show incoming hits to adjust its position."]
-    layout:Slider("incomingOffsetX", L["Incoming X"], -200, 200, 2, PixelValue,
-        incomingEnabled, nil, incomingReason)
-    layout:Slider("incomingOffsetY", L["Incoming Y"], -200, 200, 2, PixelValue,
-        incomingEnabled, nil, incomingReason)
-
-    -- Everything that limits how many numbers appear lives under one heading.
     layout:Heading(L["Reduce clutter"])
     layout:Input("minDamage", L["Minimum damage threshold"],
         L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be displayed."], function()
             BD:RebuildThresholdCurve()
         end)
-    layout:Note(L["Hits below this amount are hidden. Type 50k or 2m. Set to 0 to show everything."])
     if IsModernAPI() then
         layout:Note(L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."])
     end
 
+    layout:Heading(L["Combine hits"])
     layout:Checkbox("combineHits", L["Combine rapid hits"],
-        L["Add hits that land in quick succession on the same nameplate into one number instead of stacking many."])
+        L["Combine rapid hits against the same enemy into one number."])
     layout:When(function() return BD.db.combineHits end, function()
         layout:Slider("combineWindow", L["Combine window"], 0.1, 1, 0.05,
             function(value) return string.format(L["%.2fs"], value) end)
@@ -161,31 +142,42 @@ local function BuildAppearance(parent, root)
     layout:Choice("fontFace", L["Font"], BD.GetFontFaceOptions(),
         L["Game fonts, plus SharedMedia fonts when that library is loaded by another addon."])
     layout:Note(L["Hover over a font to preview 12345."])
-    layout:Note(L["Only fonts inside the WoW folder can load. SharedMedia fonts appear when another addon provides them."])
-    layout:Slider("fontSize", L["Font size"], 10, 48, 1, tostring)
-    layout:Heading(L["Incoming font"])
-    layout:Choice("incomingFontFace", L["Font"], BD.GetFontFaceOptions(),
-        L["Game fonts, plus SharedMedia fonts when that library is loaded by another addon."])
-    layout:Slider("incomingFontSize", L["Font size"], 10, 48, 1, tostring)
+    layout:Slider("fontSize", L["Font size"], BD.MIN_FONT_SIZE, 48, 1, tostring)
+    layout:When(function() return BD.db.showIncoming end, function()
+        layout:Heading(L["Incoming font"])
+        layout:Choice("incomingFontFace", L["Font"], BD.GetFontFaceOptions(),
+            L["Game fonts, plus SharedMedia fonts when that library is loaded by another addon."])
+        layout:Slider("incomingFontSize", L["Font size"], BD.MIN_FONT_SIZE, 48, 1, tostring)
+    end)
     layout:Heading(L["Text style"])
     layout:Checkbox("useSchoolColors", L["Color by damage school"],
         L["Tint numbers by school (fire orange, frost blue, and so on). Off keeps the default yellow."])
-    layout:Checkbox({
-        id = "showCritLabel",
-        get = function() return BD:GetCritLabelSetting() end,
-        set = function(value)
-            local _, key = BD:GetCritLabelSetting()
-            BD.db[key] = value
-        end,
-    }, L["Show CRITICAL"],
-        L["Show CRITICAL on critical hits. Impact saves its own choice, enabled by default."])
+    layout:Heading(L["Critical text"])
+    layout:Checkbox("showCritLabel", L["Show CRITICAL: scrolling styles"],
+        L["Applies to non-Impact numbers in both layouts."])
+    layout:Checkbox("showImpactCritLabel", L["Show CRITICAL: Impact"],
+        L["Applies to Impact numbers in both layouts."])
 
     layout:Heading(L["Number formatting"])
-    layout:Checkbox("abbreviate", L["Abbreviate numbers"],
-        L["Display large numbers as 214k or 1.2M. Disables thousand separators."])
-    layout:Choice("thousandSeparator", L["Thousand separators"], BD.THOUSAND_SEPARATORS,
-        L["Group digits by thousands."], function() return not BD.db.abbreviate end,
-        nil, L["Unavailable while Abbreviate numbers is on."])
+    local function NumberFormat()
+        if BD.db.abbreviate then return "abbreviated" end
+        return BD.db.thousandSeparator ~= "none" and "separators" or "full"
+    end
+    layout:Choice({ id = "numberFormat", get = NumberFormat, set = function(value)
+        BD.db.abbreviate = value == "abbreviated"
+        if value == "full" then BD.db.thousandSeparator = "none"
+        elseif value == "separators" and BD.db.thousandSeparator == "none" then BD.db.thousandSeparator = "comma" end
+    end }, L["Number format"], {
+        { id = "full", labelKey = "Full numbers" }, { id = "separators", labelKey = "Thousands separators" },
+        { id = "abbreviated", labelKey = "Abbreviated" },
+    })
+    layout:When(function() return NumberFormat() == "separators" end, function()
+        local separators = {}
+        for _, option in ipairs(BD.THOUSAND_SEPARATORS) do
+            if option.id ~= "none" then separators[#separators + 1] = option end
+        end
+        layout:Choice("thousandSeparator", L["Thousand separators"], separators, L["Group digits by thousands."])
+    end)
 
     layout:Heading(L["Spell icons"])
     layout:Checkbox("showSpellIcon", L["Show spell icon"],
@@ -198,52 +190,28 @@ local function BuildAppearance(parent, root)
             layout:Warning(L["Spell icons are a best guess. The game no longer says which spell caused a hit, so PlateSCT uses your latest matching cast and may show the wrong icon."])
         end)
     end
-    layout:Choice("iconPosition", L["Icon position"], BD.ICON_POSITIONS,
-        L["Place the spell icon beside, above, or below the number."], function()
-            return PersonalModeAvailable() and BD.db.showSpellIcon
-        end, nil, L["Enable Show spell icon to choose its position."])
+    layout:When(function() return PersonalModeAvailable() and BD.db.showSpellIcon end, function()
+        layout:Choice("iconPosition", L["Icon position"], BD.ICON_POSITIONS,
+            L["Place the spell icon beside, above, or below the number."], function()
+                return PersonalModeAvailable() and BD.db.showSpellIcon
+            end, nil, L["Enable Show spell icon to choose its position."])
+    end)
     if not IsModernAPI() then
         layout:Note(L["Spell icons use the spell from the combat log."])
     end
     layout:Finish()
 end
 
-local function BuildAnimation(parent, root)
-    local layout = NewLayout(parent, root, "animation")
+local function BuildNameplateAnimation(layout)
     layout:Heading(L["Number style"])
     layout:Choice("numberStyle", L["Number style"], {
         { id = "retail", labelKey = "Modern number style" },
         { id = "classic", labelKey = "Classic number style" },
         { id = "impact", labelKey = "Impact number style" },
-    }, L["All number styles are available on every supported WoW API."])
-    layout:Note(L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the grow-and-settle pow, packed close to the plate."])
-    layout:Note(L["Impact slams outgoing damage beside or above the nameplate, then floats up. New hits layer in front; crits amplify and CRITICAL flashes above when enabled."])
-    layout:Note(L["Impact uses Modern for incoming damage, healing, and miss text, preserving saved Modern motions."])
-
-    layout:Heading(L["Number position"])
-    layout:Slider({
-        id = "numberOffsetX",
-        get = function()
-            local x = BD:GetNumberStyleOffsets()
-            return x
-        end,
-        set = function(value)
-            local _, _, key = BD:GetNumberStyleOffsets()
-            BD.db[key] = value
-        end,
-    }, L["X offset"], -200, 200, 1, PixelValue)
-    layout:Slider({
-        id = "numberOffsetY",
-        get = function()
-            local _, y = BD:GetNumberStyleOffsets()
-            return y
-        end,
-        set = function(value)
-            local _, _, _, key = BD:GetNumberStyleOffsets()
-            BD.db[key] = value
-        end,
-    }, L["Y offset"], -200, 200, 1, PixelValue)
-    layout:Note(L["Offsets are saved separately for each number style. Positive X moves right; positive Y moves up. Incoming uses its own position controls."])
+    }, L["Modern scrolls up from the nameplate with a small crit pop. Classic keeps the grow-and-settle pow, packed close to the plate."]
+        .. "\n\n" .. L["Impact slams outgoing damage beside or above the nameplate, then floats up. New hits layer in front; crits amplify and CRITICAL flashes above when enabled."])
+    layout:Note(L["All number styles are available on every supported WoW API."])
+    layout:Note(L["Impact uses Modern motions for outgoing healing and misses. Incoming has its own area animation."])
 
     layout:Heading(L["Timing and movement"])
     layout:Slider("floatDistance", L["Scroll offset"], 10, 120, 5, PixelValue)
@@ -252,22 +220,112 @@ local function BuildAnimation(parent, root)
     layout:Slider("scrollSpeed", L["Scroll speed"], 0.5, 3, 0.1,
         function(value) return string.format(L["%.1fx"], value) end)
 
-    layout:When(ModernNumberStyle, function()
-        layout:Heading(L["Modern number style motion"])
+    local modernMotion = function() return ModernNumberStyle() and BD.Layout.Supports("motionChoices") end
+    layout:When(modernMotion, function()
+        layout:Heading(L["Motion by outcome"])
         layout:Choice("animHit", L["Normal hits"], BD.ANIM_STYLES,
-            L["Motion used for normal damage numbers."], ModernNumberStyle)
+            L["Motion used for normal damage numbers."], modernMotion)
         layout:Choice("animCrit", L["Critical hits"], BD.ANIM_STYLES_CRIT,
-            L["Motion used for critical hits. Classic Slap uses the Classic grow-and-settle pow."], ModernNumberStyle)
+            L["Motion used for critical hits. Classic Slap uses the Classic grow-and-settle pow."], modernMotion)
         layout:Choice("animMiss", L["Miss / Parry / Dodge"], BD.ANIM_STYLES,
-            L["Motion used for miss, parry, dodge, and similar outcomes."], ModernNumberStyle)
+            L["Motion used for miss, parry, dodge, and similar outcomes."], modernMotion)
     end)
-    layout:When(ImpactNumberStyle, function()
+end
+
+local function BuildNameplatePlacement(layout)
+    layout:When(Supports("styleOffsets"), function()
+        layout:Heading(L["Number position"])
+        layout:Slider({
+            id = "numberOffsetX",
+            get = function()
+                local x = BD:GetNumberStyleOffsets()
+                return x
+            end,
+            set = function(value)
+                local _, _, key = BD:GetNumberStyleOffsets()
+                BD.db[key] = value
+            end,
+        }, L["X offset"], -200, 200, 1, PixelValue, Supports("styleOffsets"))
+        layout:Slider({
+            id = "numberOffsetY",
+            get = function()
+                local _, y = BD:GetNumberStyleOffsets()
+                return y
+            end,
+            set = function(value)
+                local _, _, _, key = BD:GetNumberStyleOffsets()
+                BD.db[key] = value
+            end,
+        }, L["Y offset"], -200, 200, 1, PixelValue, Supports("styleOffsets"))
+        layout:Note(L["Offsets are saved separately for each number style. Positive X moves right; positive Y moves up. Incoming uses its own position controls."])
+    end)
+
+    local impactPlacement = function() return ImpactNumberStyle() and BD.Layout.Supports("impactStyle") end
+    layout:When(impactPlacement, function()
         layout:Heading(L["Impact style position"])
         layout:Choice("impactPosition", L["Damage position"], {
             { id = "side", labelKey = "Side", recommended = true },
             { id = "top", labelKey = "Top" },
-        }, L["Place Impact damage to the right of the nameplate or centered above it."], ImpactNumberStyle)
+        }, L["Place Impact damage to the right of the nameplate or centered above it."], impactPlacement)
     end)
+end
+
+local function BuildAnimation(parent, root)
+    local layout = NewLayout(parent, root, "animation")
+    BD.OptionsAreas.BuildSelector(layout)
+    layout:When(function() return not BD.OptionsAreas.UsesArea() end, function() BuildNameplateAnimation(layout) end)
+    layout:When(BD.OptionsAreas.UsesArea, function() BD.OptionsAreas.BuildMotion(layout) end)
+    layout:Finish()
+end
+
+local function BuildPlacement(parent, root)
+    local layout = NewLayout(parent, root, "placement")
+    BD.OptionsAreas.BuildSelector(layout)
+    layout:When(function() return not BD.OptionsAreas.UsesArea() end, function() BuildNameplatePlacement(layout) end)
+    layout:When(BD.OptionsAreas.UsesArea, function() BD.OptionsAreas.BuildPlacement(layout) end)
+    layout:When(function() return BD.Layout.IsScreen() or BD.db.showIncoming end, function()
+        layout:Heading(L["Routing"])
+        BD.OptionsAreas.BuildRouting(layout)
+    end)
+    layout:Finish()
+end
+
+local MEDIA = "Interface\\AddOns\\" .. ADDON_NAME .. "\\Media\\UI\\"
+
+local function BuildDisplayMode(layout)
+    layout:Heading(L["Display mode"])
+    layout:Note(L["Choose where your outgoing numbers appear. Incoming damage always uses screen areas."])
+    layout:Cards("displayMode", {
+        { id = "nameplates", title = L["Nameplates"], image = MEDIA .. "layout-nameplates.png",
+            body = L["Numbers rise from each enemy's nameplate and follow it. Needs enemy nameplates."] },
+        { id = "screen", title = L["Screen"], image = MEDIA .. "layout-screen.png",
+            body = L["Numbers scroll through areas you place on the screen, like classic combat text addons."] },
+    }, function() BD:RefreshScreenAreas() end)
+    layout:When(function() return NeedsEnemyNameplates() and not EnemyNameplatesEnabled() end, function()
+        layout:Warning(L["Enemy nameplates are off. Press V (default) to enable outgoing hits from nameplates."])
+    end)
+    layout:When(ScreenMode, function()
+        if IsModernAPI() then
+            layout:Warning(L["Midnight and Forever report damage only for enemies with nameplates, plus your target. Keep enemy nameplates on in Screen mode."])
+        else
+            layout:Note(L["Classic API clients read every hit from the combat log, so screen areas work with nameplates off."])
+        end
+        layout:Note(L["Configure placement, motion, and routing under Areas."])
+    end)
+end
+
+local function BuildGeneral(parent, root)
+    local layout = NewLayout(parent, root, "general")
+    layout:Heading(L["General"])
+    layout:Checkbox("enabled", L["Enable PlateSCT"], L["Show combat text using the selected layout."])
+    BuildDisplayMode(layout)
+    layout:Heading(L["Game integration"])
+    layout:Checkbox("hideBlizzardFCT", L["Hide Blizzard floating combat text"],
+        L["Turns off default in-world damage numbers."], nil, function(checked)
+            if checked then BD:ApplyBlizzardFCTSetting() else BD:RestoreBlizzardFCTSetting() end
+        end)
+    layout:Checkbox("showMinimapButton", L["Show minimap button"], nil, nil, function() BD:RefreshMinimapButton() end)
+    BuildPreferences(layout, root)
     layout:Finish()
 end
 
@@ -284,11 +342,14 @@ local function BuildSounds(parent, root)
         L["Play a sound when an outgoing critical hit is above the damage threshold."])
     local critEnabled = function() return BD.db.critSoundEnabled end
     local critReason = L["Enable crit sound to adjust its threshold and channel."]
-    layout:Input("critSoundThreshold", L["Damage threshold"], thresholdTip, nil, critEnabled, critReason)
-    layout:Choice("critSoundChannel", L["Channel"], BD.SOUND_CHANNELS,
-        L["Which game sound channel plays this effect."], critEnabled, nil, critReason)
-    layout:Action("playCrit", L["Play crit sound"], L["Preview this sound effect."], function()
-        BD:PlayCritSoundPreview("crit")
+    layout:When(critEnabled, function()
+        layout:Input("critSoundThreshold", L["Damage threshold"], thresholdTip, nil, critEnabled, critReason)
+        layout:Choice("critSoundChannel", L["Channel"], BD.SOUND_CHANNELS,
+            L["Which game sound channel plays this effect."], critEnabled, nil, critReason)
+        layout:Action("playCrit", L["Play crit sound"], L["Preview this sound effect."], function()
+            BD:PlayCritSoundPreview("crit")
+        end)
+
     end)
 
     layout:Heading(L["Huge crit sound"])
@@ -296,12 +357,15 @@ local function BuildSounds(parent, root)
         L["Play a louder sound when an outgoing critical hit is above the huge damage threshold."])
     local hugeEnabled = function() return BD.db.hugeCritSoundEnabled end
     local hugeReason = L["Enable huge crit sound to adjust its threshold and channel."]
-    layout:Input("hugeCritSoundThreshold", L["Damage threshold"], thresholdTip, nil, hugeEnabled, hugeReason)
-    layout:Choice("hugeCritSoundChannel", L["Channel"], BD.SOUND_CHANNELS,
-        L["Which game sound channel plays this effect."], hugeEnabled, nil, hugeReason)
-    layout:Action("playHugeCrit", L["Play huge crit sound"], L["Preview this sound effect."], function()
-        BD:PlayCritSoundPreview("huge")
+    layout:When(hugeEnabled, function()
+        layout:Input("hugeCritSoundThreshold", L["Damage threshold"], thresholdTip, nil, hugeEnabled, hugeReason)
+        layout:Choice("hugeCritSoundChannel", L["Channel"], BD.SOUND_CHANNELS,
+            L["Which game sound channel plays this effect."], hugeEnabled, nil, hugeReason)
+        layout:Action("playHugeCrit", L["Play huge crit sound"], L["Preview this sound effect."], function()
+            BD:PlayCritSoundPreview("huge")
+        end)
     end)
+
     layout:Finish()
 end
 
@@ -330,7 +394,7 @@ local function StrictnessOptions(recommended)
     for _, id in ipairs({ "loose", "balanced", "strict", "veryStrict" }) do
         local label = L[strictnessKeys[id]]
         if id == recommended then
-            label = label .. " |cffffcc00(" .. L["Recommended"] .. ")|r"
+            label = label .. " |cffa39a8a(" .. L["Recommended"] .. ")|r"
         end
         options[#options + 1] = { id = id, label = label }
     end
@@ -345,16 +409,9 @@ local function BuildModernMode(layout)
         { id = "engaged", labelKey = "Engaged nameplates" },
     }, L["Personal matches recent casts. Current target and Engaged nameplates show damage from all sources."])
     control.searchAliases = { L["Only my damage"], L["All engaged nameplates"] }
-    layout:When(function() return not BD.db.onlyMyDamage end, function()
-        layout:Note(L["Personal - experimental: best-effort matching by destination and timing. Other players' hits on the same target can appear."])
-    end)
     layout:When(function() return BD.db.onlyMyDamage end, function()
-        layout:Warning(L["Personal mode is a best guess. The game no longer says who dealt each hit, so PlateSCT matches hits and heals to your recent casts by target and timing. Other players' hits can appear, and some of yours may not show."])
+        layout:Warning(L["Personal mode estimates ownership from recent casts. Other players' hits may appear, and some of yours may be missed."])
     end)
-    layout:Note(L["Current target: all-source numbers on your target. Engaged nameplates: all-source numbers on engaged enemies."])
-    layout:Heading(L["Attribution limitations"])
-    layout:Note(L["Best effort: matches your casts to nameplates by destination and timing. Dest-matched cleave can show. Other players on the same target can still appear. Mythic+ uses the Dungeon profile."])
-    layout:Note(L["Pet matching and spell icons require Personal mode. Choose their appearance and visibility under Combat and Appearance."])
 end
 
 local function BuildAttribution(layout, root)
@@ -373,46 +430,52 @@ local function BuildAttribution(layout, root)
     layout:Checkbox("attributionAuto", L["Auto-switch by instance"],
         L["Pick Open world, Dungeon, Raid, Battleground, or Arena settings from the zone you are in."],
         nil, RefreshScenario)
-    layout:Choice("attributionManual", L["Manual strictness"], StrictnessOptions(),
-        L["Used when Auto-switch is off."], function() return not BD.db.attributionAuto end,
-        RefreshScenario, L["Turn off Auto-switch by instance to choose manual strictness."])
-    layout:Heading(L["Instance profiles"])
-    local profiles = {
-        { "attributionOpenWorld", "Open world", "Loose: longer windows, more numbers.", "loose" },
-        { "attributionDungeon", "Dungeon", "Balanced: medium windows and cleave hits.", "balanced" },
-        { "attributionRaid", "Raid", "Very Strict: shortest windows, destination required, one hit per cast.", "veryStrict" },
-        { "attributionBattleground", "Battleground", "Strict: short windows, fewer foreign hits.", "strict" },
-        { "attributionArena", "Arena", "Balanced: medium windows and cleave hits.", "balanced" },
-    }
-    for _, profile in ipairs(profiles) do
-        layout:Choice(profile[1], L[profile[2]], StrictnessOptions(profile[4]), L[profile[3]],
-            function() return BD.db.attributionAuto end, RefreshScenario,
-            L["Enable Auto-switch by instance to edit the instance profiles."])
-    end
+    layout:When(function() return not BD.db.attributionAuto end, function()
+        layout:Choice("attributionManual", L["Manual strictness"], StrictnessOptions(),
+            L["Used when Auto-switch is off."], function() return not BD.db.attributionAuto end,
+            RefreshScenario, L["Turn off Auto-switch by instance to choose manual strictness."])
+    end)
+    layout:When(function() return BD.db.attributionAuto end, function()
+        layout:Heading(L["Instance profiles"])
+        local profiles = {
+            { "attributionOpenWorld", "Open world", "Loose: longer windows, more numbers.", "loose" },
+            { "attributionDungeon", "Dungeon", "Balanced: medium windows and cleave hits.", "balanced" },
+            { "attributionRaid", "Raid", "Very Strict: shortest windows, destination required, one hit per cast.", "veryStrict" },
+            { "attributionBattleground", "Battleground", "Strict: short windows, fewer foreign hits.", "strict" },
+            { "attributionArena", "Arena", "Balanced: medium windows and cleave hits.", "balanced" },
+        }
+        for _, profile in ipairs(profiles) do
+            layout:Choice(profile[1], L[profile[2]], StrictnessOptions(profile[4]), L[profile[3]],
+                function() return BD.db.attributionAuto end, RefreshScenario,
+                L["Enable Auto-switch by instance to edit the instance profiles."])
+        end
+    end)
 end
 
 local function BuildSchools(layout, root)
     layout:Heading(L["Damage schools"])
-    layout:Note(L["Show damage from schools checked below. Same-school hits from other players can still appear. Secret or unreadable schools are always shown."])
+    local enabled = function() return BD.db.schoolFilterEnabled end
     layout:Checkbox("schoolFilterEnabled", L["Filter by damage school"],
         L["Show damage from schools checked below. Same-school hits from other players can still appear. Secret or unreadable schools are always shown."],
         nil, function(checked)
             if checked and BD.db.schoolFilterRecommended then BD:ApplySchoolFilterRecommended() end
         end)
-    local schoolEnabled = function() return BD.db.schoolFilterEnabled end
-    local schoolReason = L["Enable Filter by damage school to choose allowed schools."]
-    local recommended = layout:Checkbox("schoolFilterRecommended", BD:GetRecommendedSchoolFilterLabel(),
-        L["Use the schools your class typically deals."], schoolEnabled, function(checked)
-            if checked then BD:ApplySchoolFilterRecommended() end
-        end, schoolReason)
-    root.refreshers[#root.refreshers + 1] = function()
-        recommended.label:SetText(BD:GetRecommendedSchoolFilterLabel())
-    end
-    for _, school in ipairs(BD.DAMAGE_SCHOOLS) do
-        layout:Checkbox(school.dbKey, L[school.labelKey], L[school.labelKey], schoolEnabled, function()
-            BD.db.schoolFilterRecommended = BD:SchoolFilterMatchesClass()
-        end, schoolReason)
-    end
+    layout:When(enabled, function()
+        local recommended = layout:Checkbox("schoolFilterRecommended", BD:GetRecommendedSchoolFilterLabel(),
+            L["Use the schools your class typically deals."], enabled, function(checked)
+                if checked then BD:ApplySchoolFilterRecommended() end
+            end)
+        root.refreshers[#root.refreshers + 1] = function()
+            recommended.label:SetText(BD:GetRecommendedSchoolFilterLabel())
+        end
+        layout:When(function() return not BD.db.schoolFilterRecommended end, function()
+            for _, school in ipairs(BD.DAMAGE_SCHOOLS) do
+                layout:Checkbox(school.dbKey, L[school.labelKey], L[school.labelKey], enabled, function()
+                    BD.db.schoolFilterRecommended = BD:SchoolFilterMatchesClass()
+                end)
+            end
+        end)
+    end)
 end
 
 local function BuildModern(parent, root, tabId)
@@ -427,7 +490,7 @@ local function BuildModern(parent, root, tabId)
     layout:Finish()
 end
 
-local function BuildPreferences(layout, root)
+BuildPreferences = function(layout, root)
     layout:Heading(L["Language"])
     local localeOptions = {}
     for _, option in ipairs(BD.LOCALE_OPTIONS) do
@@ -449,14 +512,6 @@ local function BuildPreferences(layout, root)
         L["Use gentle fades and row reveals in this settings window. Combat animation is unaffected."])
     layout:Checkbox("showOptionsPreview", L["Show live preview"],
         L["Show sample hits, crits, and misses in the bottom preview drawer."])
-    layout:Note(L["The preview shows appearance only. It does not prove attribution or simulate damage filtering."])
-    layout:Action("testTarget", L["Test on Target"], L["Show sample damage numbers on your target."], function()
-        BD:ShowTestNumbers()
-    end)
-    layout:Heading(L["Maintenance"])
-    layout:Action("resetDefaults", L["Reset Defaults"], L["Restore every PlateSCT setting to its default."], function()
-        root:ConfirmReset()
-    end)
 end
 
 local function BuildTransfer(parent, root)
@@ -496,31 +551,40 @@ local function BuildDiagnostics(layout)
 end
 
 local function BuildWhatsNew(layout)
-    layout:Heading("1.2.5")
-    layout:Heading(L["Show misses and avoidance"])
-    layout:Note(L["Show or hide outgoing and incoming miss, dodge, parry, and similar text under Combat → Display settings. Enabled by default on Midnight and Classic APIs."])
-    layout:Note(L["Midnight Personal mode still omits outgoing misses."])
-    layout:Heading(L["Impact number style"])
-    layout:Note(L["Impact now leaves room for CRITICAL labels, icons, and enlarged crits when stacking damage numbers."])
+    layout:Heading("1.3.0")
+    layout:Heading(L["Settings window"])
+    layout:Note(L["The redesigned settings window has clearer pages, search, and live previews. The new welcome flow helps you choose a layout and get started."])
+    layout:Heading(L["Screen areas"])
+    layout:Note(L["Choose Screen under General to place and resize combat text areas. Customize each area's animation, direction, alignment, spacing, and duration, and route damage and healing to different areas."])
+    layout:Heading(L["Show scroll area"])
+    layout:Note(L["Show scroll area repeats sample hits while you move and resize areas. Done or Escape returns to your previous settings page."])
+    layout:Heading(L["Import & Export"])
+    layout:Note(L["Larger text areas make strings easier to copy, paste, and review. Imports now include screen areas, their motion, and routing."])
 end
 
 local function BuildHelp(parent, root, tabId)
     local layout = NewLayout(parent, root, "help", tabId)
-    if tabId == "diagnostics" then
-        BuildDiagnostics(layout)
-    elseif tabId == "whatsNew" then
+    if tabId == "whatsNew" then
         BuildWhatsNew(layout)
     else
-        BuildPreferences(layout, root)
+        layout:Heading(L["Settings guide"])
+        for _, page in ipairs(BD.OptionsPages) do
+            local heading = layout:Heading(page.label and page.label() or L[page.labelKey])
+            if page.label then root.refreshers[#root.refreshers + 1] = function() heading:SetText(W.Title(page.label())) end end
+            layout:Note(L[page.subtitleKey])
+        end
     end
     layout:Finish()
 end
 
 BD.OptionsPages = {
-    { id = "combat", labelKey = "Combat", subtitleKey = "Choose the combat text you want to see.", build = BuildCombat },
-    { id = "appearance", labelKey = "Appearance", subtitleKey = "Fonts, colors, numbers, and spell icons.", build = BuildAppearance },
-    { id = "animation", labelKey = "Animation", subtitleKey = "Number style, timing, and movement.", build = BuildAnimation },
-    { id = "sounds", labelKey = "Sounds", subtitleKey = "Audio cues for outgoing critical hits.", build = BuildSounds },
+    { id = "general", labelKey = "General", subtitleKey = "Choose your layout, language, and addon preferences.", build = BuildGeneral },
+    { id = "combat", labelKey = "Combat", subtitleKey = "Choose what appears: damage, healing, incoming hits, and filters.", build = BuildCombat },
+    { id = "appearance", labelKey = "Appearance", subtitleKey = "Set fonts, colors, number formatting, icons, and critical labels.", build = BuildAppearance },
+    { id = "animation", labelKey = "Animation", subtitleKey = "Choose how numbers move, their timing, and critical-hit behavior.", build = BuildAnimation },
+    { id = "placement", labelKey = "Placement", label = function() return L[BD.Layout.IsScreen() and "Areas" or "Placement"] end,
+        subtitleKey = "Set positions, area sizes, spacing, alignment, and destinations.", build = BuildPlacement },
+    { id = "sounds", labelKey = "Sounds", subtitleKey = "Configure critical-hit sounds, thresholds, and channels.", build = BuildSounds },
 }
 if IsModernAPI() then
     BD.OptionsPages[#BD.OptionsPages + 1] = {
@@ -532,14 +596,14 @@ if IsModernAPI() then
         }, build = BuildModern,
     }
 end
-BD.OptionsPages[#BD.OptionsPages + 1] = {
-    id = "transfer", labelKey = "Import & Export", subtitleKey = "Back up, share, or restore your settings.", build = BuildTransfer,
-}
-BD.OptionsPages[#BD.OptionsPages + 1] = {
-    id = "help", labelKey = "Help & Settings", subtitleKey = "Preferences, API information, and diagnostics.",
-    tabs = {
-        { id = "preferences", labelKey = "Preferences" },
-        { id = "diagnostics", labelKey = "Diagnostics" },
-        { id = "whatsNew", labelKey = "What's new?" },
-    }, build = BuildHelp,
+BD.OptionsUtilities = {
+    { id = "help", labelKey = "Help", subtitleKey = "Find the right settings page and see what's new.",
+        tabs = { { id = "guide", labelKey = "Settings guide" }, { id = "whatsNew", labelKey = "What's new?" } }, build = BuildHelp },
+    { id = "diagnostics", labelKey = "Diagnostics", subtitleKey = "Client information and troubleshooting tools.",
+        build = function(parent, root)
+            local layout = NewLayout(parent, root, "diagnostics")
+            BuildDiagnostics(layout)
+            layout:Finish()
+        end },
+    { id = "transfer", labelKey = "Import & Export", subtitleKey = "Back up, share, or restore your settings.", build = BuildTransfer },
 }
