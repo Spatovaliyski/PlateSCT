@@ -495,8 +495,8 @@ test("dialog export, validation, editing, cancellation, and apply", function()
     local function noop() end
     local function frame(kind)
         local f = { scripts = {}, shown = true, enabled = true, text = "", height = 180, offset = 0 }
-        for _, method in ipairs({ "SetAllPoints", "EnableMouse", "SetFrameLevel", "SetPoint", "SetColorTexture",
-            "SetMultiLine", "SetTextInsets", "SetSpacing", "SetMaxLetters", "RegisterEvent", "SetTextColor",
+        for _, method in ipairs({ "SetAllPoints", "ClearAllPoints", "EnableMouse", "SetFrameLevel", "SetPoint", "SetColorTexture",
+            "SetMultiLine", "SetTextInsets", "SetSpacing", "SetMaxLetters", "RegisterEvent", "SetTextColor", "SetJustifyH",
             "UpdateScrollChildRect" }) do f[method] = noop end
         function f:SetSize(_, height) self.height = height end
         function f:SetHeight(height) self.height = height end
@@ -517,6 +517,10 @@ test("dialog export, validation, editing, cancellation, and apply", function()
             if self.scripts.OnTextChanged then self.scripts.OnTextChanged(self, true) end
         end
         function f:GetText() return self.text end
+        function f:GetFontString()
+            self.font = self.font or frame("FontString")
+            return self.font
+        end
         function f:SetFocus() self.focus = true end
         function f:ClearFocus() self.focus = false end
         function f:HighlightText() self.selected = true end
@@ -567,6 +571,7 @@ test("dialog export, validation, editing, cancellation, and apply", function()
     dialog:Open(false)
     eq(input:GetText(), assert(BD:ExportSettings()), "copyable export")
     eq(input.selected, true); eq(input.focus, true); eq(apply:IsShown(), false)
+    eq(labels[#labels]:GetText(), "", "export does not show an import validation summary")
     cancel:Click(); eq(dialog:IsShown(), false); same(BD.db, original)
     dialog:Open(true); eq(apply:IsEnabled(), false); eq(root.pageScrollLocked, true)
     input:SetText(CLASSIC_V1); validate:Click()

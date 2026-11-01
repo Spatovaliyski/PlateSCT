@@ -7,7 +7,7 @@ local Render = BD.Render
 -- Incoming numbers always use this layout; outgoing ones when the display mode is "screen".
 
 local OUTGOING_LEVEL, INCOMING_LEVEL = 110, 120
-local CURVE_SHARE = 0.3 -- a curved path bows this share of the area width to its side
+local CURVE_SHARE = 0.3 -- a curved path bows up to this share of the area width to its side
 
 local OUTGOING_ROUTES = { hit = "routeOutgoingHit", crit = "routeOutgoingCrit", miss = "routeOutgoingMiss" }
 local INCOMING_ROUTES = { hit = "routeIncomingHit", crit = "routeIncomingCrit", miss = "routeIncomingMiss" }
@@ -111,9 +111,22 @@ local function AreaMetrics(frame, area)
     local peak = frame.isCrit and math.max(1, frame.critSlapScale or 1, frame.critRestScale or 1) or 1
     peak = peak * (1 + BD.COMBINE_PULSE_SCALE)
     frame.areaLine = (bounds[4] - bounds[3]) * peak + area.spacing
-    if not frame.critsHold and area.alignment == "left" then return -area.width * 0.5 - bounds[1] * peak end
-    if not frame.critsHold and area.alignment == "right" then return area.width * 0.5 - bounds[2] * peak end
-    return -(bounds[1] + bounds[2]) * 0.5
+    local left = -area.width * 0.5 - bounds[1] * peak
+    local right = area.width * 0.5 - bounds[2] * peak
+    local curve = 0
+    if not frame.critsHold then
+        local bow = math.min(area.width * CURVE_SHARE, math.max(0, right - left))
+        if area.animation == "curveLeft" then curve = -bow
+        elseif area.animation == "curveRight" then curve = bow end
+    end
+    frame.areaCurve = curve
+    -- Align the entire swept path, including the peak text/icon bounds, inside the rectangle.
+    left, right = left - math.min(0, curve), right - math.max(0, curve)
+    if left <= right and not frame.critsHold then
+        if area.alignment == "left" then return left end
+        if area.alignment == "right" then return right end
+    end
+    return (left + right) * 0.5
 end
 
 function BD:RefreshAreaNumber(frame)
@@ -192,7 +205,7 @@ local function Spawn(self, area, frame, preset, numberStyle, text, r, g, b, amou
     local baseX = AreaMetrics(frame, area)
 
     local anchor, baseY = runtime.anchor, 0
-    frame.areaTravel, frame.areaCurve = 0, 0
+    frame.areaTravel = 0
     if held then
         anchor = runtime.sticky
         frame.anchorRelPoint = "CENTER"
@@ -208,11 +221,6 @@ local function Spawn(self, area, frame, preset, numberStyle, text, r, g, b, amou
         baseY = direction * inset
         if area.animation ~= "static" then
             frame.areaTravel = direction * math.max(0, area.height - inset * 2)
-            if area.animation == "curveLeft" then
-                frame.areaCurve = -area.width * CURVE_SHARE
-            elseif area.animation == "curveRight" then
-                frame.areaCurve = area.width * CURVE_SHARE
-            end
         end
     end
     frame.anchor = anchor
@@ -313,7 +321,7 @@ function BD:RefreshScreenAreas()
     end
 end
 
--- Unlock mode: one sample of every routed kind, whatever the visibility settings.
+-- Live area tests: routed samples, optionally including areas without any routes yet.
 local TEST_SAMPLES = {
     { route = "routeOutgoingHit", fallback = "outgoing", kind = "hit", amount = 12400 },
     { route = "routeOutgoingCrit", fallback = "outgoing", kind = "crit", amount = 48600 },
@@ -324,16 +332,17 @@ local TEST_SAMPLES = {
     { route = "routeIncomingMiss", fallback = "incoming", kind = "miss", text = "DODGE", incoming = true },
 }
 
-function BD:ShowScreenAreaTest(areaId, incomingOnly)
-    for index, sample in ipairs(TEST_SAMPLES) do
+function BD:ShowScreenAreaTest(areaId, incomingOnly, session, includeUnused)
+    local function Queue(sample, index, destination)
         C_Timer.After((index - 1) * 0.15, function()
-            if incomingOnly and not sample.incoming then return end
-            local area = areaId and BD.FindScreenArea(self.db, areaId)
-                or self:GetRoutedArea(sample.route, sample.fallback)
+            if session and not session.active then return end
+            if sample.incoming and not self.db.showIncoming then return end
+            local area = BD.FindScreenArea(self.db, destination)
             if not area then return end
             local isCrit = sample.kind == "crit"
             local frame, preset, numberStyle = Render.Begin(self, sample.kind, isCrit, sample.heal, sample.incoming,
                 "area", area)
+            if session then frame.isPreview, frame.previewOwner = true, session end
             local r, g, b
             if sample.incoming then
                 local color = BD.INCOMING_COLOR
@@ -344,9 +353,33 @@ function BD:ShowScreenAreaTest(areaId, incomingOnly)
                 r, g, b = Render.OutgoingColor(self, preset, nil, nil, nil, sample.heal)
             end
             local text = sample.text or BD.FormatAmount(sample.amount, self.db.abbreviate)
-            Spawn(self, area, frame, preset, numberStyle, text, r, g, b, nil, nil,
+            local shown = Spawn(self, area, frame, preset, numberStyle, text, r, g, b, nil, nil,
                 sample.incoming and INCOMING_LEVEL or OUTGOING_LEVEL)
+            -- Settings may overlap an area: keep its live preview above the window.
+            if shown and session then shown:SetFrameStrata("DIALOG") end
         end)
+    end
+    local covered = {}
+    for index, sample in ipairs(TEST_SAMPLES) do
+        if (not incomingOnly or sample.incoming) and (not sample.incoming or self.db.showIncoming) then
+            local area
+            if areaId then area = BD.FindScreenArea(self.db, areaId)
+            else area = self:GetRoutedArea(sample.route, sample.fallback) end
+            if area then
+                covered[area.id] = true
+                Queue(sample, index, area.id)
+            end
+        end
+    end
+    if includeUnused then
+        for _, area in ipairs(self.db.screenAreas or {}) do
+            if not covered[area.id] and (area.id ~= "incoming" or self.db.showIncoming) then
+                local incoming = area.id == "incoming" or (incomingOnly and true or false)
+                for index, sample in ipairs(TEST_SAMPLES) do
+                    if (sample.incoming and true or false) == incoming then Queue(sample, index, area.id) end
+                end
+            end
+        end
     end
 end
 

@@ -444,6 +444,8 @@ local function PaintButton(button)
     elseif style == "result" then
         fill = (selected or over) and C.menuHover or nil
         text = C.bright
+    elseif style == "text" then
+        text = not enabled and C.disabledText or over and C.bright or C.accent
     elseif style == "black" then
         fill = over and C.blackHover or C.black
         text = enabled and C.bright or C.disabledText
@@ -489,7 +491,7 @@ function W.Button(parent, label, width, height, onClick, style)
     W.SetFont(font, role, size)
     font:ClearAllPoints()
     local centered = style == "action" or style == "segment" or style == "black"
-    local inset = centered and 14 or 12
+    local inset = style == "text" and 0 or centered and 14 or 12
     font:SetPoint("LEFT", inset, 0)
     font:SetPoint("RIGHT", -inset, 0)
     font:SetJustifyH(centered and "CENTER" or "LEFT")

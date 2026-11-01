@@ -9,6 +9,7 @@ BD.OptionsAreas = Areas
 
 local movers, toolbar = {}, nil
 local reopenOptions = false
+local testSession
 
 local function Available(area)
     if BD.Layout.IsScreen() then
@@ -200,7 +201,7 @@ local function PlaceMover(mover, area)
     mover:SetSize(area.width, area.height)
     mover.label:SetText(BD:GetScreenAreaLabel(area))
     mover.coords:SetText(string.format("%d, %d  ·  %d × %d", area.x, area.y, area.width, area.height))
-    W.Backdrop(mover, area.id == Areas.selected and "selected" or "inset")
+    W.Backdrop(mover.background, area.id == Areas.selected and "selected" or "inset")
 end
 
 local function SaveMover(mover)
@@ -228,6 +229,12 @@ local function Mover(index)
     local mover = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
     mover:SetIgnoreParentScale(true)
     mover:SetFrameStrata("DIALOG")
+    -- Fade only the surface, below the scrolling numbers; labels and handles stay opaque.
+    mover.background = CreateFrame("Frame", nil, mover)
+    mover.background:SetAllPoints()
+    mover.background:SetFrameStrata("HIGH")
+    mover.background:SetFrameLevel(0)
+    mover.background:SetAlpha(0.45)
     mover:SetClampedToScreen(true)
     mover:EnableMouse(true)
     mover:SetMovable(true)
@@ -284,7 +291,7 @@ local function Toolbar()
     W.Text(toolbar, L["Screen areas unlocked"], 14, -12, 352, "GameFontNormal", { 0.88, 0.72, 0.43 })
     W.Text(toolbar, L["Drag an area to move it. Drag its corner to resize it."], 14, -32, 352, "GameFontDisableSmall")
     local test = W.Button(toolbar, L["Test"], 120, 26, function()
-        BD:ShowScreenAreaTest(nil, not BD.Layout.IsScreen())
+        BD:ShowScreenAreaTest(nil, not BD.Layout.IsScreen(), testSession, BD.Layout.IsScreen())
     end)
     test:SetPoint("BOTTOMLEFT", 14, 12)
     local done = W.Button(toolbar, L["Done"], 120, 26, function() toolbar:Hide() end)
@@ -314,20 +321,42 @@ function Areas.RefreshMovers()
     end
 end
 
+local function StopPreview()
+    if not testSession then return end
+    testSession.active = false
+    BD.Pool.ReleasePreviewFrames(testSession)
+    testSession = nil
+end
+
+function Areas.RefreshPreview()
+    StopPreview()
+    local config = BD.configFrame
+    if not Areas.unlocked and not (BD.Layout.IsScreen() and config and config:IsShown()) then return end
+    BD:EnsureScreenAreas()
+    local session = { active = true }
+    testSession = session
+    local function Replay()
+        if not session.active then return end
+        BD:ShowScreenAreaTest(nil, not BD.Layout.IsScreen(), session, BD.Layout.IsScreen())
+        C_Timer.After(2, Replay)
+    end
+    Replay()
+end
+
 function Areas.Unlock()
     if Areas.unlocked then
         return
     end
     BD:EnsureScreenAreas()
-    Areas.unlocked = true
     local config = BD.configFrame
     reopenOptions = config and config:IsShown() and true or false
     if config then
         config:Hide()
     end
+    Areas.unlocked = true
     Areas.RefreshMovers()
     Toolbar():Show()
-    BD:ShowScreenAreaTest(nil, not BD.Layout.IsScreen())
+    Areas.RefreshPreview()
 end
 
 function Areas.Lock()
@@ -335,6 +364,7 @@ function Areas.Lock()
         return
     end
     Areas.unlocked = false
+    StopPreview()
     for _, mover in ipairs(movers) do
         mover:Hide()
     end
@@ -344,8 +374,5 @@ function Areas.Lock()
     if reopenOptions then
         reopenOptions = false
         BD:OpenOptions()
-        if BD.configFrame and BD.configFrame:IsShown() then
-            BD.configFrame:SelectPage("placement", nil, true)
-        end
     end
 end

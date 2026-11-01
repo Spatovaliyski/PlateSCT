@@ -302,7 +302,8 @@ local function CreatePreview(root, content, bar)
         areaLabel:SetText(area and string.format(L["Selected area: %s"], BD:GetScreenAreaLabel(area)) or "")
     end
     function pane:UpdateLayout()
-        local open = BD.db.showOptionsPreview and true or false
+        local nameplates = not BD.Layout.IsScreen()
+        local open = nameplates and BD.db.showOptionsPreview and true or false
         self:SetShown(open)
         bar:ClearAllPoints()
         bar:SetPoint("BOTTOMLEFT", content, "BOTTOMLEFT", 0, open and STAGE_HEIGHT or 0)
@@ -312,6 +313,7 @@ local function CreatePreview(root, content, bar)
         root.pageArea:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -(root.pageContentTop or 96))
         root.pageArea:SetPoint("BOTTOMRIGHT", bar, "TOPRIGHT", 0, 0)
         local toggle = root.previewToggle
+        toggle:SetShown(nameplates)
         toggle:SetText(open and L["Hide preview"] or L["Show preview"])
         W.SetIcon(toggle.optionsIcon, open and "ChevronDown" or "ChevronUp")
         toggle:SetWidth(toggle:GetFontString():GetStringWidth() + 50)
@@ -343,9 +345,14 @@ local function CreateSettingsTransferDialog(root)
     local title = W.Text(panel, "", 24, -22, 560, "GameFontNormalLarge", C.bright or GOLD)
     if W.SetFont then W.SetFont(title, "display", 18) end
     local instruction = W.Text(panel, "", 24, -56, 592, nil, C.muted)
-    local scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", 24, -90); scroll:SetSize(570, 180)
-    W.Backdrop(scroll, "control")
+    local field = CreateFrame("Frame", nil, panel, "BackdropTemplate")
+    field:SetPoint("TOPLEFT", 24, -90)
+    field:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -24, 74)
+    W.Backdrop(field, "control")
+    local scroll = CreateFrame("ScrollFrame", nil, field, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT")
+    -- Keep the scrollbar gutter inside the field's full-width background.
+    scroll:SetPoint("BOTTOMRIGHT", -22, 0)
     local input = W.EditBox(scroll, 570, 180)
     input:SetMultiLine(true)
     -- Stay inside a 16-bit letter cap. The wire format is a few thousand characters.
@@ -357,9 +364,22 @@ local function CreateSettingsTransferDialog(root)
     scroll:SetScrollChild(input)
     -- A tall multiline child otherwise keeps the mouse over the buttons below the viewport.
     if scroll.SetClipsChildren then scroll:SetClipsChildren(true) end
-    local status = W.Text(panel, "", 24, -290, 592, nil, C.text)
+    local status = W.Text(panel, "", 24, 0, 592, nil, C.text)
+    status:ClearAllPoints()
+    status:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 24, 74)
     local apply, validate
     local holdingFocus = false
+    local function SetStatus(text)
+        text = text or ""
+        status:SetText(text)
+        field:ClearAllPoints()
+        field:SetPoint("TOPLEFT", 24, -90)
+        if text ~= "" then
+            field:SetPoint("BOTTOMRIGHT", status, "TOPRIGHT", 0, 12)
+        else
+            field:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -24, 74)
+        end
+    end
     local function SettingsText()
         return (input:GetText() or ""):gsub("%s+", "")
     end
@@ -402,12 +422,12 @@ local function CreateSettingsTransferDialog(root)
     local function Invalidate()
         dialog.validatedText = nil
         PaintApply(false)
-        status:SetText("")
+        SetStatus("")
     end
     local function ShowError(err)
         Invalidate()
         status:SetTextColor(1, 0.45, 0.3)
-        status:SetText(err or "")
+        SetStatus(err)
     end
     local function ValidateInput()
         local text = SettingsText()
@@ -423,7 +443,7 @@ local function CreateSettingsTransferDialog(root)
         if preview.preservesModern then lines[#lines + 1] = L["Your Modern API settings will stay unchanged."] end
         if preview.recommendedSchools then lines[#lines + 1] = L["Recommended damage schools will follow your current class."] end
         status:SetTextColor(0.93, 0.90, 0.85)
-        status:SetText(table.concat(lines, "\n"))
+        SetStatus(table.concat(lines, "\n"))
         -- A disabled Button never receives hover, tooltip, or clicks.
         PaintApply(true)
         ReleaseInput()
@@ -434,7 +454,7 @@ local function CreateSettingsTransferDialog(root)
     footer:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT")
     footer:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT")
     footer:SetHeight(60)
-    validate = W.Button(footer, L["Validate string"], 184, 34, ValidateInput, "flat")
+    validate = W.Button(footer, L["Validate string"], 184, 34, ValidateInput, "text")
     ClickDespiteFocus(validate, ValidateInput)
     validate:SetPoint("BOTTOMLEFT", 24, 20)
     local function ApplyInput()
@@ -452,11 +472,11 @@ local function CreateSettingsTransferDialog(root)
     end
     apply = W.Button(footer, L["Apply settings"], 184, 34, ApplyInput)
     ClickDespiteFocus(apply, ApplyInput)
-    apply:SetPoint("BOTTOM", 0, 20); PaintApply(false)
+    apply:SetPoint("BOTTOMRIGHT", -24, 20); PaintApply(false)
     local function CancelInput() dialog:Hide() end
-    local cancel = W.Button(footer, CANCEL, 184, 34, CancelInput, "flat")
+    local cancel = W.Button(footer, CANCEL, 104, 34, CancelInput, "flat")
+    cancel:GetFontString():SetJustifyH("CENTER")
     ClickDespiteFocus(cancel, CancelInput)
-    cancel:SetPoint("BOTTOMRIGHT", -24, 20)
     local buttonLevel = panel:GetFrameLevel() + 40
     if footer.SetFrameLevel then footer:SetFrameLevel(buttonLevel) end
     if validate.SetFrameLevel then validate:SetFrameLevel(buttonLevel + 2) end
@@ -478,7 +498,7 @@ local function CreateSettingsTransferDialog(root)
     end
     input:SetScript("OnTextChanged", function(_, userInput)
         scroll:UpdateScrollChildRect()
-        if holdingFocus or not userInput then return end
+        if not dialog.importing or holdingFocus or not userInput then return end
         if dialog.validatedText and SettingsText() == dialog.validatedText then return end
         Invalidate()
         if SettingsText() == "" then validateSerial = validateSerial + 1; return end
@@ -504,11 +524,18 @@ local function CreateSettingsTransferDialog(root)
         root:DismissTransient()
         root.searchBox:ClearFocus()
         root.transientMenu, root.pageScrollLocked = self, true
+        self.importing = importing and true or false
         title:SetText(importing and L["Import Settings"] or L["Export Settings"])
         instruction:SetText(importing and L["Paste a settings string, then validate it before applying."]
             or L["Press Ctrl+C to copy the settings string."])
         validate:SetShown(importing); apply:SetShown(importing)
         cancel:SetText(importing and CANCEL or L["Close"])
+        cancel:ClearAllPoints()
+        if importing then
+            cancel:SetPoint("RIGHT", apply, "LEFT", -12, 0)
+        else
+            cancel:SetPoint("BOTTOMRIGHT", -24, 20)
+        end
         self:Show(); input:SetText(""); Invalidate()
         if not importing then
             local text, err = BD:ExportSettings()
@@ -564,6 +591,10 @@ local function BuildConfigFrame()
         if not self.transferDialog then self.transferDialog = CreateSettingsTransferDialog(self) end
         self.transferDialog:Open(importing)
     end
+    function frame:RefreshPreview()
+        BD:RequestOptionsPreview()
+        BD.OptionsAreas.RefreshPreview()
+    end
     function frame:Refresh()
         if self.refreshing or self.disposed then return end
         StopMotion(self)
@@ -571,7 +602,7 @@ local function BuildConfigFrame()
         for _, control in ipairs(self.controls) do control:Refresh() end
         for _, refresh in ipairs(self.refreshers) do refresh() end
         self.refreshing = false
-        if self.previewPane then BD:RequestOptionsPreview() end
+        if self.previewPane then self:RefreshPreview() end
     end
     frame.UpdateDependentStates = frame.Refresh
     -- Header: identity on the left, layout switch and close on the right.
@@ -680,17 +711,19 @@ local function BuildConfigFrame()
     frame.previewToggle:SetPoint("LEFT", 12, 0)
     W.Tooltip(frame.previewToggle, L["Show sample hits, crits, and misses inside this window."])
     -- A quiet secondary button: the preview bar is a utility strip, not a call to action.
-    local targetTest = W.Button(previewBar, L["Test on Target"], 140, 30, function() BD:ShowTestNumbers() end, "flat")
+    local targetTest = W.Button(previewBar, L["Test on Target"], 140, 30, function()
+        if BD.Layout.IsScreen() then BD.OptionsAreas.Unlock() else BD:ShowTestNumbers() end
+    end, "flat")
     targetTest:GetFontString():SetJustifyH("CENTER")
     targetTest:SetPoint("RIGHT", -16, 0)
     W.Tooltip(targetTest, function()
-        return BD.Layout.IsScreen() and L["Spawn sample numbers in your screen areas."]
+        return BD.Layout.IsScreen() and L["Drag an area to move it. Drag its corner to resize it."]
             or L["Target an enemy, then spawn sample numbers on its nameplate."]
     end)
     frame.targetTest = targetTest
-    -- Screen areas need no target, so the button names what it does in each layout.
+    -- Screen layout opens the live area preview and its placement handles.
     frame.refreshers[#frame.refreshers + 1] = function()
-        targetTest:SetText(BD.Layout.IsScreen() and L["Test numbers"] or L["Test on Target"])
+        targetTest:SetText(BD.Layout.IsScreen() and L["Show scroll area"] or L["Test on Target"])
         targetTest:SetWidth(math.ceil(targetTest:GetFontString():GetStringWidth() + 32))
     end
     local hint = W.Text(sidebar, L["/platesct  ·  ESC to close"], 0, 0, 176, nil, C.dim)
@@ -795,7 +828,7 @@ local function BuildConfigFrame()
         if self.previewPane then self.previewPane:UpdateLayout() end
         view:SetScroll(session.scroll[view.key] or 0)
         if animate then Reveal(self, view, ox, oy) end
-        if self.previewPane then BD:RequestOptionsPreview() end
+        if self.previewPane then self:RefreshPreview() end
     end
     frame.cachedTabs = {}
     local NAV_TOP, NAV_STEP, NAV_HEIGHT = 62, 38, 36
@@ -1016,6 +1049,7 @@ local function BuildConfigFrame()
         end
         self:DismissTransient(); search:ClearFocus(); StopMotion(self)
         self:UnregisterAllEvents(); BD:ReleaseMotionPreviews()
+        BD.OptionsAreas.RefreshPreview()
         if SOUNDKIT and SOUNDKIT.IG_MAINMENU_CLOSE then pcall(PlaySound, SOUNDKIT.IG_MAINMENU_CLOSE) end
     end)
     frame:SetResizable(true)
