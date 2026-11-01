@@ -1079,6 +1079,57 @@ local function SwitchStep(control, elapsed)
     control.knobX = x
 end
 
+-- A switch: native CheckButton behavior with a painted track and knob. The owner sets OnClick
+-- and the checked state, then calls Paint.
+function W.Switch(parent)
+    local control = CreateFrame("CheckButton", nil, parent)
+    control:SetSize(40, 24)
+    if control.SetHitRectInsets then control:SetHitRectInsets(-6, -6, -8, -8) end
+    control.knob = Circle(control, KNOB_SIZE, C.knobOff, "ARTWORK")
+    -- Set the switch to its final look, or slide toward it after a click.
+    function control:Paint()
+        local on = self:GetChecked() and true or false
+        local enabled = self:IsEnabled()
+        local over = enabled and self.IsMouseOver and self:IsMouseOver()
+        local track = not enabled and (on and C.switchOnDisabled or C.switchDisabled)
+            or on and (over and C.accentHover or C.accent) or (over and C.switchOffHover or C.switchOff)
+        local knobColor = not enabled and C.knobDisabled or on and C.knobOn or C.knobOff
+        local x = on and (40 - KNOB_SIZE - KNOB_INSET) or KNOB_INSET
+        local animate = self.animateNext and self.knobX and self.knobX ~= x
+            and BD.db and BD.db.settingsAnimations and self:IsVisible()
+        self.animateNext = nil
+        if self.motion and not animate then
+            -- Mid-slide (e.g. hover): keep sliding, but toward the current colors.
+            self.motion.toX, self.motion.toTrack, self.motion.toKnob = x, track, knobColor
+            return
+        end
+        if animate then
+            self.motion = { elapsed = 0, fromX = self.knobX, toX = x,
+                fromTrack = self.trackColor or track, toTrack = track,
+                fromKnob = self.knobColor or knobColor, toKnob = knobColor }
+            self:SetScript("OnUpdate", SwitchStep)
+            return
+        end
+        SwitchFrame(self, x, track, knobColor)
+    end
+    control:SetScript("OnHide", FinishSwitch)
+    control:SetScript("OnEnter", function(self) self:Paint() end)
+    control:SetScript("OnLeave", function(self) self:Paint() end)
+    return control
+end
+
+-- A painted warning with its icon. Returns the box and its label; the box fits the text.
+function W.WarningBox(parent, text, width)
+    local box = CreateFrame("Frame", nil, parent)
+    box:SetWidth(width)
+    W.Backdrop(box, "warning")
+    local icon = W.Icon(box, "Warning", 16, C.warningIcon)
+    icon:SetPoint("TOPLEFT", 14, -13)
+    local label = W.Text(box, text, 40, -12, width - 54, nil, C.warningText)
+    box:SetHeight(math.max(18, label:GetStringHeight()) + 24)
+    return box, label
+end
+
 function W.NewLayout(parent, root, pageId, tabId, width)
     local PAD_LEFT, PAD_RIGHT, TOP = 32, 14, -4
     local layout = { parent = parent, root = root, page = pageId, tab = tabId, x = PAD_LEFT, y = TOP,
@@ -1152,15 +1203,9 @@ function W.NewLayout(parent, root, pageId, tabId, width)
     end
 
     function layout:Warning(text)
-        local row = CreateFrame("Frame", nil, parent)
+        local row, label = W.WarningBox(parent, text, self.width)
         row:SetPoint("TOPLEFT", self.x, self.y)
-        row:SetWidth(self.width)
-        W.Backdrop(row, "warning")
-        local icon = W.Icon(row, "Warning", 16, C.warningIcon)
-        icon:SetPoint("TOPLEFT", 14, -13)
-        local label = W.Text(row, text, 40, -12, self.width - 54, nil, C.warningText)
-        local height = math.max(18, label:GetStringHeight()) + 24
-        row:SetHeight(height)
+        local height = row:GetHeight()
         label.row = row
         self:AddRow(row, label, "warning")
         self.y = self.y - height - 10
@@ -1212,49 +1257,15 @@ function W.NewLayout(parent, root, pageId, tabId, width)
 
     function layout:Checkbox(key, label, tip, enabledPredicate, onChanged, disabledReason)
         local row, caption, reason, _, y = self:NewRow(label, ROW_MINIMUM, disabledReason, tip)
-        -- A switch: native CheckButton behavior with a painted track and knob.
-        local control = CreateFrame("CheckButton", nil, row)
-        control:SetSize(40, 24)
+        local control = W.Switch(row)
         control:SetPoint("TOPRIGHT", 0, -ROW_PAD)
         control.layoutType = "switch"
-        if control.SetHitRectInsets then control:SetHitRectInsets(-6, -6, -8, -8) end
-        local knob = Circle(control, KNOB_SIZE, C.knobOff, "ARTWORK")
-        control.knob = knob
         self:Register(control, key, row, caption, reason, y, tip, enabledPredicate, onChanged, disabledReason)
-        -- Set the switch to its final look, or slide toward it after a click.
-        function control:Paint()
-            local on = self:GetChecked() and true or false
-            local enabled = self:IsEnabled()
-            local over = enabled and self.IsMouseOver and self:IsMouseOver()
-            local track = not enabled and (on and C.switchOnDisabled or C.switchDisabled)
-                or on and (over and C.accentHover or C.accent) or (over and C.switchOffHover or C.switchOff)
-            local knobColor = not enabled and C.knobDisabled or on and C.knobOn or C.knobOff
-            local x = on and (40 - KNOB_SIZE - KNOB_INSET) or KNOB_INSET
-            local animate = self.animateNext and self.knobX and self.knobX ~= x
-                and BD.db and BD.db.settingsAnimations and self:IsVisible()
-            self.animateNext = nil
-            if self.motion and not animate then
-                -- Mid-slide (e.g. hover): keep sliding, but toward the current colors.
-                self.motion.toX, self.motion.toTrack, self.motion.toKnob = x, track, knobColor
-                return
-            end
-            if animate then
-                self.motion = { elapsed = 0, fromX = self.knobX, toX = x,
-                    fromTrack = self.trackColor or track, toTrack = track,
-                    fromKnob = self.knobColor or knobColor, toKnob = knobColor }
-                self:SetScript("OnUpdate", SwitchStep)
-                return
-            end
-            SwitchFrame(self, x, track, knobColor)
-        end
-        control:SetScript("OnHide", FinishSwitch)
         control:SetScript("OnClick", function(self)
             self.animateNext = true
             if self:IsEnabled() then Changed(root, key, self:GetChecked() and true or false, onChanged) end
             self:Paint()
         end)
-        control:SetScript("OnEnter", function(self) self:Paint() end)
-        control:SetScript("OnLeave", function(self) self:Paint() end)
         row:SetScript("OnMouseUp", function(_, mouseButton)
             if mouseButton == "LeftButton" and control:IsEnabled() then
                 control.animateNext = true

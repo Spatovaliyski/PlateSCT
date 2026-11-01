@@ -52,6 +52,16 @@ function Layout.NeedsEnemyNameplates()
     return not Layout.IsScreen() or BD.API.IsModern()
 end
 
+-- Whether the game shows enemy nameplates. Unknown counts as shown.
+function Layout.EnemyNameplatesShown()
+    local reader = (C_CVar and (C_CVar.GetCVarBool or C_CVar.GetCVar)) or GetCVarBool or GetCVar
+    if not reader then
+        return true
+    end
+    local ok, enabled = pcall(reader, "nameplateShowEnemies")
+    return not ok or enabled == nil or (enabled ~= false and enabled ~= "0" and enabled ~= 0)
+end
+
 -- Accept a unit token as an outgoing destination. Returns the key that identifies the enemy
 -- for dedupe and combining (its plate, or "target" for a target without a plate), or nil.
 function BD.OutgoingUnitKey(unit)

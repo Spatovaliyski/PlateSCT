@@ -67,12 +67,7 @@ local function NeedsEnemyNameplates()
 end
 
 local function EnemyNameplatesEnabled()
-    local reader = (C_CVar and (C_CVar.GetCVarBool or C_CVar.GetCVar)) or GetCVarBool or GetCVar
-    if not reader then
-        return true
-    end
-    local ok, enabled = pcall(reader, "nameplateShowEnemies")
-    return not ok or enabled == nil or (enabled ~= false and enabled ~= "0" and enabled ~= 0)
+    return BD.Layout.EnemyNameplatesShown()
 end
 
 local BuildPreferences

@@ -4,6 +4,8 @@ local L, W = BD.L, BD.OptionsWidgets
 local WINDOW_WIDTH, WINDOW_HEIGHT = 840, 640
 local SIDEBAR_WIDTH, HEADER_HEIGHT = 200, 64
 local BAR_HEIGHT, STAGE_HEIGHT = 44, 176
+-- Previews are never smaller than this, whatever the style or layout.
+local PREVIEW_SCALE, AREA_EDGE_INSET = 0.7, 4
 local C = W.COLORS or {}
 local GOLD = C.accent or { 0.85, 0.68, 0.37 }
 local PAGE_ICONS = {
@@ -205,7 +207,7 @@ local function CreatePreview(root, content, bar)
     pane:SetPoint("TOPLEFT", bar, "BOTTOMLEFT", 0, 0)
     pane:SetPoint("BOTTOMRIGHT", content, "BOTTOMRIGHT", 0, 0)
     W.Paint(pane, C.drawer, 9, nil, "124")
-    local scaleLabel = W.Text(pane, string.format(L["Preview scale: %d%%"], 70), 0, 0, nil, nil, C.dim)
+    local scaleLabel = W.Text(pane, string.format(L["Preview scale: %d%%"], math.floor(PREVIEW_SCALE * 100 + 0.5)), 0, 0, nil, nil, C.dim)
     scaleLabel:ClearAllPoints()
     scaleLabel:SetPoint("LEFT", root.previewToggle, "RIGHT", 6, 0)
     scaleLabel:SetWordWrap(false)
@@ -266,28 +268,35 @@ local function CreatePreview(root, content, bar)
         local area = BD:GetOptionsPreviewArea()
         note:SetText(area and L["Scaled preview · Test selected area shows actual size."]
             or L["Appearance only · Test on Target checks gameplay size."])
-        local classic = not area and BD:IsClassicNumberStyle()
-        local scale = classic and 0.6 or 0.7
+        -- Every preview plays at a locked scale, never shrunk to fit the drawer.
+        local scale = PREVIEW_SCALE
         local offsetX, offsetY = BD:GetNumberStyleOffsets()
-        if area then offsetX, offsetY = 0, 0 end
-        local bounds = {}
-        for index, column in ipairs(self.columns) do
-            local clip = column.clip
-            if clip:GetWidth() <= 0 or clip:GetHeight() <= 0 then return end
-            -- Motion bounds use the default spawn; account for the saved offsets.
-            local left, right, bottom, top = BD:GetOptionsPreviewBounds(column.kind)
-            left, right = math.min(-32, left + offsetX), math.max(32, right + offsetX)
-            bottom, top = math.min(-3, bottom + offsetY), math.max(3, top + offsetY)
-            bounds[index] = { left, right, bottom, top }
-            if area then scale = math.min(scale, clip:GetWidth() / (right - left), clip:GetHeight() / (top - bottom)) end
-        end
-        for index, column in ipairs(self.columns) do
+        for _, column in ipairs(self.columns) do
             local clip, stage = column.clip, column.stage
-            local left, right, bottom, top = unpack(bounds[index])
+            if clip:GetWidth() <= 0 or clip:GetHeight() <= 0 then return end
             stage:ClearAllPoints()
             stage:SetScale(scale)
-            stage:SetSize(area and area.width or 1, area and area.height or 1)
-            stage:SetPoint("CENTER", clip, "CENTER", -(left + right) * 0.5 * scale, -(bottom + top) * 0.5 * scale)
+            if area then
+                -- An area taller than the drawer keeps its spawn edge in view, so each number
+                -- appears and starts to travel; held crits gather at the area's center.
+                stage:SetSize(area.width, area.height)
+                local impact = area.animation == "impact"
+                local held = column.kind == "crit" and area.stickyCrits and not impact
+                if held or area.height * scale <= clip:GetHeight() then
+                    stage:SetPoint("CENTER", clip, "CENTER", 0, 0)
+                elseif area.direction == "down" and not impact then
+                    stage:SetPoint("TOP", clip, "TOP", 0, -AREA_EDGE_INSET)
+                else
+                    stage:SetPoint("BOTTOM", clip, "BOTTOM", 0, AREA_EDGE_INSET)
+                end
+            else
+                -- Motion bounds use the default spawn; account for the saved offsets.
+                local left, right, bottom, top = BD:GetOptionsPreviewBounds(column.kind)
+                left, right = math.min(-32, left + offsetX), math.max(32, right + offsetX)
+                bottom, top = math.min(-3, bottom + offsetY), math.max(3, top + offsetY)
+                stage:SetSize(1, 1)
+                stage:SetPoint("CENTER", clip, "CENTER", -(left + right) * 0.5 * scale, -(bottom + top) * 0.5 * scale)
+            end
         end
         scaleLabel:SetText(string.format(L["Preview scale: %d%%"], math.floor(scale * 100 + 0.5)))
         areaLabel:SetText(area and string.format(L["Selected area: %s"], BD:GetScreenAreaLabel(area)) or "")

@@ -1123,6 +1123,13 @@ function BD:ShowStyleSample(anchor, style, kind)
     return SpawnMotionPreviewFrame(anchor, STYLE_SAMPLES[kind == "crit" and 2 or 1], StyleSampleOwner(style))
 end
 
+-- The same comparison for screen areas: the live area spawn, with default appearance settings.
+function BD:ShowScreenAreaSample(anchor, area, kind, incoming)
+    local frame = self.ShowScreenAreaPreview(StyleSampleOwner("retail"), anchor, kind, area, incoming)
+    if frame then frame.previewSpeed = STYLE_SAMPLE_SPEED end
+    return frame
+end
+
 function BD:GetOptionsPreviewArea()
     local view = self.configFrame and self.configFrame.activeView
     local editing = view and (view.key == "animation:main" or view.key == "placement:main")
