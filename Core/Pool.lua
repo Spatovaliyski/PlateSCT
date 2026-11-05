@@ -29,13 +29,24 @@ local lastClassicRelayoutTime = -1
 local lastClassicLayout
 local spawnOrder = 0
 
+-- A number masked against the damage threshold (Display.lua) may be invisible, and the addon
+-- cannot know which. So it never moves another number and is never moved: it starts on the
+-- nearest spot no live number covers, and keeps occupying its spot for later numbers.
+-- Numbers known to be visible (misses) keep their style's layout and may still push it.
+local function IsThresholdMasked(frame)
+    local mask = frame.thresholdMask
+    return mask ~= nil and mask.active == true
+end
+
 -- Only crits use the classic grow-and-settle shove grid. Normal hits keep
 -- their clear-spawn offsets so multi-target AOE does not pile in one stack.
+-- A masked crit takes a clear spot like a normal hit and then stays put.
 local function IsClassicShoveFrame(frame)
     return frame.usesClassicShove
         and frame.animMode == "classicPow"
         and frame.isCrit
         and frame.critsHold
+        and not IsThresholdMasked(frame)
 end
 
 local function IsClassicStyleFrame(frame)
@@ -149,7 +160,8 @@ local function ComputeMotion(frame)
 
     if frame.animMode == "impactSlam" then
         local dx, dy = Anim.ComputeImpactEntrance(frame.elapsed, frame.impactSpacingScale)
-        dy = dy + Anim.ComputeImpactTravel(frame.elapsed, frame.duration, frame.floatDistance, scrollSpeed)
+        dy = dy + Anim.ComputeImpactTravel(frame.elapsed, frame.duration, frame.floatDistance, scrollSpeed,
+            frame.impactSteady)
         dy = dy + ComputeImpactPush(frame)
         local scale = Anim.ComputeImpactScale(frame.elapsed, frame.isCrit, frame.critSlapScale, frame.critRestScale)
         return (frame.startX or 0) + dx, (frame.startY or 0) + dy, scale, Anim.ComputeAlpha(frame, progress)
@@ -519,6 +531,8 @@ local function ReleaseFrame(frame)
     frame.impactPushFrom = nil
     frame.impactPushTo = nil
     frame.impactPushStarted = nil
+    frame.impactSteady = nil
+    frame.areaPathOffset = nil
     frame.anchorRelPoint = nil
     frame.usesClassicShove = nil
     frame.classicReady = nil
@@ -747,6 +761,36 @@ local function FindClassicSlot(entry, x, y, obstacles)
     return bestX, bestY
 end
 
+-- Spots for masked Classic numbers, in the number's own cells (width, row height), tried in
+-- order: the enemy's spot; one row up, half a number to the right, then to the left; the same
+-- one row down; then two rows up and down. Neighbouring rows sit half a number apart, so the
+-- cluster spreads sideways without leaving its enemy.
+local MASKED_CLASSIC_SLOTS = {
+    { 0, 0 }, { 0.5, 1 }, { -0.5, 1 }, { 0.5, -1 }, { -0.5, -1 }, { 0, 2 }, { 0, -2 },
+}
+
+-- Masked numbers may be invisible, so they cannot shove; numbers on other enemies are left
+-- out too, or hidden hits around a whole pack would push this one far from its enemy. When
+-- every spot is taken, the number stays on its enemy's spot.
+local function FindMaskedClassicSlot(entry, entries)
+    local own = {}
+    for _, other in ipairs(entries) do
+        if other.frame.anchor == entry.frame.anchor then
+            own[#own + 1] = other
+        end
+    end
+    local obstacles = ClassicObstacles(own)
+    local gap = CLASSIC_LAYOUT_PAD * entry.factor
+    local width, height = entry.right - entry.left + gap, entry.top - entry.bottom + gap
+    for _, slot in ipairs(MASKED_CLASSIC_SLOTS) do
+        local x, y = entry.x + slot[1] * width, entry.y + slot[2] * height
+        if not ClassicSlotBlocked(entry, x, y, obstacles) then
+            return x, y
+        end
+    end
+    return entry.x, entry.y
+end
+
 local function NewestClassicFirst(a, b)
     return (a.frame.spawnOrder or 0) > (b.frame.spawnOrder or 0)
 end
@@ -872,7 +916,12 @@ local function PickClassicSpawn(frame, baseX, baseY, frames)
     frames[#frames] = nil
     local entry = table.remove(entries)
     table.sort(entries, NewestClassicFirst)
-    local x, y = FindClassicSlot(entry, entry.x, entry.y, ClassicObstacles(entries))
+    local x, y
+    if IsThresholdMasked(frame) then
+        x, y = FindMaskedClassicSlot(entry, entries)
+    else
+        x, y = FindClassicSlot(entry, entry.x, entry.y, ClassicObstacles(entries))
+    end
     return (x - (entry.ox or 0)) / entry.factor - entry.dx,
         (y - (entry.oy or 0)) / entry.factor - entry.dy
 end
@@ -969,15 +1018,64 @@ local function GetImpactStackSpacing(bottom, top, spacing)
     return math.max(spacing and 0 or IMPACT_STACK_OFFSET, top - bottom + (spacing or 4))
 end
 
+-- Live Impact numbers that share the new number's stack.
+local function InImpactStack(other, frame, anchor)
+    return other ~= frame and other.animMode == "impactSlam" and other.impactPushTo ~= nil
+        and other.anchor == anchor and other.anchorRelPoint == frame.anchorRelPoint
+        and other.isPreview == frame.isPreview and not other.lingerFrozen
+        and other.elapsed < other.duration
+end
+
+-- Height of an Impact number above its anchor once its short slam entrance has settled.
+local function ImpactRestY(frame)
+    return (frame.startY or 0) + ComputeImpactPush(frame) + Anim.ComputeImpactTravel(frame.elapsed,
+        frame.duration, frame.floatDistance, math.max(0.01, frame.scrollSpeed or 1), frame.impactSteady)
+end
+
+-- A masked Impact number may be invisible, so it pushes nothing. It rises at a steady speed, so
+-- gaps between such numbers never close, and starts in the lowest gap of the stack that is free
+-- now. In a screen area it then rises only the rest of the way, at the same speed, so it still
+-- fades at the area's top. A full stack leaves it at the spawn point.
+local function PlaceMaskedImpact(anchor, frame, spawnY)
+    frame.impactSteady = true
+    local gap = frame.areaSpacing or 4
+    local busy = {}
+    for other in pairs(active) do
+        if InImpactStack(other, frame, anchor) then
+            local y = ImpactRestY(other)
+            busy[#busy + 1] = { y + other.impactBottom - gap, y + other.impactTop + gap }
+        end
+    end
+    table.sort(busy, function(a, b) return a[1] < b[1] end)
+    local offset = 0
+    for _, span in ipairs(busy) do
+        if spawnY + offset + frame.impactTop > span[1] and spawnY + offset + frame.impactBottom < span[2] then
+            offset = span[2] - spawnY - frame.impactBottom
+        end
+    end
+    local distance = frame.floatDistance or 0
+    local limit = frame.areaRuntime and distance * 0.75 or distance + 3 * IMPACT_STACK_OFFSET
+    if offset > limit then
+        offset = 0
+    end
+    frame.impactPushFrom, frame.impactPushTo, frame.impactPushStarted = offset, offset, nil
+    local span = (frame.duration or 0) - Anim.IMPACT_ENTRANCE_DURATION
+    if frame.areaRuntime and offset > 0 and distance > 0 and span > 0 then
+        frame.floatDistance = distance - offset
+        frame.duration = Anim.IMPACT_ENTRANCE_DURATION + span * (distance - offset) / distance
+    end
+end
+
 local function PushImpactFrames(anchor, frame, spawnY)
     frame.impactPushTo = 0
+    if IsThresholdMasked(frame) then
+        PlaceMaskedImpact(anchor, frame, spawnY)
+        return
+    end
     local frames = {}
     local push = frame.areaSpacing and 0 or IMPACT_STACK_OFFSET
     for other in pairs(active) do
-        if other ~= frame and other.animMode == "impactSlam" and other.impactPushTo ~= nil
-            and other.anchor == anchor and other.anchorRelPoint == frame.anchorRelPoint
-            and other.isPreview == frame.isPreview and not other.lingerFrozen
-            and other.elapsed < other.duration then
+        if InImpactStack(other, frame, anchor) then
             frames[#frames + 1] = other
             push = math.max(push, GetImpactStackSpacing(other.startY + other.impactBottom + other.impactPushTo,
                 spawnY + frame.impactTop, frame.areaSpacing))
@@ -1029,6 +1127,10 @@ local function RelayerImpact(parent)
     local baseLevel = math.max(100, parent:GetFrameLevel() + 1)
     for index, frame in ipairs(frames) do
         frame:SetFrameLevel(baseLevel + index - 1)
+        -- A threshold-masked number draws through its clip frame (Display.lua).
+        if IsThresholdMasked(frame) then
+            frame.thresholdMask.clip:SetFrameLevel(baseLevel + index - 1)
+        end
     end
 end
 
@@ -1190,6 +1292,7 @@ BD.Pool = {
     PickClearSpawn = PickClearSpawn,
     ApplyMotion = ApplyFrameMotion,
     RelayerImpact = RelayerImpact,
+    IsThresholdMasked = IsThresholdMasked,
     GetImpactStackSpacing = GetImpactStackSpacing,
     RelayoutClassic = RelayoutClassic,
     GetClassicPreviewBounds = GetClassicPreviewBounds,

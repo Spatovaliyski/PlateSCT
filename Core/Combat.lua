@@ -125,15 +125,58 @@ local function HandleIncoming(self, action, flagText, amount)
     end
 end
 
+-- The hit that starts a fight (often a melee opener) can reach UNIT_COMBAT just before
+-- PLAYER_REGEN_DISABLED, while InCombatLockdown() is still false. Hold hits seen out of
+-- combat in a small ring and replay the recent ones when combat starts; hits from fights
+-- the player never joins are overwritten or expire unseen.
+local HOLD_WINDOW = 0.3
+local HOLD_SIZE = 16
+local held, heldNext = {}, 1
+for index = 1, HOLD_SIZE do
+    held[index] = {}
+end
+
+local function HoldPreCombatHit(unit, action, flagText, amount, schoolMask)
+    local entry = held[heldNext]
+    entry.time, entry.unit, entry.action = GetTime(), unit, action
+    entry.flagText, entry.amount, entry.schoolMask = flagText, amount, schoolMask
+    heldNext = heldNext % HOLD_SIZE + 1
+end
+
+local ProcessUnitCombat
+
 function BD:HandleUnitCombat(unit, action, flagText, amount, schoolMask)
     BD.API.AssertModern("Combat.HandleUnitCombat")
     if not self.db.enabled then
         return
     end
     if not BD.SafeUnitBoolean(InCombatLockdown) then
+        HoldPreCombatHit(unit, action, flagText, amount, schoolMask)
         return
     end
+    ProcessUnitCombat(self, unit, action, flagText, amount, schoolMask)
+end
 
+-- PLAYER_REGEN_DISABLED. InCombatLockdown() is still false while this event runs, so the
+-- held hits skip the lockdown check. Oldest first, so dedupe and attribution see real order.
+function BD:ReplayPreCombatHits()
+    BD.API.AssertModern("Combat.ReplayPreCombatHits")
+    local now = GetTime()
+    for offset = 0, HOLD_SIZE - 1 do
+        local entry = held[(heldNext - 1 + offset) % HOLD_SIZE + 1]
+        local time = entry.time
+        local unit, action, flagText, amount, schoolMask =
+            entry.unit, entry.action, entry.flagText, entry.amount, entry.schoolMask
+        entry.time, entry.unit, entry.action, entry.flagText, entry.amount, entry.schoolMask =
+            nil, nil, nil, nil, nil, nil
+        if time and now - time <= HOLD_WINDOW and self.db.enabled then
+            self:DebugPrint("replay pre-combat", unit, action)
+            ProcessUnitCombat(self, unit, action, flagText, amount, schoolMask)
+        end
+    end
+end
+
+ProcessUnitCombat = function(self, unit, action, flagText, amount, schoolMask)
     -- Incoming on the player is independent of outgoing filters.
     if unit == "player" then
         HandleIncoming(self, action, flagText, amount)

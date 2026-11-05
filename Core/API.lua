@@ -53,7 +53,8 @@ MODERN API (Midnight / Forever - combat restrictions)
 =============================================================================
   Allowed:
     UNIT_COMBAT for numbers; issecretvalue/canaccessvalue via Util helpers only;
-    C_CurveUtil threshold (secret amounts → visual hide, not Lua skip-by-compare);
+    status bar threshold mask (secret amounts → hidden while drawn, not Lua skip-by-compare;
+      curve Evaluate refuses secrets from addon code);
     attribution heuristic + onlyMyDamage/allNameplates; C_DamageMeter probe;
     C_Spell first, then legacy spell APIs;
     plate orphan on hide / NAME_PLATE_UNIT_REMOVED (no GUID identity compare);
@@ -224,8 +225,11 @@ function API.AssertClassic(where)
 end
 
 function API.ApplyFlavorDefaults(defaults)
-    if flavor == FLAVOR_CLASSIC and defaults then
+    if not defaults then return end
+    if flavor == FLAVOR_CLASSIC then
         defaults.numberStyle = "classic"
         defaults.fontSize = 18
+    elseif flavor == FLAVOR_MODERN then
+        defaults.fontSize = 20
     end
 end

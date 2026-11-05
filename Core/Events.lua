@@ -23,7 +23,6 @@ end
 -- Reapply preferences after a complete, validated update; never rerun login migrations.
 function BD:RefreshSettings()
     self:ApplyLocale()
-    self:RebuildThresholdCurve()
     if self.db.hideBlizzardFCT then
         self:ApplyBlizzardFCTSetting()
     else
@@ -204,7 +203,6 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
         BD.db = PlateSCTDB
         ApplyLayoutMigrations()
         BD:ApplyLocale()
-        BD:RebuildThresholdCurve()
         if BD.API.IsModern() and BD.RefreshScenario then
             BD:RefreshScenario()
         end
@@ -238,6 +236,13 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
     if event == "UNIT_COMBAT" then
         local unit, action, flagText, amount, schoolMask = ...
         BD:HandleUnitCombat(unit, action, flagText, amount, schoolMask)
+        return
+    end
+
+    if event == "PLAYER_REGEN_DISABLED" then
+        if BD.API.IsModern() and BD.db then
+            BD:ReplayPreCombatHits()
+        end
         return
     end
 
@@ -283,6 +288,8 @@ eventFrame:RegisterEvent("NAME_PLATE_UNIT_REMOVED")
 
 if BD.API.IsModern() then
     eventFrame:RegisterEvent("UNIT_COMBAT")
+    -- Replays an opening hit that reached UNIT_COMBAT before combat started.
+    eventFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
 elseif BD.API.IsClassic() then
     eventFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
     eventFrame:RegisterEvent("NAME_PLATE_UNIT_ADDED")

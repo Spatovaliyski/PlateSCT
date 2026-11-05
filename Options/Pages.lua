@@ -110,9 +110,7 @@ local function BuildCombat(parent, root)
 
     layout:Heading(L["Reduce clutter"])
     layout:Input("minDamage", L["Minimum damage threshold"],
-        L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be displayed."], function()
-            BD:RebuildThresholdCurve()
-        end)
+        L["Supports k/m suffixes, e.g. 20k or 2m. Damage below this value will not be displayed."])
     if IsModernAPI() then
         layout:Note(L["In raids and Mythic+ some amounts are secret, so the threshold hides those hits visually instead of skipping them."])
     end

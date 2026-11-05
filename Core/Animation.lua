@@ -108,13 +108,15 @@ function Anim.ComputeImpactScale(elapsed, isCrit, peakScale, restScale)
     return peak + (rest - peak) * Anim.EaseOutCubic((elapsed - 0.04) / 0.08)
 end
 
-function Anim.ComputeImpactTravel(elapsed, duration, distance, scrollSpeed)
+-- steady: rise at a constant speed instead of easing out, so numbers that start apart stay
+-- apart (threshold-masked numbers cannot push each other; Pool.lua).
+function Anim.ComputeImpactTravel(elapsed, duration, distance, scrollSpeed, steady)
     local span = duration - Anim.IMPACT_ENTRANCE_DURATION
     if span <= 0 then
         return 0
     end
     local progress = Anim.Clamp01((elapsed - Anim.IMPACT_ENTRANCE_DURATION) / span * math.max(0.01, scrollSpeed or 1))
-    return (distance or 0) * Anim.EaseOutQuad(progress)
+    return (distance or 0) * (steady and progress or Anim.EaseOutQuad(progress))
 end
 
 function Anim.GetImpactMotionBounds(spacingScale, distance)

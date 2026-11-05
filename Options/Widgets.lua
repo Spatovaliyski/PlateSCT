@@ -479,16 +479,16 @@ function W.Button(parent, label, width, height, onClick, style)
     button:SetSize(width or 160, height or 32)
     style = style or "action"
     button.optionsStyle = style
-    local font = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    button:SetFontString(font)
-    button:SetNormalFontObject("GameFontNormal")
-    button:SetHighlightFontObject("GameFontNormal")
-    button:SetDisabledFontObject("GameFontDisable")
-    button:SetText(label or "")
+    -- No Blizzard font template or state font objects: the client can reapply those (and
+    -- their yellow GameFontNormal color) after PaintButton runs, e.g. when the welcome
+    -- opens during login. Every label color comes from PaintButton/PaintAction instead.
+    local font = button:CreateFontString(nil, "OVERLAY")
     local role = (style == "action" or style == "black") and "semibold" or "medium"
     if style == "utility" or style == "menu" or style == "result" then role = "regular" end
     local size = 14
     W.SetFont(font, role, size)
+    button:SetFontString(font)
+    button:SetText(label or "")
     font:ClearAllPoints()
     local centered = style == "action" or style == "segment" or style == "black"
     local inset = style == "text" and 0 or centered and 14 or 12
@@ -513,7 +513,7 @@ function W.Button(parent, label, width, height, onClick, style)
     button:SetScript("OnClick", function(self, ...)
         if self:IsEnabled() and onClick then onClick(self, ...) end
     end)
-    -- Font objects reapply on state changes; keep the addon font and readable size.
+    -- Keep the addon font and readable size through state changes.
     for _, event in ipairs({ "OnEnter", "OnLeave", "OnEnable", "OnDisable", "OnShow", "OnMouseUp" }) do
         Hook(button, event, function() W.ReadableFont(font) end)
     end

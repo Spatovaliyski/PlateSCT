@@ -57,21 +57,15 @@ function SetCVar(key, value) cvars[key] = value end
 function CreateColor(...) return { ... } end
 STANDARD_TEXT_FONT = "Fonts\\FRIZQT__.TTF"
 StaticPopupDialogs = {}
-Enum = { LuaCurveType = { Step = 1 } }
 C_Timer = { After = function(_, callback) callback() end }
 local function new(flavor)
     frames, cvars, class = {}, {}, "MAGE"
-    C_CurveUtil = flavor == "modern" and {
-        CreateColorCurve = function()
-            return { points = {}, SetType = function() end,
-                AddPoint = function(self, value, color) self.points[#self.points + 1] = { value, color } end }
-        end,
-    } or nil
     local BD = { API = {
         IsModern = function() return flavor == "modern" end,
         IsClassic = function() return flavor == "classic" end,
         ApplyFlavorDefaults = function(defaults)
             if flavor == "classic" then defaults.numberStyle, defaults.fontSize = "classic", 18 end
+            if flavor == "modern" then defaults.fontSize = 20 end
         end,
     } }
     load("Locales/Locale.lua", BD)
@@ -196,7 +190,6 @@ for _, source in ipairs({ "classic", "modern" }) do
             eq(receiver:ResolveLocaleCode(), "enUS")
             eq(receiver.ResolveFontPath(), STANDARD_TEXT_FONT, "unavailable SharedMedia fallback")
             for _, cvar in ipairs(receiver.BLIZZ_FCT_CVARS) do eq(cvars[cvar], "1", "restore Blizzard text") end
-            if destination == "modern" then eq(receiver:GetThresholdCurve().points[2][1], original.minDamage) end
             local priorEffects = copy(receiver.effects)
             eq(#assert(receiver:ImportSettings(text)).changes, 0, "idempotent import")
             same(receiver.effects, priorEffects)
@@ -422,7 +415,6 @@ test("refresh failure rolls back data and retries runtime restoration", function
     local result, err, diagnostic = BD:ImportSettings(records("shared.fontSize=n:30;shared.hideBlizzardFCT=b:0;shared.minDamage=n:10"))
     eq(result, nil); eq(type(err), "string"); assert(diagnostic:find("simulated UI failure", 1, true))
     same(BD.db, before); eq(BD.db, identity); eq(attempts, 2)
-    eq(BD:GetThresholdCurve(), nil)
     for _, cvar in ipairs(BD.BLIZZ_FCT_CVARS) do eq(cvars[cvar], "0", "rollback Blizzard text") end
 end)
 

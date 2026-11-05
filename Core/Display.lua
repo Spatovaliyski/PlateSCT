@@ -887,10 +887,81 @@ function Render.OutgoingColor(self, preset, r, g, b, isHeal)
     return r, g, b
 end
 
--- Font, text, icon, CRITICAL label, color and threshold alpha. Returns the font size,
--- font path and layout used, or nil when the threshold hides the number (the frame
--- is released then).
+-- Threshold mask. Modern clients hand addons secret hit amounts: Lua may not compare them, and a
+-- threshold curve refuses them from addon code. A status bar does accept one. With its range set
+-- from one below the threshold to the threshold, its fill is empty for smaller amounts and full
+-- from it. The number's text, icon, hit count and CRITICAL label then sit in a frame clipped to
+-- that fill, so the client hides small hits as it draws them. Such a number still exists: it
+-- keeps its place in the motion and counts toward the caps until it expires.
+local MASK_SIZE = 4096
+local MASKED_REGIONS = { "text", "icon", "iconCount", "critLabel" }
+
+local function SetMaskedRegionsParent(frame, parent)
+    for _, key in ipairs(MASKED_REGIONS) do
+        local region = frame[key]
+        if region then
+            region:SetParent(parent)
+        end
+    end
+end
+
+-- Built once per pooled frame. The bar and clip are children of the number, so they follow
+-- its scale, alpha and visibility; every region keeps its explicit anchors.
+local function ThresholdMask(frame)
+    local mask = frame.thresholdMask
+    if mask then
+        return mask
+    end
+    local bar = CreateFrame("StatusBar", nil, frame)
+    bar:SetSize(MASK_SIZE, MASK_SIZE)
+    bar:SetPoint("CENTER", frame, "CENTER", 0, 0)
+    bar:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
+    bar:SetStatusBarColor(1, 1, 1, 0)
+    bar:Hide()
+    local clip = CreateFrame("Frame", nil, frame)
+    clip:SetClipsChildren(true)
+    local fill = bar:GetStatusBarTexture()
+    clip:SetPoint("TOPLEFT", fill, "TOPLEFT", 0, 0)
+    clip:SetPoint("BOTTOMRIGHT", fill, "BOTTOMRIGHT", 0, 0)
+    clip:Hide()
+    mask = { bar = bar, clip = clip }
+    frame.thresholdMask = mask
+    return mask
+end
+
+local function ClearThresholdMask(frame)
+    local mask = frame.thresholdMask
+    if not (mask and mask.active) then
+        return
+    end
+    SetMaskedRegionsParent(frame, frame)
+    mask.active = nil
+    mask.clip:Hide()
+    mask.bar:Hide()
+end
+
+-- amount is secret: it only reaches the status bar.
+local function ApplyThresholdMask(self, frame, amount, minDamage)
+    local mask = ThresholdMask(frame)
+    mask.bar:SetMinMaxValues(minDamage - 1, minDamage)
+    local accepted, reason = pcall(mask.bar.SetValue, mask.bar, amount)
+    if not accepted then
+        self:DebugPrint("threshold mask unavailable:", reason)
+        return
+    end
+    mask.bar:Show()
+    -- Same level as the number, which draws nothing of its own while masked (Impact relayering
+    -- keeps the two in step).
+    mask.clip:SetFrameLevel(frame:GetFrameLevel())
+    mask.clip:Show()
+    SetMaskedRegionsParent(frame, mask.clip)
+    mask.active = true
+end
+
+-- Font, text, icon, CRITICAL label, color and threshold mask. Returns the font size, font path
+-- and layout used.
 function Render.Paint(self, frame, preset, numberStyle, text, r, g, b, amount, icon)
+    ClearThresholdMask(frame)
     local fontSize, fontFace
     if frame.incoming then
         fontSize = self.db.incomingFontSize or self.db.fontSize or self.DEFAULTS.fontSize
@@ -922,22 +993,13 @@ function Render.Paint(self, frame, preset, numberStyle, text, r, g, b, amount, i
     ApplyTextLayout(frame, fontSize, fontPath, preset.fontFlags, preset, layoutOpts)
     frame.text:SetTextColor(r, g, b, 1)
 
-    local thresholdCurve = self:GetThresholdCurve()
-    if amount and self.db.minDamage and self.db.minDamage > 0 and BD.IsSecret(amount) and thresholdCurve then
-        local ok = pcall(function()
-            local color = thresholdCurve:Evaluate(amount)
-            frame.baseAlpha = select(4, color:GetRGBA())
-        end)
-        if not ok then
-            frame.baseAlpha = 1
-        end
-    end
-    if frame.baseAlpha <= 0 then
-        BD.Pool.Release(frame)
-        return nil
+    -- Readable amounts were already checked by BD.PassesThreshold before this number was made.
+    local minDamage = tonumber(self.db.minDamage) or 0
+    if minDamage > 0 and BD.IsSecret(amount) then
+        ApplyThresholdMask(self, frame, amount, minDamage)
     end
     -- No amount (misses, incoming, previews) keeps the neutral scale and the live average untouched.
-    if frame.usesClassicShove and amount ~= nil then
+    if frame.usesClassicShove and BD.ValuePresent(amount) then
         frame.amountScale = BD.ComputeClassicAmountScale(amount)
     end
     return fontSize, fontPath, layoutOpts
@@ -1116,7 +1178,10 @@ local function StyleSampleOwner(style, interval)
 end
 
 function BD:GetStyleSampleBounds(style, kind, interval)
-    return self.GetOptionsPreviewBounds(StyleSampleOwner(style, interval), kind)
+    -- Pass the style explicitly: without an override, the bounds follow the settings
+    -- preview's screen area whenever the saved layout is Screen.
+    local owner = StyleSampleOwner(style, interval)
+    return self.GetOptionsPreviewBounds(owner, kind, owner.db.numberStyle)
 end
 
 function BD:ShowStyleSample(anchor, style, kind)

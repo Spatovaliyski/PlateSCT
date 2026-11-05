@@ -87,6 +87,12 @@ local function Scrolls(frame)
     return frame.areaTravel ~= 0 and not (frame.isCrit and frame.critsHold)
 end
 
+-- Distance along the area's path from the start. A masked number may start part of the way
+-- along (areaPathOffset) and then scrolls only the rest.
+local function PathPosition(frame)
+    return (frame.areaPathOffset or 0) + math.abs(frame.areaTravel) * math.min(1, frame.elapsed / frame.duration)
+end
+
 -- A new number starts the path: push older ones ahead just far enough to clear the one behind.
 local function Spread(frames, newest)
     local position, line = 0, newest.areaLine
@@ -95,14 +101,66 @@ local function Spread(frames, newest)
         if frame ~= newest and Scrolls(frame) then
             local need = position + (line + frame.areaLine) * 0.5
             local travel = math.abs(frame.areaTravel)
-            local travelled = travel * math.min(1, frame.elapsed / frame.duration)
-            if travelled >= need then
+            if PathPosition(frame) >= need then
                 break
             end
-            frame.elapsed = math.min(frame.duration, need / travel * frame.duration)
+            frame.elapsed = math.min(frame.duration, (need - (frame.areaPathOffset or 0)) / travel * frame.duration)
             position, line = need, frame.areaLine
         end
     end
+end
+
+-- The lowest position (from 0) where a number of the given line height overlaps none of the
+-- busy { center, line } spans.
+local function FirstFreeOffset(busy, line)
+    table.sort(busy, function(a, b) return a[1] - a[2] * 0.5 < b[1] - b[2] * 0.5 end)
+    local center, half = 0, line * 0.5
+    for _, span in ipairs(busy) do
+        local low, high = span[1] - span[2] * 0.5, span[1] + span[2] * 0.5
+        if center + half > low and center - half < high then
+            center = high + half
+        end
+    end
+    return center
+end
+
+-- A masked number may be invisible, so it moves no other number (Pool.IsThresholdMasked). It
+-- takes the nearest spot no live number covers: a gap along a scrolling path (numbers on one
+-- path keep the same speed, so the gap stays free), or a free step of a static stack or of
+-- the sticky crit lane. A full area leaves it at the start. Returns the start's Y change.
+local function PlaceMasked(frames, frame, area, held, direction)
+    local busy, line = {}, frame.areaLine
+    if held then
+        for _, other in ipairs(frames) do
+            if other.critsHold then busy[#busy + 1] = { math.abs(other.areaStack or 0), other.areaLine } end
+        end
+        local offset = FirstFreeOffset(busy, line)
+        frame.areaStack = (offset + line * 0.5 <= area.height * 0.5) and offset or 0
+        return 0
+    end
+    if frame.areaTravel == 0 then
+        for _, other in ipairs(frames) do
+            if not (other.isCrit and other.critsHold) then
+                busy[#busy + 1] = { math.abs(other.areaStack or 0), other.areaLine }
+            end
+        end
+        local offset = FirstFreeOffset(busy, line)
+        frame.areaStack = (offset + line * 0.5 <= area.height) and direction * offset or 0
+        return 0
+    end
+    for _, other in ipairs(frames) do
+        if Scrolls(other) then busy[#busy + 1] = { PathPosition(other), other.areaLine } end
+    end
+    local travel = math.abs(frame.areaTravel)
+    local offset = FirstFreeOffset(busy, line)
+    if offset <= 0 or offset > travel * 0.75 then
+        return 0
+    end
+    -- Start part of the way along and scroll the rest at the same speed.
+    frame.areaPathOffset = offset
+    frame.areaTravel = direction * (travel - offset)
+    frame.duration = frame.duration * (travel - offset) / travel
+    return direction * offset
 end
 
 -- Painted bounds are secret-safe and include icons and critical labels.
@@ -229,7 +287,12 @@ local function Spawn(self, area, frame, preset, numberStyle, text, r, g, b, amou
         Render.RememberCombine(self, frame, combineOwner, combineKey, amount, icon, fontSize, fontPath, preset,
             layoutOpts)
     end
-    if held then
+    -- A number masked against the threshold may be invisible, so it takes a free spot and moves
+    -- no other number (Impact areas do this in Pool's spawn); the area cap still counts it.
+    local masked = BD.Pool.IsThresholdMasked(frame)
+    if masked and not impact then
+        baseY = baseY + PlaceMasked(frames, frame, area, held, direction)
+    elseif held and not masked then
         -- A central crit lane stacks away from the center instead of covering earlier crits.
         local offset, line = 0, frame.areaLine
         for index = #frames, 1, -1 do
@@ -240,7 +303,7 @@ local function Spawn(self, area, frame, preset, numberStyle, text, r, g, b, amou
                 if offset + other.areaLine * 0.5 > area.height * 0.5 then BD.Pool.Release(other) end
             end
         end
-    elseif not impact then
+    elseif not held and not impact and not masked then
         if area.animation == "static" then
             Stack(frames, frame, direction, area.height)
         else

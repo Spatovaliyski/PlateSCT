@@ -1,7 +1,5 @@
 local _, BD = ...
 
-local thresholdCurve = nil
-
 function BD:GetStylePreset(styleOverride)
     local style = styleOverride or self.db.numberStyle or "retail"
     if not self.STYLE_PRESETS[style] then
@@ -223,32 +221,7 @@ function BD:RestoreBlizzardFCTSetting()
     SetBlizzardFCTEnabled(true)
 end
 
-function BD:RebuildThresholdCurve()
-    thresholdCurve = nil
-    if not C_CurveUtil or not C_CurveUtil.CreateColorCurve then
-        return
-    end
-    if not self.db.minDamage or self.db.minDamage <= 0 then
-        return
-    end
-
-    local ok, curve = pcall(function()
-        local c = C_CurveUtil.CreateColorCurve()
-        c:SetType(Enum.LuaCurveType.Step)
-        c:AddPoint(0, CreateColor(1, 1, 1, 0))
-        c:AddPoint(self.db.minDamage, CreateColor(1, 1, 1, 1))
-        return c
-    end)
-
-    if ok then
-        thresholdCurve = curve
-    end
-end
-
-function BD:GetThresholdCurve()
-    return thresholdCurve
-end
-
+-- A secret amount passes here; Render.Paint masks it against the threshold (Display.lua).
 function BD.PassesThreshold(amount, minDamage)
     if not minDamage or minDamage <= 0 then
         return true
