@@ -25,7 +25,7 @@ local function IsDuplicatePersonalHit(key, amount, isCrit)
         return false
     end
     if BD.IsSecret(amount) or BD.IsSecret(lastPersonalAmount) then
-        return true
+        return false
     end
     return AmountsEqual(amount, lastPersonalAmount)
 end
@@ -47,6 +47,10 @@ local function ShowPersonalDamage(unit, key, amount, isCrit, schoolMask)
     end
     if not BD:PassesSchoolFilter(schoolMask) then
         BD:DebugPrint("personal skip, school filter")
+        return false
+    end
+    if BD.AmountIsZero(amount) then
+        BD:DebugPrint("personal skip, zero wound")
         return false
     end
 
@@ -215,6 +219,9 @@ ProcessUnitCombat = function(self, unit, action, flagText, amount, schoolMask)
             return
         end
         if not self:PassesSchoolFilter(schoolMask) then
+            return
+        end
+        if BD.AmountIsZero(amount) then
             return
         end
         local display = BD.FormatAmount(amount, self.db.abbreviate)
