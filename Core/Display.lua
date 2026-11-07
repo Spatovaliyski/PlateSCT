@@ -995,8 +995,8 @@ function Render.Paint(self, frame, preset, numberStyle, text, r, g, b, amount, i
 
     -- Readable amounts were already checked by BD.PassesThreshold before this number was made.
     local minDamage = tonumber(self.db.minDamage) or 0
-    if minDamage > 0 and BD.IsSecret(amount) then
-        ApplyThresholdMask(self, frame, amount, minDamage)
+    if BD.IsSecret(amount) then
+        ApplyThresholdMask(self, frame, amount, math.max(minDamage, 1))
     end
     -- No amount (misses, incoming, previews) keeps the neutral scale and the live average untouched.
     if frame.usesClassicShove and BD.ValuePresent(amount) then

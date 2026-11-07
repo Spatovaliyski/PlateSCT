@@ -235,6 +235,16 @@ function BD.PassesThreshold(amount, minDamage)
     return ok and passes
 end
 
+function BD.AmountIsZero(amount)
+    if not BD.CanAccessValue(amount) then
+        return false
+    end
+    local ok, zero = pcall(function()
+        return amount == 0
+    end)
+    return ok and zero and true or false
+end
+
 function BD.AmountExceeds(amount, threshold)
     if threshold == nil or type(threshold) ~= "number" or threshold < 0 then
         return false
