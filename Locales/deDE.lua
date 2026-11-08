@@ -291,6 +291,10 @@ L["Miss"] = "Verfehlt"
 
 -- Settings explanations
 L["A new WoW-inspired settings window with clear sections, searchable controls, and gentle animations."] = "Neues Einstellungsfenster im WoW-Stil mit klaren Abschnitten, einer Suche und dezenten Animationen."
+L["Show damage over time"] = "Schaden über Zeit anzeigen"
+L["Show bleeds, DoTs, and other ticks that land long after your cast. Turn off to keep only hits that land right after a cast; this also hides most damage other players deal to your target."] = "Zeigt Blutungen, DoTs und andere Ticks, die lange nach deinem Zauber eintreffen. Deaktivieren, um nur Treffer direkt nach einem Zauber zu zeigen; das blendet auch den meisten Schaden anderer Spieler an deinem Ziel aus."
+L["Show periodic damage from bleeds, poisons, and DoTs."] = "Zeigt periodischen Schaden von Blutungen, Giften und DoTs."
+L["Choose Personal - experimental under Modern API → Damage mode to filter damage over time."] = "Wähle Persönlich - experimentell unter Moderne API → Schadensmodus, um Schaden über Zeit zu filtern."
 L["Choose Personal - experimental under Modern API → Damage mode to use pet matching."] = "Wähle Persönlich - experimentell unter Moderne API → Schadensmodus, um Begleitertreffer zuzuordnen."
 L["Choose Personal - experimental under Modern API → Damage mode to use spell icons."] = "Wähle Persönlich - experimentell unter Moderne API → Schadensmodus, um Zaubersymbole zu nutzen."
 L["Choose the combat text you want to see."] = "Wähle den angezeigten Kampftext."

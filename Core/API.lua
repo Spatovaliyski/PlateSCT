@@ -117,6 +117,7 @@ local flavor = FLAVOR_UNSUPPORTED
 local projectId
 local interfaceVersion
 local warnedMismatch = false
+local isForever = false
 
 local function GetInterfaceVersion()
     local _, _, _, interface = GetBuildInfo()
@@ -138,6 +139,7 @@ local function DetectFlavor()
     -- Project is CAMELOT (18), or MAINLINE (1) on builds that still report 1.
     local foreverInterface = interfaceVersion >= 16000 and interfaceVersion < 17000
     if projectId == foreverProject or foreverInterface then
+        isForever = true
         return FLAVOR_MODERN
     end
     if projectId == modernProject and interfaceVersion >= 120000 then
@@ -198,6 +200,12 @@ end
 
 function API.IsClassic()
     return flavor == FLAVOR_CLASSIC
+end
+
+-- Forever only, within the Modern API: for game rules Midnight does not share, such as
+-- next-melee abilities. Client API questions still use IsModern / IsClassic.
+function API.IsForever()
+    return isForever
 end
 
 function API.IsSupported()

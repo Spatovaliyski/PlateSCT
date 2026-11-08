@@ -8,6 +8,8 @@ local lastPersonalKey
 local lastPersonalTime = 0
 local lastPersonalAmount
 local lastPersonalCrit
+local lastPersonalSpell
+local lastPersonalPaired = false
 local PERSONAL_DUP_WINDOW = 0.05
 
 local function AmountsEqual(a, b)
@@ -30,15 +32,35 @@ local function IsDuplicatePersonalHit(key, amount, isCrit)
     return AmountsEqual(amount, lastPersonalAmount)
 end
 
-local function RememberPersonalHit(key, amount, isCrit)
+-- Forever reports the swing a next-melee ability replaces (Raptor Strike, Heroic Strike, Maul,
+-- Cleave) as a hit of 0 beside the real hit, in either order. Both amounts are secret, so they
+-- cannot be told apart: a hit may bring one companion that shares its spell match, and
+-- Render.Paint hides the 0.
+local function IsNextMeleeCompanion(key, amount)
+    if not key or key ~= lastPersonalKey or lastPersonalPaired or not lastPersonalSpell then
+        return false
+    end
+    if not BD.IsSecret(amount) or not BD.IsSecret(lastPersonalAmount) or not BD.API.IsForever() then
+        return false
+    end
+    return (GetTime() - lastPersonalTime) <= PERSONAL_DUP_WINDOW
+end
+
+local function RememberPersonalHit(key, amount, isCrit, spellID, paired)
     lastPersonalKey = key
     lastPersonalTime = GetTime()
     lastPersonalAmount = amount
     lastPersonalCrit = isCrit
+    lastPersonalSpell = spellID
+    lastPersonalPaired = paired and true or false
 end
 
 local function ShowPersonalDamage(unit, key, amount, isCrit, schoolMask)
-    if IsDuplicatePersonalHit(key, amount, isCrit) then
+    if key == lastPersonalKey then
+        BD:DebugPrint("personal gap", GetTime() - lastPersonalTime)
+    end
+    local companion = IsNextMeleeCompanion(key, amount)
+    if not companion and IsDuplicatePersonalHit(key, amount, isCrit) then
         BD:DebugPrint("personal skip, duplicate")
         return false
     end
@@ -54,7 +76,13 @@ local function ShowPersonalDamage(unit, key, amount, isCrit, schoolMask)
         return false
     end
 
-    local spellID, usedAuto = BD:MatchOutgoingHit(unit, schoolMask)
+    local spellID, usedAuto
+    if companion then
+        -- Must not spend a cast's hit or the auto-attack gap, or whichever arrives second is lost.
+        spellID = lastPersonalSpell
+    else
+        spellID, usedAuto = BD:MatchOutgoingHit(unit, schoolMask)
+    end
     if not spellID then
         BD:DebugPrint("personal skip, no outgoing match")
         return false
@@ -67,8 +95,8 @@ local function ShowPersonalDamage(unit, key, amount, isCrit, schoolMask)
         r, g, b = preset.defaultColor[1], preset.defaultColor[2], preset.defaultColor[3]
     end
     local hitKind = isCrit and "crit" or "hit"
-    BD:DebugPrint("personal", unit, display, hitKind, usedAuto and "auto" or spellID)
-    RememberPersonalHit(key, amount, isCrit)
+    BD:DebugPrint("personal", unit, display, hitKind, usedAuto and "auto" or spellID, companion and "companion" or "")
+    RememberPersonalHit(key, amount, isCrit, spellID, companion)
     -- Modern-only: spellId comes from attribution, not UNIT_COMBAT.
     BD:ShowOutgoing(unit, key, display, r, g, b, amount, isCrit, false, nil, hitKind, spellID)
     return true
@@ -90,7 +118,7 @@ local function ShowPersonalHeal(unit, key, amount, isCrit, schoolMask)
         return false
     end
 
-    local spellID, usedAuto = BD:MatchOutgoingHit(unit, schoolMask)
+    local spellID, usedAuto = BD:MatchOutgoingHit(unit, schoolMask, true)
     -- Heals must match a cast; auto-attack fallback is damage-only.
     if not spellID or usedAuto then
         BD:DebugPrint("personal heal skip, no outgoing match")

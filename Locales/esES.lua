@@ -291,6 +291,10 @@ L["Miss"] = "Fallo"
 
 -- Settings explanations
 L["A new WoW-inspired settings window with clear sections, searchable controls, and gentle animations."] = "Nueva ventana de ajustes inspirada en WoW, con secciones claras, búsqueda y animaciones suaves."
+L["Show damage over time"] = "Mostrar daño periódico"
+L["Show bleeds, DoTs, and other ticks that land long after your cast. Turn off to keep only hits that land right after a cast; this also hides most damage other players deal to your target."] = "Muestra sangrados, DoTs y otros tics que llegan mucho después de tu lanzamiento. Desactívalo para mostrar solo los golpes que llegan justo después de un lanzamiento; también oculta la mayor parte del daño que otros jugadores hacen a tu objetivo."
+L["Show periodic damage from bleeds, poisons, and DoTs."] = "Muestra el daño periódico de sangrados, venenos y DoTs."
+L["Choose Personal - experimental under Modern API → Damage mode to filter damage over time."] = "Elige Personal - experimental en API moderna → Modo de daño para filtrar el daño periódico."
 L["Choose Personal - experimental under Modern API → Damage mode to use pet matching."] = "Elige Personal - experimental en API moderna → Modo de daño para identificar golpes de tu mascota."
 L["Choose Personal - experimental under Modern API → Damage mode to use spell icons."] = "Elige Personal - experimental en API moderna → Modo de daño para usar iconos de hechizos."
 L["Choose the combat text you want to see."] = "Elige el texto de combate que quieres ver."

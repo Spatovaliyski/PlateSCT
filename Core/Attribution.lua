@@ -4,6 +4,13 @@ local pending = {}
 local pendingPool = {}
 local castMeta = {}
 local lastAutoAttackFallbackTime = 0
+-- Your own swing state (PLAYER_ENTER_COMBAT / START_AUTOREPEAT_SPELL). Game state, not evidence:
+-- ClearAttributionState leaves it alone.
+local autoAttackMelee, autoAttackRanged = false, false
+-- With damage over time hidden, a cast may still take one hit this long after it (projectile travel).
+local LATE_HIT_WINDOW = 2.0
+-- A channel keeps its window open until it ends, plus this much for the last tick to arrive.
+local CHANNEL_GRACE = 0.4
 
 local function AcquirePending()
     local entry = table.remove(pendingPool)
@@ -147,6 +154,29 @@ local function ExpireStale(now)
     end
 end
 
+-- Seconds left in the player's channel of spellID, or nil. Channel ticks are direct hits, so the
+-- cast window covers them instead of the linger meant for damage over time.
+local function ChannelTimeLeft(source, spellID, now)
+    if source ~= "player" or type(UnitChannelInfo) ~= "function" then
+        return nil
+    end
+    local ok, endTimeMS, channelSpellID = pcall(function()
+        local _, _, _, _, endMS, _, _, id = UnitChannelInfo("player")
+        return endMS, id
+    end)
+    if not ok or BD.IsSecret(endTimeMS) or type(endTimeMS) ~= "number" then
+        return nil
+    end
+    if not BD.ValuePresent(channelSpellID) or not BD.ValuesEqual(channelSpellID, spellID) then
+        return nil
+    end
+    local left = endTimeMS / 1000 - now
+    if left <= 0 then
+        return nil
+    end
+    return left
+end
+
 local function PushPending(spellID, source, destToken, kind)
     if not BD.ValuePresent(spellID) then
         return
@@ -171,8 +201,13 @@ local function PushPending(spellID, source, destToken, kind)
     entry.t0 = now
     entry.kind = kind or "instant"
     entry.window = kind == "cast" and strict.castWindow or strict.instantWindow
+    local channelLeft = ChannelTimeLeft(entry.source, spellID, now)
+    if channelLeft and channelLeft + CHANNEL_GRACE > entry.window then
+        entry.window = channelLeft + CHANNEL_GRACE
+    end
     entry.hitsLeft = strict.hitsLeft
     entry.linger = strict.linger or 0
+    entry.matched = 0
     pending[#pending + 1] = entry
     BD:DebugPrint("pending+", entry.kind, spellID, entry.destToken or "no-dest", entry.window)
 end
@@ -205,6 +240,10 @@ function BD:NoteOutgoingSpell(unit, castGUID, spellID)
     end
 
     local meta = TakeCastMeta(castGUID)
+    if meta and meta.destGone then
+        -- Its target's token was released mid-cast; it may already name another enemy.
+        return
+    end
     local kind = (meta and meta.kind == "cast") and "cast" or "instant"
     local destToken = (meta and meta.destToken) or CaptureDestToken()
     PushPending(spellID, unit, destToken, kind)
@@ -252,7 +291,10 @@ local function CanUsePendingOnUnit(entry, unit, strict)
     return BD.UnitsMatch(unit, "target") or unit == "target"
 end
 
-local function TryMatchPending(unit, now, strict)
+-- lateHits false (damage over time hidden): past its window a cast takes at most one hit, within
+-- LATE_HIT_WINDOW, and only if nothing matched it yet. A slow projectile still lands; the bleed
+-- and DoT ticks that follow, and other players' hits, no longer borrow the newest cast's icon.
+local function TryMatchPending(unit, now, strict, lateHits)
     ExpireStale(now)
     local bestIndex
     local preferDest = false
@@ -269,6 +311,9 @@ local function TryMatchPending(unit, now, strict)
             local linger = entry.linger or 0
             local inWindow = age <= window
             local inLinger = linger > window and age <= linger
+            if inLinger and not lateHits then
+                inLinger = (entry.matched or 0) == 0 and age <= LATE_HIT_WINDOW
+            end
             if (inWindow or inLinger) and CanUsePendingOnUnit(entry, unit, strict) then
                 local destMatch = DestMatches(entry, unit)
                 if destMatch then
@@ -288,6 +333,7 @@ local function TryMatchPending(unit, now, strict)
     end
 
     local entry = pending[bestIndex]
+    entry.matched = (entry.matched or 0) + 1
     local age = now - (entry.t0 or 0)
     local window = entry.window or 0
     local linger = entry.linger or 0
@@ -320,24 +366,79 @@ local function CanUseAutoAttackFallback(now, strict)
     return true
 end
 
---- Returns spellID, usedAuto (or nil if no match).
-function BD:MatchOutgoingHit(unit, schoolMask)
+local function PlayerIsAutoAttacking()
+    if autoAttackMelee or autoAttackRanged then
+        return true
+    end
+    -- Covers a reload mid-swing, before the next PLAYER_ENTER_COMBAT.
+    local isCurrentSpell = (C_Spell and C_Spell.IsCurrentSpell) or IsCurrentSpell
+    return BD.SafeUnitBoolean(isCurrentSpell, BD.AUTO_ATTACK_SPELL_ID)
+end
+
+-- Bleeds and other players' melee are physical too. Credit a physical hit to your swing only
+-- while your auto attack, or your pet's attack on that unit, is actually running.
+local function AutoAttackMayHit(unit)
+    if PlayerIsAutoAttacking() then
+        return true
+    end
+    if BD.db and BD.db.includePetDamage and BD.SafeUnitBoolean(UnitExists, "pet") then
+        return BD.UnitsMatch(unit, "pettarget")
+    end
+    return false
+end
+
+--- Returns spellID, usedAuto (or nil if no match). Heals keep HoT ticks and never use the
+--- auto-attack fallback.
+function BD:MatchOutgoingHit(unit, schoolMask, isHeal)
     BD.API.AssertModern("Attribution.MatchOutgoingHit")
     local now = GetTime()
     local strict = self:GetActiveStrictness()
-    local spellID = TryMatchPending(unit, now, strict)
+    local lateHits = isHeal or not (self.db and self.db.showDamageOverTime == false)
+    local spellID = TryMatchPending(unit, now, strict, lateHits)
     if spellID then
         return spellID, false
     end
 
-    if not IsLikelySpellSchool(schoolMask) and CanUseAutoAttackFallback(now, strict) then
-        if BD.UnitsMatch(unit, "target") or unit == "target" then
+    if not isHeal and not IsLikelySpellSchool(schoolMask) and CanUseAutoAttackFallback(now, strict) then
+        if (BD.UnitsMatch(unit, "target") or unit == "target") and AutoAttackMayHit(unit) then
             lastAutoAttackFallbackTime = now
             return BD.AUTO_ATTACK_SPELL_ID, true
         end
     end
 
     return nil, false
+end
+
+-- PLAYER_ENTER_COMBAT / PLAYER_LEAVE_COMBAT ("melee") and START_ / STOP_AUTOREPEAT_SPELL ("ranged").
+function BD:SetAutoAttackState(kind, active)
+    BD.API.AssertModern("Attribution.SetAutoAttackState")
+    if kind == "ranged" then
+        autoAttackRanged = active and true or false
+    else
+        autoAttackMelee = active and true or false
+    end
+end
+
+-- NAME_PLATE_UNIT_REMOVED, and PLAYER_TARGET_CHANGED for "target": the token names another unit
+-- next, often a distant enemy someone else is fighting. Evidence aimed at it must not follow.
+function BD:ForgetAttributionUnit(unit)
+    BD.API.AssertModern("Attribution.ForgetAttributionUnit")
+    if not unit then
+        return
+    end
+    for index = #pending, 1, -1 do
+        local entry = pending[index]
+        if entry.destToken == unit then
+            table.remove(pending, index)
+            ReleasePending(entry)
+        end
+    end
+    for _, meta in pairs(castMeta) do
+        if meta.destToken == unit then
+            meta.destToken = nil
+            meta.destGone = true
+        end
+    end
 end
 
 function BD:PlayerIsEngagedWith(unit)

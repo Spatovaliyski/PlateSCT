@@ -174,8 +174,31 @@ if BD.API.IsModern() then
     pcall(function()
         trackFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player", "pet")
     end)
+    -- Your own swing state gates the auto-attack fallback; a new target retires "target" evidence.
+    for _, trackEvent in ipairs({ "PLAYER_ENTER_COMBAT", "PLAYER_LEAVE_COMBAT", "START_AUTOREPEAT_SPELL",
+        "STOP_AUTOREPEAT_SPELL", "PLAYER_TARGET_CHANGED" }) do
+        pcall(function()
+            trackFrame:RegisterEvent(trackEvent)
+        end)
+    end
+
+    local AUTO_ATTACK_EVENTS = {
+        PLAYER_ENTER_COMBAT = { "melee", true },
+        PLAYER_LEAVE_COMBAT = { "melee", false },
+        START_AUTOREPEAT_SPELL = { "ranged", true },
+        STOP_AUTOREPEAT_SPELL = { "ranged", false },
+    }
 
     trackFrame:SetScript("OnEvent", function(_, event, ...)
+        local autoAttack = AUTO_ATTACK_EVENTS[event]
+        if autoAttack then
+            BD:SetAutoAttackState(autoAttack[1], autoAttack[2])
+            return
+        end
+        if event == "PLAYER_TARGET_CHANGED" then
+            BD:ForgetAttributionUnit("target")
+            return
+        end
         if event == "UNIT_SPELLCAST_SENT" then
             local unit, destName, castGUID, spellID = ...
             BD:NoteOutgoingSent(unit, destName, castGUID, spellID)
@@ -277,6 +300,10 @@ eventFrame:SetScript("OnEvent", function(_, event, ...)
             BD:OnClassicNamePlateRemoved(unit)
         else
             BD:OrphanFramesForUnit(unit)
+            -- The token is reused for the next plate, often a distant enemy.
+            if BD.API.IsModern() and BD.ForgetAttributionUnit then
+                BD:ForgetAttributionUnit(unit)
+            end
         end
     end
 end)

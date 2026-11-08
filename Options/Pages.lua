@@ -99,6 +99,11 @@ local function BuildCombat(parent, root)
             layout:Warning(L["Pet damage is a best guess. The game no longer says which hits came from your pet, so PlateSCT counts hits that land right after your pet casts."])
         end)
     end
+    layout:Checkbox("showDamageOverTime", L["Show damage over time"],
+        IsModernAPI() and L["Show bleeds, DoTs, and other ticks that land long after your cast. Turn off to keep only hits that land right after a cast; this also hides most damage other players deal to your target."]
+            or L["Show periodic damage from bleeds, poisons, and DoTs."],
+        PersonalModeAvailable, nil,
+        L["Choose Personal - experimental under Modern API → Damage mode to filter damage over time."])
 
     layout:Heading(L["Incoming hits"])
     layout:Checkbox("showIncoming", L["Show incoming hits"], L["Incoming hits use screen areas in either layout."])

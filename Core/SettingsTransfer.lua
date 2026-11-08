@@ -62,6 +62,7 @@ local schema = {
     routeOutgoingMiss = AreaRef(76), routeIncomingHit = AreaRef(77), routeIncomingCrit = AreaRef(78),
     routeIncomingMiss = AreaRef(79),
     screenStyle = Choice(90, BD.SCREEN_STYLES),
+    showDamageOverTime = Boolean(101),
 }
 -- IDs 80-89: one record per saved screen area, in list order. Separate records stay far below
 -- MAX_STRING, so older readers skip them as unknown instead of rejecting the string. A string
