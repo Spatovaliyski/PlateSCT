@@ -27,7 +27,7 @@ local function IsDuplicatePersonalHit(key, amount, isCrit)
         return false
     end
     if BD.IsSecret(amount) or BD.IsSecret(lastPersonalAmount) then
-        return false
+        return true
     end
     return AmountsEqual(amount, lastPersonalAmount)
 end
