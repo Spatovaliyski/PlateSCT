@@ -21,7 +21,8 @@ local function ProbePrint(...)
     probeBuffer[#probeBuffer + 1] = table.concat(parts, " ")
 end
 
-local function ShowProbeCopyDialog(text)
+-- A movable read-only text box to copy from. Also used for the debug log on the Help page.
+function BD.ShowCopyDialog(titleText, helpText, text)
     if not probeDialog then
         local frame = CreateFrame("Frame", "PlateSCTProbeDialog", UIParent, "BackdropTemplate")
         frame:SetSize(560, 420)
@@ -51,7 +52,8 @@ local function ShowProbeCopyDialog(text)
 
         local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         title:SetPoint("TOP", 0, -14)
-        title:SetText(L["Meter probe"])
+        title:SetText(titleText)
+        frame.titleLabel = title
 
         local help = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         local helpPath, helpSize, helpFlags = help:GetFont()
@@ -60,7 +62,8 @@ local function ShowProbeCopyDialog(text)
         help:SetWidth(500)
         help:SetJustifyH("CENTER")
         help:SetTextColor(0.75, 0.75, 0.76)
-        help:SetText(L["Click the box, Ctrl+A, then Ctrl+C, and paste it in chat."])
+        help:SetText(helpText)
+        frame.helpLabel = help
 
         local scroll = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
         local bodyTop = math.max(58, 14 + title:GetStringHeight() + 6 + help:GetStringHeight() + 8)
@@ -75,7 +78,7 @@ local function ShowProbeCopyDialog(text)
         BD.SafeSetFont(edit, editPath, editSize, editFlags)
         edit:SetWidth(490)
         edit:SetHeight(2000)
-        edit:SetMaxLetters(20000)
+        edit:SetMaxLetters(40000)
         edit:SetScript("OnEscapePressed", function()
             frame:Hide()
         end)
@@ -106,6 +109,8 @@ local function ShowProbeCopyDialog(text)
         probeDialog = frame
     end
 
+    probeDialog.titleLabel:SetText(titleText)
+    probeDialog.helpLabel:SetText(helpText)
     probeDialog.edit.lockedText = text or ""
     probeDialog.edit:SetText(probeDialog.edit.lockedText)
     probeDialog:Show()
@@ -353,5 +358,6 @@ function BD:DumpDamageMeterProbe()
         end
     end
     ProbePrint("----- dump end -----")
-    ShowProbeCopyDialog(table.concat(probeBuffer, "\n"))
+    BD.ShowCopyDialog(L["Meter probe"], L["Click the box, Ctrl+A, then Ctrl+C, and paste it in chat."],
+        table.concat(probeBuffer, "\n"))
 end

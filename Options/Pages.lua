@@ -2,26 +2,30 @@ local ADDON_NAME, BD = ...
 local L = BD.L
 local W = BD.OptionsWidgets
 
-local TRANSLATION_ISSUES_URL = "https://github.com/Spatovaliyski/PlateSCT/issues"
+-- The game cannot open a browser, so links are offered in a box to copy from.
+local function RegisterLinkPopup(name, url)
+    StaticPopupDialogs[name] = {
+        text = L["Press Ctrl+C to copy the URL."],
+        button1 = CLOSE,
+        hasEditBox = true,
+        editBoxWidth = 360,
+        OnShow = function(self)
+            local editBox = self.GetEditBox and self:GetEditBox() or self.editBox or self.EditBox
+            editBox:SetText(url)
+            editBox:SetFocus()
+            editBox:HighlightText()
+        end,
+        EditBoxOnEnterPressed = function(self) self:GetParent():Hide() end,
+        EditBoxOnEscapePressed = function(self) self:GetParent():Hide() end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true,
+        preferredIndex = 3,
+    }
+end
 
-StaticPopupDialogs["PLATESCT_TRANSLATION_ISSUES_URL"] = {
-    text = L["Press Ctrl+C to copy the URL."],
-    button1 = CLOSE,
-    hasEditBox = true,
-    editBoxWidth = 360,
-    OnShow = function(self)
-        local editBox = self.GetEditBox and self:GetEditBox() or self.editBox or self.EditBox
-        editBox:SetText(TRANSLATION_ISSUES_URL)
-        editBox:SetFocus()
-        editBox:HighlightText()
-    end,
-    EditBoxOnEnterPressed = function(self) self:GetParent():Hide() end,
-    EditBoxOnEscapePressed = function(self) self:GetParent():Hide() end,
-    timeout = 0,
-    whileDead = true,
-    hideOnEscape = true,
-    preferredIndex = 3,
-}
+RegisterLinkPopup("PLATESCT_TRANSLATION_ISSUES_URL", "https://github.com/Spatovaliyski/PlateSCT/issues")
+RegisterLinkPopup("PLATESCT_REPORT_ISSUE_URL", "https://legacy.curseforge.com/wow/addons/platesct/issues")
 
 local function IsModernAPI()
     return BD.API and BD.API.IsModern()
@@ -540,9 +544,8 @@ local function BuildDiagnostics(layout)
         layout:Note(L["Classic API - Era/TBC/Wrath/MoP"])
         layout:Note(L["Classic clients read damage ownership and spells directly from the combat log. Modern attribution and school-filter options do not apply."])
     end
-    layout:Heading(L["Diagnostics"])
-    layout:Checkbox("debug", L["Debug mode"], L["Print combat events to chat for troubleshooting."])
     if IsModernAPI() then
+        layout:Heading(L["Diagnostics"])
         layout:Note(C_DamageMeter and C_DamageMeter.GetCombatSessionSourceFromType
             and L["Damage meter probe is available. Capture a snapshot while hitting a target."]
             or L["This client does not expose the damage meter API. A snapshot can still report which fields are unavailable."])
@@ -553,30 +556,33 @@ local function BuildDiagnostics(layout)
     end
 end
 
-local function BuildWhatsNew(layout)
-    layout:Heading("1.3.0")
-    layout:Heading(L["Settings window"])
-    layout:Note(L["The redesigned settings window has clearer pages, search, and live previews. The new welcome flow helps you choose a layout and get started."])
-    layout:Heading(L["Screen areas"])
-    layout:Note(L["Choose Screen under General to place and resize combat text areas. Customize each area's animation, direction, alignment, spacing, and duration, and route damage and healing to different areas."])
-    layout:Heading(L["Show scroll area"])
-    layout:Note(L["Show scroll area repeats sample hits while you move and resize areas. Done or Escape returns to your previous settings page."])
-    layout:Heading(L["Import & Export"])
-    layout:Note(L["Larger text areas make strings easier to copy, paste, and review. Imports now include screen areas, their motion, and routing."])
-end
+local function BuildHelp(parent, root)
+    local layout = NewLayout(parent, root, "help")
+    layout:Heading(L["Report an issue"])
+    layout:Note(L["Found a bug or something that looks wrong? Open an issue on CurseForge. Say what you were doing, what you expected, and what happened instead. Your game version and class help, and so does a screenshot."])
+    layout:Action("reportIssue", L["Open Link"],
+        L["Get the link to the PlateSCT issues page on CurseForge. Press Ctrl+C in the box that opens, then paste it into your browser."],
+        function() StaticPopup_Show("PLATESCT_REPORT_ISSUE_URL") end)
 
-local function BuildHelp(parent, root, tabId)
-    local layout = NewLayout(parent, root, "help", tabId)
-    if tabId == "whatsNew" then
-        BuildWhatsNew(layout)
-    else
-        layout:Heading(L["Settings guide"])
-        for _, page in ipairs(BD.OptionsPages) do
-            local heading = layout:Heading(page.label and page.label() or L[page.labelKey])
-            if page.label then root.refreshers[#root.refreshers + 1] = function() heading:SetText(W.Title(page.label())) end end
-            layout:Note(L[page.subtitleKey])
-        end
-    end
+    layout:Heading(L["Include a debug log"])
+    layout:Note(L["A debug log shows what PlateSCT saw and did, which makes most problems much quicker to fix."])
+    layout:Note(table.concat({
+        L["1. Turn on Debug mode below."],
+        L["2. Make the problem happen again, for example by attacking a training dummy."],
+        L["3. Press Copy Debug Log, then press Ctrl+A and Ctrl+C in the box that opens."],
+        L["4. Paste the log into your issue with Ctrl+V."],
+        L["5. Turn Debug mode off again, because it also prints every event to chat."],
+    }, "\n"))
+    layout:Checkbox("debug", L["Debug mode"], L["Record combat events for your report. They also appear in chat."], nil,
+        function(checked)
+            -- Start clean, so the report holds only the problem being reproduced.
+            if checked then BD:ClearDebugLog() end
+        end)
+    layout:Action("copyDebugLog", L["Copy Debug Log"], L["Open the log in a box you can copy from."], function()
+        BD.ShowCopyDialog(L["Debug log"], L["Click the box, press Ctrl+A then Ctrl+C, and paste it into your issue."],
+            BD:GetDebugReport())
+    end)
+    layout:Note(L["The log keeps the last 300 events and clears on /reload, on logout, and each time you turn Debug mode on. Amounts the game hides appear as <secret>."])
     layout:Finish()
 end
 
@@ -600,8 +606,7 @@ if IsModernAPI() then
     }
 end
 BD.OptionsUtilities = {
-    { id = "help", labelKey = "Help", subtitleKey = "Find the right settings page and see what's new.",
-        tabs = { { id = "guide", labelKey = "Settings guide" }, { id = "whatsNew", labelKey = "What's new?" } }, build = BuildHelp },
+    { id = "help", labelKey = "Help", subtitleKey = "Report a problem and collect a debug log.", build = BuildHelp },
     { id = "diagnostics", labelKey = "Diagnostics", subtitleKey = "Client information and troubleshooting tools.",
         build = function(parent, root)
             local layout = NewLayout(parent, root, "diagnostics")

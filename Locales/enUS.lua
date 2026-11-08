@@ -657,3 +657,30 @@ L["Speed tuning"] = "Speed tuning"
 L["Thousands separators"] = "Thousands separators"
 L["Active layout"] = "Active layout"
 L["Click to change layout."] = "Click to change layout."
+
+-- Help page: reporting issues
+L["Report a problem and collect a debug log."] = "Report a problem and collect a debug log."
+L["Report an issue"] = "Report an issue"
+L["Found a bug or something that looks wrong? Open an issue on CurseForge. Say what you were doing, what you expected, and what happened instead. Your game version and class help, and so does a screenshot."] =
+    "Found a bug or something that looks wrong? Open an issue on CurseForge. Say what you were doing, what you expected, and what happened instead. Your game version and class help, and so does a screenshot."
+L["Get the link to the PlateSCT issues page on CurseForge. Press Ctrl+C in the box that opens, then paste it into your browser."] =
+    "Get the link to the PlateSCT issues page on CurseForge. Press Ctrl+C in the box that opens, then paste it into your browser."
+L["Include a debug log"] = "Include a debug log"
+L["A debug log shows what PlateSCT saw and did, which makes most problems much quicker to fix."] =
+    "A debug log shows what PlateSCT saw and did, which makes most problems much quicker to fix."
+L["1. Turn on Debug mode below."] = "1. Turn on Debug mode below."
+L["2. Make the problem happen again, for example by attacking a training dummy."] =
+    "2. Make the problem happen again, for example by attacking a training dummy."
+L["3. Press Copy Debug Log, then press Ctrl+A and Ctrl+C in the box that opens."] =
+    "3. Press Copy Debug Log, then press Ctrl+A and Ctrl+C in the box that opens."
+L["4. Paste the log into your issue with Ctrl+V."] = "4. Paste the log into your issue with Ctrl+V."
+L["5. Turn Debug mode off again, because it also prints every event to chat."] =
+    "5. Turn Debug mode off again, because it also prints every event to chat."
+L["Record combat events for your report. They also appear in chat."] = "Record combat events for your report. They also appear in chat."
+L["Copy Debug Log"] = "Copy Debug Log"
+L["Open the log in a box you can copy from."] = "Open the log in a box you can copy from."
+L["Debug log"] = "Debug log"
+L["Click the box, press Ctrl+A then Ctrl+C, and paste it into your issue."] =
+    "Click the box, press Ctrl+A then Ctrl+C, and paste it into your issue."
+L["The log keeps the last 300 events and clears on /reload, on logout, and each time you turn Debug mode on. Amounts the game hides appear as <secret>."] =
+    "The log keeps the last 300 events and clears on /reload, on logout, and each time you turn Debug mode on. Amounts the game hides appear as <secret>."

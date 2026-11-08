@@ -106,10 +106,71 @@ function BD.SafeSetFont(fontString, path, size, flags)
     return fallback
 end
 
+-- Recent debug lines, held in memory so players can paste them into a bug report (Help page).
+local DEBUG_LOG_SIZE = 300
+local DEBUG_REPORT_SETTINGS = {
+    "displayMode", "numberStyle", "fontSize", "minDamage", "onlyMyDamage", "allNameplates", "includePetDamage",
+    "showDamageOverTime", "showHealing", "showIncoming", "combineHits", "abbreviate",
+}
+local debugLog, debugLogNext, debugLogCount = {}, 1, 0
+
+-- A secret must never reach tostring or a concat, so it is logged by name only.
+local function DebugLogText(value)
+    if BD.IsSecret(value) then
+        return "<secret>"
+    end
+    local ok, text = pcall(tostring, value)
+    return ok and text or "?"
+end
+
+local function RecordDebugLine(...)
+    local parts = { string.format("%.3f", GetTime()) }
+    for index = 1, select("#", ...) do
+        parts[index + 1] = DebugLogText((select(index, ...)))
+    end
+    debugLog[debugLogNext] = table.concat(parts, " ")
+    debugLogNext = debugLogNext % DEBUG_LOG_SIZE + 1
+    debugLogCount = math.min(debugLogCount + 1, DEBUG_LOG_SIZE)
+end
+
 function BD:DebugPrint(...)
     if self.db.debug then
         print("|cff66ccffPlateSCT:|r", ...)
+        RecordDebugLine(...)
     end
+end
+
+function BD:ClearDebugLog()
+    wipe(debugLog)
+    debugLogNext, debugLogCount = 1, 0
+end
+
+-- Client and settings first, then the log oldest to newest.
+function BD:GetDebugReport()
+    local reader = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
+    local addonVersion = reader and reader("PlateSCT", "Version") or "unknown"
+    local gameVersion, build, _, interface = GetBuildInfo()
+    local client = BD.API.IsForever() and "Forever" or BD.API.GetFlavor()
+    local settings = {}
+    for _, key in ipairs(DEBUG_REPORT_SETTINGS) do
+        settings[#settings + 1] = key .. "=" .. tostring(self.db[key])
+    end
+    if BD.API.IsModern() then
+        settings[#settings + 1] = "attribution=" .. tostring(self:GetActiveStrictnessId())
+    end
+    local lines = {
+        string.format("PlateSCT %s | %s | game %s.%s | interface %s", tostring(addonVersion), tostring(client),
+            tostring(gameVersion), tostring(build), tostring(interface)),
+        table.concat(settings, " "),
+    }
+    local oldest = debugLogCount < DEBUG_LOG_SIZE and 1 or debugLogNext
+    for offset = 0, debugLogCount - 1 do
+        lines[#lines + 1] = debugLog[(oldest - 1 + offset) % DEBUG_LOG_SIZE + 1]
+    end
+    if debugLogCount == 0 then
+        lines[#lines + 1] = "(no events recorded)"
+    end
+    return table.concat(lines, "\n")
 end
 
 function BD.CopyDefaults(source, defaults)
