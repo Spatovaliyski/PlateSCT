@@ -291,6 +291,10 @@ L["Miss"] = "Raté"
 
 -- Settings explanations
 L["A new WoW-inspired settings window with clear sections, searchable controls, and gentle animations."] = "Nouvelle fenêtre de réglages inspirée de WoW, avec des sections claires, une recherche et des animations discrètes."
+L["Show damage over time"] = "Afficher les dégâts sur la durée"
+L["Show bleeds, DoTs, and other ticks that land long after your cast. Turn off to keep only hits that land right after a cast; this also hides most damage other players deal to your target."] = "Affiche les saignements, DoT et autres ticks qui arrivent longtemps après votre sort. Désactivez pour ne garder que les coups qui suivent de près un sort ; cela masque aussi la plupart des dégâts infligés à votre cible par d'autres joueurs."
+L["Show periodic damage from bleeds, poisons, and DoTs."] = "Affiche les dégâts périodiques des saignements, poisons et DoT."
+L["Choose Personal - experimental under Modern API → Damage mode to filter damage over time."] = "Choisissez Personnel - expérimental dans API moderne → Mode de dégâts pour filtrer les dégâts sur la durée."
 L["Choose Personal - experimental under Modern API → Damage mode to use pet matching."] = "Choisissez Personnel - expérimental dans API moderne → Mode de dégâts pour associer les coups de votre familier."
 L["Choose Personal - experimental under Modern API → Damage mode to use spell icons."] = "Choisissez Personnel - expérimental dans API moderne → Mode de dégâts pour afficher les icônes de sorts."
 L["Choose the combat text you want to see."] = "Choisissez le texte de combat à afficher."

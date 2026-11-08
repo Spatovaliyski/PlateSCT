@@ -22,6 +22,7 @@ BD.DEFAULTS = {
     onlyMyDamage = true,
     allNameplates = false,
     includePetDamage = true,
+    showDamageOverTime = true, -- Classic: SPELL_PERIODIC_DAMAGE; Modern Personal: hits past the cast window
     showHealing = false,
     showIncoming = false,
     combineHits = false,
