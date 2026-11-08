@@ -97,10 +97,12 @@ local function AccessibleTextSize(text, fontSize)
     local ok, width, height = pcall(function()
         return text:GetStringWidth(), text:GetStringHeight()
     end)
-    -- Never inspect secret text to estimate its length. Use a conservative
-    -- font-based rectangle if the client cannot expose its rendered metrics.
+    -- Never inspect secret text to estimate its length. When the client hides its rendered
+    -- metrics, assume the longest number that client shows ("1,234" on Forever, "12,345,678"
+    -- on Midnight): layouts space neighbours by this width, so a larger guess flings them
+    -- far from their enemy.
     if not ok or not BD.CanAccessValue(width) or not width then
-        width = fontSize * 12
+        width = fontSize * (BD.API.IsForever() and 3 or 6)
     end
     if not ok or not BD.CanAccessValue(height) or not height then
         height = fontSize
@@ -995,8 +997,15 @@ function Render.Paint(self, frame, preset, numberStyle, text, r, g, b, amount, i
 
     -- Readable amounts were already checked by BD.PassesThreshold before this number was made.
     local minDamage = tonumber(self.db.minDamage) or 0
-    if minDamage > 0 and BD.IsSecret(amount) then
-        ApplyThresholdMask(self, frame, amount, minDamage)
+    if BD.IsSecret(amount) then
+        -- Forever: the swing a next-melee ability replaces arrives as a secret 0 (Combat.lua).
+        -- Midnight has no such swing, so its numbers keep their unmasked layout.
+        if BD.API.IsForever() then
+            minDamage = math.max(minDamage, 1)
+        end
+        if minDamage > 0 then
+            ApplyThresholdMask(self, frame, amount, minDamage)
+        end
     end
     -- No amount (misses, incoming, previews) keeps the neutral scale and the live average untouched.
     if frame.usesClassicShove and BD.ValuePresent(amount) then

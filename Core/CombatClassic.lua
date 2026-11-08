@@ -396,6 +396,11 @@ local function HandleSpell(subEvent, sourceGUID, sourceFlags, destGUID, destFlag
         return
     end
 
+    -- Outgoing only: bleeds, poisons and DoTs on enemies. Incoming periodic damage still shows.
+    if subEvent == "SPELL_PERIODIC_DAMAGE" and BD.db.showDamageOverTime == false then
+        return
+    end
+
     local unit = GetNameplateTokenForGUID(destGUID)
     if subEvent == "SPELL_MISSED" or subEvent == "RANGE_MISSED" then
         local display = MISS_DISPLAY[missType] or missType or "MISS"

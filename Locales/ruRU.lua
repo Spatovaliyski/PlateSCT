@@ -291,6 +291,10 @@ L["Miss"] = "Промах"
 
 -- Settings explanations
 L["A new WoW-inspired settings window with clear sections, searchable controls, and gentle animations."] = "Новое окно настроек в стиле WoW с понятными разделами, поиском и плавной анимацией."
+L["Show damage over time"] = "Показывать периодический урон"
+L["Show bleeds, DoTs, and other ticks that land long after your cast. Turn off to keep only hits that land right after a cast; this also hides most damage other players deal to your target."] = "Показывать кровотечения, DoT и другие тики, которые приходят намного позже вашего заклинания. Отключите, чтобы оставить только удары сразу после заклинания; это также скрывает большую часть урона, который другие игроки наносят вашей цели."
+L["Show periodic damage from bleeds, poisons, and DoTs."] = "Показывать периодический урон от кровотечений, ядов и DoT."
+L["Choose Personal - experimental under Modern API → Damage mode to filter damage over time."] = "Выберите Личный - экспериментальный в Современный API → Режим урона для фильтрации периодического урона."
 L["Choose Personal - experimental under Modern API → Damage mode to use pet matching."] = "Выберите Личный - экспериментальный в Современный API → Режим урона для сопоставления ударов питомца."
 L["Choose Personal - experimental under Modern API → Damage mode to use spell icons."] = "Выберите Личный - экспериментальный в Современный API → Режим урона для значков заклинаний."
 L["Choose the combat text you want to see."] = "Выберите отображаемый боевой текст."
