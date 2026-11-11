@@ -1128,6 +1128,14 @@ function BD:OpenOptions()
     self.configFrame:Show(); self.configFrame:Raise()
 end
 
+-- Show the settings without toggling them closed; used by Forever Combat Style's "Open PlateSCT".
+function BD:ShowOptions()
+    self.db.welcomeSeen = true
+    if self.welcomeFrame then self.welcomeFrame:Hide() end
+    if not self.configFrame then self:RegisterOptionsPanel() end
+    self.configFrame:Show(); self.configFrame:Raise()
+end
+
 local init = CreateFrame("Frame")
 init:RegisterEvent("PLAYER_LOGIN")
 init:SetScript("OnEvent", function()

@@ -684,3 +684,19 @@ L["Click the box, press Ctrl+A then Ctrl+C, and paste it into your issue."] =
     "Click the box, press Ctrl+A then Ctrl+C, and paste it into your issue."
 L["The log keeps the last 300 events and clears on /reload, on logout, and each time you turn Debug mode on. Amounts the game hides appear as <secret>."] =
     "The log keeps the last 300 events and clears on /reload, on logout, and each time you turn Debug mode on. Amounts the game hides appear as <secret>."
+
+-- Companion addon (PlateSCT / Forever Combat Style)
+L["Prefer Blizzard's own numbers? Forever Combat Style tunes them instead: size, gravity, spread, height and more, 100% Blizzard-safe. Turn this off to use it alongside PlateSCT."] = "Prefer Blizzard's own numbers? Forever Combat Style tunes them instead: size, gravity, spread, height and more, 100% Blizzard-safe. Turn this off to use it alongside PlateSCT."
+L["Alternative"] = "Alternative"
+L["Want simpler, Blizzard-native numbers instead?"] = "Want simpler, Blizzard-native numbers instead?"
+L["Forever Combat Style tunes the game's own floating combat text instead of replacing it."] = "Forever Combat Style tunes the game's own floating combat text instead of replacing it."
+L["100% Blizzard-safe: changes only game settings"] = "100% Blizzard-safe: changes only game settings"
+L["Retail or Classic number style"] = "Retail or Classic number style"
+L["Size, gravity, spread and direction"] = "Size, gravity, spread and direction"
+L["Pop and fade timing"] = "Pop and fade timing"
+L["Damage, healing, shield and pet toggles"] = "Damage, healing, shield and pet toggles"
+L["Zero performance cost"] = "Zero performance cost"
+L["Open Forever Combat Style"] = "Open Forever Combat Style"
+L["Get Forever Combat Style"] = "Get Forever Combat Style"
+L["Installed. Opens its settings."] = "Installed. Opens its settings."
+L["Free on CurseForge. Made for WoW Forever."] = "Free on CurseForge. Made for WoW Forever."

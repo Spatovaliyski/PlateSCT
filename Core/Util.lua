@@ -280,6 +280,28 @@ end
 
 function BD:RestoreBlizzardFCTSetting()
     SetBlizzardFCTEnabled(true)
+    -- Forever Combat Style (same author) tunes these CVars; turning every one on above overrode
+    -- its choices, so let it put its saved values back.
+    local fcs = _G.ForeverCombatStyle
+    if type(fcs) == "table" and type(fcs.Resync) == "function" then
+        pcall(fcs.Resync)
+    end
+end
+
+-- Public: also called by Forever Combat Style's "Show Blizzard numbers".
+function BD:SetHideBlizzardFCT(hidden)
+    self.db.hideBlizzardFCT = hidden and true or false
+    if self.db.hideBlizzardFCT then self:ApplyBlizzardFCTSetting() else self:RestoreBlizzardFCTSetting() end
+    if self.configFrame and self.configFrame:IsShown() then self.configFrame:Refresh() end
+    BD.NotifyCompanion()
+end
+
+-- Let an open Forever Combat Style window redraw (its warning depends on hideBlizzardFCT).
+function BD.NotifyCompanion()
+    local fcs = _G.ForeverCombatStyle
+    if type(fcs) == "table" and type(fcs.RefreshWindow) == "function" then
+        pcall(fcs.RefreshWindow)
+    end
 end
 
 -- A secret amount passes here; Render.Paint masks it against the threshold (Display.lua).
