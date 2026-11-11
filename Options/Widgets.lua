@@ -244,6 +244,7 @@ local function NewShape(frame, sublevel)
 end
 
 local function LayoutShape(shape, radius, inset, square)
+    shape.radius, shape.inset = radius, inset
     local key = radius .. ":" .. inset .. ":" .. (square or "")
     if shape.key == key then return end
     shape.key = key
@@ -308,6 +309,46 @@ function W.Unpaint(frame)
     frame.optionsFill = nil
 end
 
+local function GradientMix(a, b, t)
+    return { a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, a[3] + (b[3] - a[3]) * t,
+        (a[4] or 1) + ((b[4] or 1) - (a[4] or 1)) * t }
+end
+
+-- A left-to-right gradient on one texture: SetGradient with colors on current clients, the older
+-- SetGradientAlpha elsewhere, a flat middle color when neither exists.
+local function Gradient(texture, left, right)
+    if texture.SetGradient and CreateColor then
+        local ok = pcall(texture.SetGradient, texture, "HORIZONTAL",
+            CreateColor(left[1], left[2], left[3], left[4]), CreateColor(right[1], right[2], right[3], right[4]))
+        if ok then return end
+    end
+    if texture.SetGradientAlpha then
+        texture:SetGradientAlpha("HORIZONTAL", left[1], left[2], left[3], left[4], right[1], right[2], right[3], right[4])
+        return
+    end
+    local middle = GradientMix(left, right, 0.5)
+    texture:SetVertexColor(middle[1], middle[2], middle[3], middle[4])
+end
+
+-- Paint a rounded fill running from `from` (left edge) to `to` (right edge) across `width`, with
+-- an optional ring. The corners take the color at their position; the strips carry the gradient.
+function W.PaintGradient(frame, from, to, width, radius, ring)
+    W.Paint(frame, from, radius, ring)
+    local shape = frame.optionsFillShape
+    local r, inset = shape.radius or 0, shape.inset or 0
+    width = math.max(1, width or frame:GetWidth() or 1)
+    local function At(x) return GradientMix(from, to, math.min(1, math.max(0, x / width))) end
+    local parts = shape.parts
+    local left, right = At(inset + r / 2), At(width - inset - r / 2)
+    parts[1]:SetVertexColor(left[1], left[2], left[3], left[4])
+    parts[4]:SetVertexColor(left[1], left[2], left[3], left[4])
+    parts[2]:SetVertexColor(right[1], right[2], right[3], right[4])
+    parts[3]:SetVertexColor(right[1], right[2], right[3], right[4])
+    Gradient(parts[5], At(inset + r), At(width - inset - r))
+    Gradient(parts[7], At(inset + r), At(width - inset - r))
+    Gradient(parts[6], At(inset), At(width - inset))
+end
+
 function W.Icon(parent, name, size, color, layer)
     local icon = parent:CreateTexture(nil, layer or "ARTWORK")
     icon:SetTexture(MEDIA .. "UI\\Icons\\" .. name .. ".png")
@@ -367,7 +408,8 @@ function W.PaintAction(frame, mode)
     if frame.IsEnabled and not frame:IsEnabled() then
         mode = mode == "hover" and "disabledHover" or "disabled"
     end
-    local face = ACTION_FACES[mode] or ACTION_FACES.idle
+    local faces = frame.optionsActionFaces or ACTION_FACES   -- a promo button can bring its own colors
+    local face = faces[mode] or ACTION_FACES[mode] or ACTION_FACES.idle
     W.Paint(frame, face.fill, frame.optionsRadius or 8)
     local font = frame.GetFontString and frame:GetFontString()
     if font and face.text then font:SetTextColor(RGB(face.text)) end
@@ -1656,6 +1698,158 @@ function W.NewLayout(parent, root, pageId, tabId, width)
         return row
     end
 
+    -- An advert for a companion addon: a gradient card with the addon's logo, a badge, a headline,
+    -- a short pitch, a checklist of features and a call-to-action button. `spec` fields: id (search
+    -- id), logo (texture path), logoCoords (optional texcoords), badge, title, body, features (list),
+    -- button, onClick, foot, from / to (gradient colors), ring (accent for ring, badge and ticks).
+    local PROMO_PAD, PROMO_LOGO, PROMO_GAP, PROMO_RADIUS = 22, 64, 18, 14
+    local function PromoText(owner, text, color, role, size)
+        local label = W.Text(owner, text, 0, 0, nil, nil, color)
+        W.SetFont(label, role, size)
+        return label
+    end
+    function layout:Promo(spec)
+        if #self.rows > 0 then self:Gap(28) end
+        local row = CreateFrame("Frame", nil, parent)
+        row:SetPoint("TOPLEFT", self.x, self.y)
+        row:SetWidth(self.width)
+        row.spec = spec
+
+        -- With `watermark`, the logo again, large and glowing faintly at the right, like the art of
+        -- a banner (for a logo on a dark background: the additive blend drops the dark parts).
+        row.watermark = row:CreateTexture(nil, "BORDER")
+        row.watermark:SetShown(spec.watermark and true or false)
+        row.watermark:SetTexture(spec.logo)
+        if spec.logoCoords then row.watermark:SetTexCoord(unpack(spec.logoCoords)) end
+        row.watermark:SetBlendMode("ADD")
+        row.watermark:SetAlpha(0.16)
+
+        row.logoFrame = CreateFrame("Frame", nil, row)
+        row.logoFrame:SetSize(PROMO_LOGO, PROMO_LOGO)
+        W.Paint(row.logoFrame, C.drawer, 14, spec.ring)
+        row.logo = row.logoFrame:CreateTexture(nil, "ARTWORK")
+        row.logo:SetTexture(spec.logo)
+        if spec.logoCoords then row.logo:SetTexCoord(unpack(spec.logoCoords)) end
+        row.logo:SetPoint("TOPLEFT", 4, -4)
+        row.logo:SetPoint("BOTTOMRIGHT", -4, 4)
+
+        row.badge = CreateFrame("Frame", nil, row)
+        row.badgeText = PromoText(row.badge, spec.badge or "", C.onAccent, "semibold", 12)
+        row.badgeText:ClearAllPoints()
+        row.badgeText:SetPoint("CENTER", row.badge, "CENTER", 0, 0)
+        row.badgeText:SetWordWrap(false)
+        W.Paint(row.badge, spec.ring, 11)
+
+        row.title = PromoText(row, spec.title, C.bright, "semibold", 21)
+        row.body = PromoText(row, spec.body, C.navText, "regular", 15)
+
+        row.features = {}
+        for _, text in ipairs(spec.features or {}) do
+            local feature = {}
+            feature.dot = Circle(row, 18, spec.ring, "ARTWORK")
+            feature.tick = W.Icon(row, "Check", 11, C.onAccent, "OVERLAY")
+            feature.tick:SetPoint("CENTER", feature.dot, "CENTER", 0, 0)
+            feature.text = PromoText(row, text, C.text, "medium", 14)
+            row.features[#row.features + 1] = feature
+        end
+
+        row.button = W.Button(row, spec.button, 180, 36, function()
+            root:DismissTransient()
+            spec.onClick()
+        end, "action")
+        row.button.optionsRadius = 10
+        -- The button takes the advertised addon's accent instead of this addon's gold.
+        local accent = spec.ring
+        local function Shade(amount)
+            return { math.min(1, accent[1] + amount), math.min(1, accent[2] + amount), math.min(1, accent[3] + amount), 1 }
+        end
+        row.button.optionsActionFaces = {
+            idle = { fill = accent, text = C.onAccent },
+            hover = { fill = Shade(0.06), text = C.onAccent },
+            down = { fill = Shade(-0.12), text = C.onAccent },
+            selected = { fill = Shade(0.06), text = C.onAccent },
+        }
+        W.PaintAction(row.button, "idle")
+        row.foot = W.SetSmall(W.Text(row, spec.foot or "", 0, 0, nil, nil, MUTED))
+
+        -- Lay the card out across `width`; returns its height.
+        function row:LayoutPromo(width)
+            local textX = PROMO_PAD + PROMO_LOGO + PROMO_GAP
+            local textWidth = math.max(160, width - textX - PROMO_PAD)
+            self.logoFrame:ClearAllPoints()
+            self.logoFrame:SetPoint("TOPLEFT", self, "TOPLEFT", PROMO_PAD, -PROMO_PAD)
+
+            self.badge:SetSize(math.floor(self.badgeText:GetStringWidth() + 22 + 0.5), 22)
+            self.badge:ClearAllPoints()
+            self.badge:SetPoint("TOPLEFT", self, "TOPLEFT", textX, -PROMO_PAD)
+            local y = PROMO_PAD + 22 + 10
+            self.title:SetWidth(textWidth)
+            self.title:ClearAllPoints()
+            self.title:SetPoint("TOPLEFT", self, "TOPLEFT", textX, -y)
+            y = y + self.title:GetStringHeight() + 6
+            self.body:SetWidth(textWidth)
+            self.body:ClearAllPoints()
+            self.body:SetPoint("TOPLEFT", self, "TOPLEFT", textX, -y)
+            y = math.max(y + self.body:GetStringHeight(), PROMO_PAD + PROMO_LOGO) + 20
+
+            -- Features: two columns when there is room, one otherwise.
+            local columns = textWidth >= 440 and 2 or 1
+            local columnGap = 18
+            local columnWidth = math.floor((textWidth - columnGap * (columns - 1)) / columns)
+            local lineTop, lineHeight = y, 0
+            for index, feature in ipairs(self.features) do
+                local column = (index - 1) % columns
+                if column == 0 and index > 1 then
+                    lineTop = lineTop + lineHeight + 10
+                    lineHeight = 0
+                end
+                local x = textX + column * (columnWidth + columnGap)
+                feature.text:SetWidth(columnWidth - 28)
+                local height = math.max(18, feature.text:GetStringHeight())
+                feature.dot:ClearAllPoints()
+                feature.dot:SetPoint("TOPLEFT", self, "TOPLEFT", x, -lineTop)
+                feature.text:ClearAllPoints()
+                feature.text:SetPoint("TOPLEFT", self, "TOPLEFT", x + 28, -(lineTop + 1))
+                lineHeight = math.max(lineHeight, height)
+            end
+            if #self.features > 0 then y = lineTop + lineHeight + 22 end
+
+            -- Call to action, with the small print beside it (or under it when narrow).
+            local buttonWidth = math.max(170, math.floor(self.button:GetFontString():GetStringWidth() + 48 + 0.5))
+            self.button:SetSize(buttonWidth, 36)
+            self.button:ClearAllPoints()
+            self.button:SetPoint("TOPLEFT", self, "TOPLEFT", textX, -y)
+            local footWidth = textWidth - buttonWidth - 16
+            self.foot:ClearAllPoints()
+            if footWidth >= 180 then
+                self.foot:SetWidth(footWidth)
+                self.foot:SetPoint("LEFT", self.button, "RIGHT", 16, 0)
+                y = y + math.max(36, self.foot:GetStringHeight())
+            else
+                self.foot:SetWidth(textWidth)
+                self.foot:SetPoint("TOPLEFT", self, "TOPLEFT", textX, -(y + 36 + 8))
+                y = y + 36 + 8 + self.foot:GetStringHeight()
+            end
+            local height = y + PROMO_PAD
+
+            local art = math.min(height - 24, 180)
+            self.watermark:SetSize(art, art)
+            self.watermark:ClearAllPoints()
+            self.watermark:SetPoint("RIGHT", self, "RIGHT", -18, 0)
+            W.PaintGradient(self, spec.from, spec.to, width, PROMO_RADIUS, spec.ring)
+            W.Paint(self.badge, spec.ring, 11)
+            return height
+        end
+        function row:Refresh() end
+
+        self:AddRow(row, row.title, "promo")
+        local meta = { id = spec.id or "promo", label = spec.title, tip = spec.body, page = pageId, tab = tabId,
+            section = self.section, y = self.y }
+        root:RegisterControl(row, meta)
+        self.y = self.y - row:LayoutPromo(self.width)
+        return row
+    end
+
     -- Size a setting row to its label, description and control; returns its height.
     local function PlaceControlRow(row, width)
         local caption, control = row.layoutCaption, row.layoutControl
@@ -1751,6 +1945,9 @@ function W.NewLayout(parent, root, pageId, tabId, width)
                     height = math.max(18, caption:GetStringHeight()) + 24
                 elseif row.layoutKind == "cards" then
                     height = row:LayoutCards(self.width)
+                    row.searchMeta.y = y
+                elseif row.layoutKind == "promo" then
+                    height = row:LayoutPromo(self.width)
                     row.searchMeta.y = y
                 else
                     height = PlaceControlRow(row, self.width)

@@ -26,6 +26,7 @@ end
 
 RegisterLinkPopup("PLATESCT_TRANSLATION_ISSUES_URL", "https://github.com/Spatovaliyski/PlateSCT/issues")
 RegisterLinkPopup("PLATESCT_REPORT_ISSUE_URL", "https://legacy.curseforge.com/wow/addons/platesct/issues")
+RegisterLinkPopup("PLATESCT_FCS_URL", "https://www.curseforge.com/wow/addons/forever-combat-style")
 
 local function IsModernAPI()
     return BD.API and BD.API.IsModern()
@@ -321,6 +322,42 @@ local function BuildDisplayMode(layout)
     end)
 end
 
+-- Forever only: an advert for Forever Combat Style (same author), which tunes Blizzard's own
+-- numbers instead of drawing new ones. Opens it when it is loaded, otherwise offers its link.
+local function BuildCompanion(layout, root)
+    local fcs = _G.ForeverCombatStyle
+    local installed = type(fcs) == "table" and type(fcs.Open) == "function"
+    layout:Promo({
+        id = "companionAddon",
+        logo = "Interface\\Icons\\Spell_Fire_FlameBolt",
+        logoCoords = { 0.08, 0.92, 0.08, 0.92 },
+        badge = L["Alternative"],
+        title = L["Want simpler, Blizzard-native numbers instead?"],
+        body = L["Forever Combat Style tunes the game's own floating combat text instead of replacing it."],
+        features = {
+            L["100% Blizzard-safe: changes only game settings"],
+            L["Retail or Classic number style"],
+            L["Size, gravity, spread and direction"],
+            L["Pop and fade timing"],
+            L["Damage, healing, shield and pet toggles"],
+            L["Zero performance cost"],
+        },
+        button = installed and L["Open Forever Combat Style"] or L["Get Forever Combat Style"],
+        foot = installed and L["Installed. Opens its settings."] or L["Free on CurseForge. Made for WoW Forever."],
+        onClick = function()
+            if installed then
+                root:Hide()
+                fcs.Open()
+            else
+                StaticPopup_Show("PLATESCT_FCS_URL")
+            end
+        end,
+        from = { 0.314, 0.231, 0.090, 1 },
+        to = { 0.098, 0.082, 0.063, 1 },
+        ring = { 0.851, 0.682, 0.373, 1 },
+    })
+end
+
 local function BuildGeneral(parent, root)
     local layout = NewLayout(parent, root, "general")
     layout:Heading(L["General"])
@@ -330,9 +367,14 @@ local function BuildGeneral(parent, root)
     layout:Checkbox("hideBlizzardFCT", L["Hide Blizzard floating combat text"],
         L["Turns off default in-world damage numbers."], nil, function(checked)
             if checked then BD:ApplyBlizzardFCTSetting() else BD:RestoreBlizzardFCTSetting() end
+            BD.NotifyCompanion()
         end)
+    if BD.API.IsForever() then
+        layout:Note(L["Prefer Blizzard's own numbers? Forever Combat Style tunes them instead: size, gravity, spread, height and more, 100% Blizzard-safe. Turn this off to use it alongside PlateSCT."])
+    end
     layout:Checkbox("showMinimapButton", L["Show minimap button"], nil, nil, function() BD:RefreshMinimapButton() end)
     BuildPreferences(layout, root)
+    if BD.API.IsForever() then BuildCompanion(layout, root) end
     layout:Finish()
 end
 
