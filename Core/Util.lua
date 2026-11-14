@@ -91,8 +91,10 @@ function BD.GetFontFaceOptions()
     return options
 end
 
-function BD.SafeSetFont(fontString, path, size, flags)
-    size = math.max(BD.MIN_FONT_SIZE, tonumber(size) or BD.MIN_FONT_SIZE)
+-- minimum: the size floor, BD.MIN_FONT_SIZE unless given; combat numbers pass BD.MIN_NUMBER_FONT_SIZE.
+function BD.SafeSetFont(fontString, path, size, flags, minimum)
+    minimum = minimum or BD.MIN_FONT_SIZE
+    size = math.max(minimum, tonumber(size) or minimum)
     if not fontString then
         return BD.GetDefaultFontPath()
     end
@@ -110,7 +112,8 @@ end
 local DEBUG_LOG_SIZE = 300
 local DEBUG_REPORT_SETTINGS = {
     "displayMode", "numberStyle", "fontSize", "minDamage", "onlyMyDamage", "allNameplates", "includePetDamage",
-    "showDamageOverTime", "showHealing", "showIncoming", "combineHits", "abbreviate",
+    "showDamageOverTime", "showHealing", "showIncoming", "combineHits", "abbreviate", "whiteAutoAttacks",
+    "useSchoolColors",
 }
 local debugLog, debugLogNext, debugLogCount = {}, 1, 0
 

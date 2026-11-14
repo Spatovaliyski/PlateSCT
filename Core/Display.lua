@@ -138,6 +138,11 @@ local function ImpactTextBounds(textW, textH, labelW, labelH, iconSize, iconPosi
     return left, right, bottom, top
 end
 
+-- The "CRITICAL" label keeps the readability floor but never outgrows its number.
+local function CritLabelSize(fontSize)
+    return math.min(fontSize, math.max(BD.MIN_FONT_SIZE, math.floor(fontSize * 0.55 + 0.5)))
+end
+
 local function RecordClassicBounds(frame, fontSize, iconSize, iconPosition)
     if not frame.usesClassicShove and not frame.areaRuntime then
         return
@@ -145,7 +150,7 @@ local function RecordClassicBounds(frame, fontSize, iconSize, iconPosition)
     local width, height = AccessibleTextSize(frame.text, fontSize)
     local labelW, labelH = 0, 0
     if frame.critLabel and frame.critLabel:IsShown() then
-        labelW, labelH = AccessibleTextSize(frame.critLabel, math.max(BD.MIN_FONT_SIZE, math.floor(fontSize * 0.55 + 0.5)))
+        labelW, labelH = AccessibleTextSize(frame.critLabel, CritLabelSize(fontSize))
     end
     local bounds = ClassicTextBounds(width, height, labelW, labelH, iconSize, iconPosition)
     if frame.areaRuntime then frame.areaBounds = bounds else frame.classicBounds = bounds end
@@ -204,8 +209,8 @@ local function ApplyTextLayout(frame, fontSize, fontPath, fontFlags, preset, lay
 
     local critLabelW = 0
     if showCritLabel and frame.critLabel then
-        local critSize = math.max(BD.MIN_FONT_SIZE, math.floor(fontSize * 0.55 + 0.5))
-        BD.SafeSetFont(frame.critLabel, fontPath, critSize, fontFlags)
+        local critSize = CritLabelSize(fontSize)
+        BD.SafeSetFont(frame.critLabel, fontPath, critSize, fontFlags, BD.MIN_NUMBER_FONT_SIZE)
         frame.critLabel:SetText(L["CRITICAL"])
         frame.critLabel:SetTextColor(r, g, b, 1)
         if preset.shadowOffset then
@@ -261,7 +266,7 @@ local function ApplyTextLayout(frame, fontSize, fontPath, fontFlags, preset, lay
         local width, height = AccessibleTextSize(frame.text, fontSize)
         local labelW, labelH = 0, 0
         if frame.critLabel and frame.critLabel:IsShown() then
-            labelW, labelH = AccessibleTextSize(frame.critLabel, math.max(BD.MIN_FONT_SIZE, math.floor(fontSize * 0.55 + 0.5)))
+            labelW, labelH = AccessibleTextSize(frame.critLabel, CritLabelSize(fontSize))
         end
         local left, right, bottom, top = ImpactTextBounds(width, height, labelW, labelH, resolvedIcon and size, iconPosition)
         if frame.areaRuntime then frame.areaBounds = { left, right, bottom, top } end
@@ -365,7 +370,7 @@ local function ConfigureFrameCommon(self, frame, preset, isCrit, hitKind, isInco
     if defaultFontSize < 1 then
         defaultFontSize = 14
     end
-    local fontSize = math.max(BD.MIN_FONT_SIZE, (isIncoming and self.db.incomingFontSize) or self.db.fontSize or defaultFontSize)
+    local fontSize = math.max(BD.MIN_NUMBER_FONT_SIZE, (isIncoming and self.db.incomingFontSize) or self.db.fontSize or defaultFontSize)
     local spacingScale = fontSize / defaultFontSize
     frame.impactSpacingScale = frame.numberStyle == "impact" and fontSize / 14 or nil
     if frame.impactSpacingScale then
@@ -569,7 +574,8 @@ local previewGeneration = 0
 local previewReplayGeneration = 0
 local previewReplayPending = false
 local PREVIEW_SAMPLES = {
-    { hitKind = "hit", amount = 12400, spellID = 6603, school = 1, fallbackIcon = "Interface\\Icons\\INV_Sword_04" },
+    { hitKind = "hit", amount = 12400, spellID = 6603, school = 1, autoAttack = true,
+        fallbackIcon = "Interface\\Icons\\INV_Sword_04" },
     { hitKind = "crit", amount = 24800, spellID = 133, school = 4, fallbackIcon = "Interface\\Icons\\Spell_Fire_FlameBolt" },
     { hitKind = "hit", amount = 18650, spellID = 116, school = 16, fallbackIcon = "Interface\\Icons\\Spell_Frost_FrostBolt02" },
     { hitKind = "crit", amount = 58600, spellID = 686, school = 32, fallbackIcon = "Interface\\Icons\\Spell_Shadow_ShadowBolt" },
@@ -593,7 +599,7 @@ local function MeasurePreviewText(text, fontPath, fontSize, fontFlags)
         previewMeasureFrame:Hide()
         previewMeasureText = previewMeasureFrame:CreateFontString(nil, "ARTWORK")
     end
-    BD.SafeSetFont(previewMeasureText, fontPath, fontSize, fontFlags)
+    BD.SafeSetFont(previewMeasureText, fontPath, fontSize, fontFlags, BD.MIN_NUMBER_FONT_SIZE)
     previewMeasureText:SetText(text)
     return previewMeasureText:GetStringWidth() or 0, math.max(fontSize, previewMeasureText:GetStringHeight() or 0)
 end
@@ -601,7 +607,7 @@ end
 local function ClassicPreviewSamples(self, sampleKind)
     local samples = {}
     local preset = self:GetStylePreset()
-    local fontSize = math.max(BD.MIN_FONT_SIZE, (self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale)
+    local fontSize = math.max(BD.MIN_NUMBER_FONT_SIZE, (self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale)
     local fontPath = BD.ResolveFontPath(self.db.fontFace)
     for _, sample in ipairs(self.previewSamples or PREVIEW_SAMPLES) do
         if MatchesPreviewKind(sample, sampleKind) then
@@ -612,7 +618,7 @@ local function ClassicPreviewSamples(self, sampleKind)
             local width, height = MeasurePreviewText(text, fontPath, fontSize, preset.fontFlags)
             local labelW, labelH = 0, 0
             if isCrit and self:GetCritLabelSetting("classic") then
-                local critSize = math.max(BD.MIN_FONT_SIZE, math.floor(fontSize * 0.55 + 0.5))
+                local critSize = CritLabelSize(fontSize)
                 labelW, labelH = MeasurePreviewText(L["CRITICAL"], fontPath, critSize, preset.fontFlags)
             end
             local icon = sample.hitKind ~= "miss" and
@@ -661,7 +667,7 @@ end
 
 local function ImpactPreviewBounds(self, sampleKind)
     local preset = self.STYLE_PRESETS.impact
-    local fontSize = math.max(BD.MIN_FONT_SIZE, (self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale)
+    local fontSize = math.max(BD.MIN_NUMBER_FONT_SIZE, (self.db.fontSize or self.DEFAULTS.fontSize) * preset.fontScale)
     local fontPath = BD.ResolveFontPath(self.db.fontFace)
     local spacing = fontSize / 14
     local distance = (self.db.floatDistance or self.DEFAULTS.floatDistance) * preset.floatMult
@@ -677,7 +683,7 @@ local function ImpactPreviewBounds(self, sampleKind)
             local labelW, labelH = 0, 0
             if sample.hitKind == "crit" and self:GetCritLabelSetting("impact") then
                 labelW, labelH = MeasurePreviewText(L["CRITICAL"], fontPath,
-                    math.max(BD.MIN_FONT_SIZE, math.floor(fontSize * 0.55 + 0.5)), preset.fontFlags)
+                    CritLabelSize(fontSize), preset.fontFlags)
             end
             local iconSize = self.db.showSpellIcon and math.max(12, math.floor(fontSize * 1.1 + 0.5)) or nil
             local l, r, b, t = ImpactTextBounds(width, height, labelW, labelH, iconSize, self.db.iconPosition)
@@ -720,7 +726,7 @@ function BD:GetOptionsPreviewBounds(sampleKind, styleOverride)
         return BD.Pool.GetClassicPreviewBounds(samples, self.previewStagger or PreviewStagger(self, sampleKind))
     end
     local baseFontSize = self.db.fontSize or self.DEFAULTS.fontSize
-    local fontSize = math.max(BD.MIN_FONT_SIZE, baseFontSize * preset.fontScale)
+    local fontSize = math.max(BD.MIN_NUMBER_FONT_SIZE, baseFontSize * preset.fontScale)
     local fontPath = BD.ResolveFontPath(self.db.fontFace)
     local spacingScale = baseFontSize / math.max(1, self.DEFAULTS.fontSize or 14)
     local left, right, bottom, top = 0, 0, 0, 0
@@ -748,7 +754,7 @@ function BD:GetOptionsPreviewBounds(sampleKind, styleOverride)
             local critLabelWidth = 0
             local iconYOffset = 0
             if isCrit and self:GetCritLabelSetting(numberStyle) then
-                local critSize = math.max(BD.MIN_FONT_SIZE, math.floor(fontSize * 0.55 + 0.5))
+                local critSize = CritLabelSize(fontSize)
                 local labelWidth, labelHeight = MeasurePreviewText(L["CRITICAL"], fontPath, critSize, preset.fontFlags)
                 critLabelWidth = labelWidth + CRIT_LABEL_GAP
                 width = width + critLabelWidth
@@ -869,7 +875,13 @@ function Render.ParentToScreen(frame, level)
     frame:SetFrameLevel(level)
 end
 
-function Render.OutgoingColor(self, preset, r, g, b, isHeal)
+-- isAutoAttack: the combat flavor credited this hit to your auto attack (exact on Classic API,
+-- a best guess on Modern API). White then wins over school colors and the preset default.
+function Render.OutgoingColor(self, preset, r, g, b, isHeal, isAutoAttack)
+    if isAutoAttack and not isHeal and self.db.whiteAutoAttacks ~= false then
+        local white = BD.AUTO_ATTACK_COLOR
+        return white[1], white[2], white[3]
+    end
     if isHeal then
         if self:ShouldUseSchoolColors() then
             if not r then
@@ -972,8 +984,9 @@ function Render.Paint(self, frame, preset, numberStyle, text, r, g, b, amount, i
         fontSize = self.db.fontSize or self.DEFAULTS.fontSize
         fontFace = self.db.fontFace
     end
-    fontSize = math.max(BD.MIN_FONT_SIZE, fontSize * preset.fontScale)
-    local fontPath = BD.SafeSetFont(frame.text, BD.ResolveFontPath(fontFace), fontSize, preset.fontFlags)
+    fontSize = math.max(BD.MIN_NUMBER_FONT_SIZE, fontSize * preset.fontScale)
+    local fontPath = BD.SafeSetFont(frame.text, BD.ResolveFontPath(fontFace), fontSize, preset.fontFlags,
+        BD.MIN_NUMBER_FONT_SIZE)
     if preset.shadowOffset then
         frame.text:SetShadowOffset(preset.shadowOffset[1], preset.shadowOffset[2])
         frame.text:SetShadowColor(0, 0, 0, 1)
@@ -1127,9 +1140,8 @@ local function SpawnMotionPreviewFrame(anchor, sample, owner)
         text = BD.FormatAmount(sample.amount, self.db.abbreviate)
         if self:ShouldUseSchoolColors() then
             r, g, b = BD.GetSchoolColor(sample.school)
-        else
-            r, g, b = preset.defaultColor[1], preset.defaultColor[2], preset.defaultColor[3]
         end
+        r, g, b = Render.OutgoingColor(self, preset, r, g, b, false, sample.autoAttack)
         resolvedIcon = self:ResolveOutgoingSpellIcon(nil, sample.spellID)
         if not resolvedIcon then
             resolvedIcon = self:ResolveOutgoingSpellIcon(sample.fallbackIcon, nil)
@@ -1354,7 +1366,7 @@ function BD:ShowTestNumbers()
             local r, g, b = 1, 0.92, 0.35
             local spellIcon = self.db.showSpellIcon and BD.GetSpellIconTexture(sample.spellID) or nil
             self:ShowOutgoing(unit, "test", display, r, g, b, sample.amount, sample.crit, false, spellIcon,
-                sample.hitKind, sample.spellID)
+                sample.hitKind, sample.spellID, sample.spellID == BD.AUTO_ATTACK_SPELL_ID)
         end)
     end
 

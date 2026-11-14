@@ -153,8 +153,9 @@ local function ApplyLayoutMigrations()
         BD.db.layoutRevision = 16
     end
     if (BD.db.layoutRevision or 1) < 17 then
-        BD.db.fontSize = math.max(BD.MIN_FONT_SIZE, tonumber(BD.db.fontSize) or BD.DEFAULTS.fontSize)
-        BD.db.incomingFontSize = math.max(BD.MIN_FONT_SIZE, tonumber(BD.db.incomingFontSize) or BD.DEFAULTS.incomingFontSize)
+        BD.db.fontSize = math.max(BD.MIN_NUMBER_FONT_SIZE, tonumber(BD.db.fontSize) or BD.DEFAULTS.fontSize)
+        BD.db.incomingFontSize = math.max(BD.MIN_NUMBER_FONT_SIZE,
+            tonumber(BD.db.incomingFontSize) or BD.DEFAULTS.incomingFontSize)
         BD.db.layoutRevision = 17
     end
     BD:EnsureScreenAreas()
@@ -176,11 +177,16 @@ if BD.API.IsModern() then
     end)
     -- Your own swing state gates the auto-attack fallback; a new target retires "target" evidence.
     for _, trackEvent in ipairs({ "PLAYER_ENTER_COMBAT", "PLAYER_LEAVE_COMBAT", "START_AUTOREPEAT_SPELL",
-        "STOP_AUTOREPEAT_SPELL", "PLAYER_TARGET_CHANGED" }) do
+        "STOP_AUTOREPEAT_SPELL", "PLAYER_TARGET_CHANGED", "PLAYER_REGEN_ENABLED", "PLAYER_EQUIPMENT_CHANGED" }) do
         pcall(function()
             trackFrame:RegisterEvent(trackEvent)
         end)
     end
+    -- The swing clock's speeds: shown again after combat, or changed by haste or a weapon swap.
+    pcall(function()
+        trackFrame:RegisterUnitEvent("UNIT_ATTACK_SPEED", "player")
+    end)
+    local SWING_SPEED_EVENTS = { PLAYER_REGEN_ENABLED = true, PLAYER_EQUIPMENT_CHANGED = true, UNIT_ATTACK_SPEED = true }
 
     local AUTO_ATTACK_EVENTS = {
         PLAYER_ENTER_COMBAT = { "melee", true },
@@ -193,6 +199,10 @@ if BD.API.IsModern() then
         local autoAttack = AUTO_ATTACK_EVENTS[event]
         if autoAttack then
             BD:SetAutoAttackState(autoAttack[1], autoAttack[2])
+            return
+        end
+        if SWING_SPEED_EVENTS[event] then
+            BD:RefreshSwingSpeed()
             return
         end
         if event == "PLAYER_TARGET_CHANGED" then

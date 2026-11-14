@@ -30,7 +30,7 @@ local C = {
     card = { 0.090, 0.078, 0.059, 1 },
     cardHover = { 0.106, 0.094, 0.071, 1 },
     cardSelected = { 0.110, 0.094, 0.063, 1 },
-    warning = { 0.141, 0.106, 0.055, 1 },
+    warning = { 0.176, 0.063, 0.055, 1 }, -- red, so warnings stand out from the gold accent
     accent = { 0.851, 0.682, 0.373, 1 },
     accentHover = { 0.902, 0.741, 0.439, 1 },
     accentDown = { 0.722, 0.573, 0.306, 1 },
@@ -42,8 +42,9 @@ local C = {
     muted = { 0.639, 0.604, 0.541 },
     dim = { 0.549, 0.518, 0.459 },
     disabledText = { 0.45, 0.42, 0.37 },
-    warningText = { 0.922, 0.796, 0.576 },
-    warningIcon = { 0.914, 0.706, 0.373 },
+    warningText = { 1, 0.475, 0.431 },
+    warningIcon = { 1, 0.333, 0.290 },
+    warningRing = { 1, 0.333, 0.290, 0.75 },
     reasonText = { 0.835, 0.706, 0.506 },
     switchOff = { 0.180, 0.157, 0.125, 1 },
     switchOffHover = { 0.216, 0.192, 0.153, 1 },
@@ -121,7 +122,7 @@ end
 
 -- Supporting text under a label (descriptions, notes, disabled reasons) sits one step below
 -- the 14pt label size. Lower this to let it go under BD.MIN_FONT_SIZE in the settings
--- window only; combat text always keeps BD.MIN_FONT_SIZE.
+-- window only. Combat numbers use their own floor, BD.MIN_NUMBER_FONT_SIZE.
 W.SMALL_SIZE = 13
 
 local function FontFloor(region)
@@ -733,7 +734,7 @@ local function ShowFontPreview(menu, entry)
     local incoming = menu.owner.binding == "incomingFontFace"
     local preset = BD:GetStylePreset(incoming and BD.db.numberStyle == "impact" and "retail" or nil)
     local size = ((incoming and BD.db.incomingFontSize) or BD.db.fontSize or BD.DEFAULTS.fontSize) * preset.fontScale
-    BD.SafeSetFont(preview.number, BD.ResolveFontPath(entry.optionId), size, preset.fontFlags)
+    BD.SafeSetFont(preview.number, BD.ResolveFontPath(entry.optionId), size, preset.fontFlags, BD.MIN_NUMBER_FONT_SIZE)
     local shadow = preset.shadowOffset
     preview.number:SetShadowOffset(shadow and shadow[1] or 0, shadow and shadow[2] or 0)
     preview.number:SetShadowColor(0, 0, 0, 1)
@@ -1171,7 +1172,58 @@ function W.WarningBox(parent, text, width)
     icon:SetPoint("TOPLEFT", 14, -13)
     local label = W.Text(box, text, 40, -12, width - 54, nil, C.warningText)
     box:SetHeight(math.max(18, label:GetStringHeight()) + 24)
+    box.icon = icon
     return box, label
+end
+
+-- A warning about the setting above it hangs under that setting: one red outline wraps both,
+-- and the warning box closes its bottom. The outline reaches ATTACH_OUTSET past the row's
+-- sides and starts ATTACH_TOP below its top, which the warning takes back from the row's
+-- bottom padding so the setting sits evenly inside.
+local ATTACH_OUTSET, ATTACH_TOP, ATTACH_RADIUS = 12, 3, 8
+
+-- W.Paint draws a ring as a full shape under an inset fill, so the inside is filled with the
+-- window color: on the settings page that leaves only the 1px outline visible.
+local function SetWarningOutline(row, warning)
+    local outline = row.warningOutline
+    if not warning and not outline then return end
+    if not outline then
+        outline = CreateFrame("Frame", nil, row)
+        -- Behind the row's label and control; the warning box above it covers the bottom.
+        if outline.SetFrameLevel and row.GetFrameLevel then outline:SetFrameLevel(math.max(0, row:GetFrameLevel() - 1)) end
+        W.Paint(outline, C.window, ATTACH_RADIUS, C.warningRing)
+        row.warningOutline = outline
+    end
+    outline:SetShown(warning ~= nil)
+    if row.rule then row.rule:SetShown(not warning) end
+    if warning then
+        outline:ClearAllPoints()
+        outline:SetPoint("TOPLEFT", row, "TOPLEFT", -ATTACH_OUTSET, -ATTACH_TOP)
+        outline:SetPoint("BOTTOMRIGHT", warning, "BOTTOMRIGHT", 1, -1)
+    end
+end
+
+-- Place a warning box and return its height. Attached, it fills the outline's width with square
+-- top corners; its icon lines up with the setting's label and its text ends at the control's edge.
+local function PlaceWarning(row, x, y, width, attached)
+    local inset = attached and ATTACH_OUTSET - 1 or 0
+    local margin = attached and inset or 14
+    local total = width + inset * 2
+    row:ClearAllPoints()
+    row:SetPoint("TOPLEFT", x - inset, y)
+    row:SetWidth(total)
+    row.icon:ClearAllPoints()
+    row.icon:SetPoint("TOPLEFT", margin, -13)
+    local label = row.layoutCaption
+    label:ClearAllPoints()
+    label:SetPoint("TOPLEFT", margin + 26, -12)
+    label:SetWidth(total - margin * 2 - 26)
+    if attached then
+        W.Paint(row, C.warning, ATTACH_RADIUS - 1, nil, "12")
+    else
+        W.Backdrop(row, "warning")
+    end
+    return math.max(18, label:GetStringHeight()) + 24
 end
 
 function W.NewLayout(parent, root, pageId, tabId, width)
@@ -1246,11 +1298,24 @@ function W.NewLayout(parent, root, pageId, tabId, width)
         return label
     end
 
-    function layout:Warning(text)
+    -- The setting row a warning is about: the nearest control above it, past other notes and
+    -- warnings. Headings, cards and promos end the search, so those warnings flag nothing.
+    function layout:WarningTarget()
+        for index = #self.rows, 1, -1 do
+            local kind = self.rows[index].layoutKind
+            if kind == "control" then return self.rows[index] end
+            if kind ~= "note" and kind ~= "warning" then return nil end
+        end
+    end
+
+    -- `target` is the row the warning attaches under; default the setting above, false for none.
+    function layout:Warning(text, target)
+        if target == nil then target = self:WarningTarget() end
         local row, label = W.WarningBox(parent, text, self.width)
         row:SetPoint("TOPLEFT", self.x, self.y)
         local height = row:GetHeight()
         label.row = row
+        row.warningTarget = target or nil
         self:AddRow(row, label, "warning")
         self.y = self.y - height - 10
         return label
@@ -1924,11 +1989,29 @@ function W.NewLayout(parent, root, pageId, tabId, width)
 
     function layout:Reflow()
         local y = TOP
+        local shown, attachedTo = {}, {}
+        for _, row in ipairs(self.rows) do shown[row] = not row.isVisible or row.isVisible() end
+        -- Each visible setting takes the first visible warning about it.
         for _, row in ipairs(self.rows) do
-            local visible = not row.isVisible or row.isVisible()
+            local target = row.warningTarget
+            if target and shown[row] and shown[target] and not attachedTo[target] then attachedTo[target] = row end
+        end
+        local previous
+        for _, row in ipairs(self.rows) do
+            local visible = shown[row]
+            local attached = row.layoutKind == "warning" and row.warningTarget
+                and attachedTo[row.warningTarget] == row
             row:SetShown(visible)
+            if row.layoutKind == "control" then SetWarningOutline(row, attachedTo[row]) end
             if visible then
-                y = y - row.layoutGap
+                if attached then
+                    -- Flush under its setting, taking back the outline's top inset; flush under
+                    -- any note between them.
+                    y = y + (previous == row.warningTarget and ATTACH_TOP or 0)
+                else
+                    y = y - row.layoutGap
+                end
+                previous = row
                 local caption = row.layoutCaption
                 row:ClearAllPoints()
                 row:SetPoint("TOPLEFT", self.x, y)
@@ -1941,8 +2024,7 @@ function W.NewLayout(parent, root, pageId, tabId, width)
                     caption:SetWidth(self.width)
                     height = math.max(16, caption:GetStringHeight()) + 12
                 elseif row.layoutKind == "warning" then
-                    caption:SetWidth(self.width - 54)
-                    height = math.max(18, caption:GetStringHeight()) + 24
+                    height = PlaceWarning(row, self.x, y, self.width, attached)
                 elseif row.layoutKind == "cards" then
                     height = row:LayoutCards(self.width)
                     row.searchMeta.y = y

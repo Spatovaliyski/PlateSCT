@@ -345,8 +345,8 @@ test("both booleans, numeric boundaries, and Unicode strings", function()
             eq(BD.db.enabled, value); eq(BD.db.showIncoming, value); eq(BD.db.debug, value)
             eq(BD.db.showMisses, value)
         end
-        assert(BD:ImportSettings(records("shared.fontSize=n:10;shared.duration=n:0.5;shared.retailOffsetX=n:-200;shared.minDamage=n:0")))
-        eq(BD.db.fontSize, 13, "legacy font import uses readability floor")
+        assert(BD:ImportSettings(records("shared.fontSize=n:8;shared.duration=n:0.5;shared.retailOffsetX=n:-200;shared.minDamage=n:0")))
+        eq(BD.db.fontSize, 8, "font import accepts the number floor")
         assert(BD:ImportSettings(records("shared.fontSize=n:48;shared.duration=n:4;shared.retailOffsetX=n:200;shared.minDamage=n:1e+20")))
         eq(BD.db.minDamage, 1e20)
     end
@@ -364,7 +364,7 @@ test("malformed and hostile strings never mutate settings or effects", function(
         records("shared.enabled=b:0;shared.enabled=b:1"),
         records("shared.fontSize=n:25;modern.fontSize=n:25"),
         records("shared.onlyMyDamage=b:0"), records("modern.onlyMyDamage=b:0", "classic"),
-        records("shared.layoutRevision=n:999"), records("shared.fontSize=n:9"),
+        records("shared.layoutRevision=n:999"), records("shared.fontSize=n:7"),
         records("shared.fontSize=n:49"), records("shared.enabled=n:1"),
         records("shared.duration=n:0"), records("shared.minDamage=n:-1"),
         records("shared.fontSize=n:1e999"), records("shared.fontSize=n:nan"),
@@ -694,20 +694,22 @@ end)
 test("minimum font sizes upgrade saved data and old incoming imports", function()
     local BD = new("modern")
     local login = frames[#frames].scripts.OnEvent
-    PlateSCTDB = { layoutRevision = 16, fontSize = 10, incomingFontSize = 12 }
+    PlateSCTDB = { layoutRevision = 16, fontSize = 6, incomingFontSize = 10 }
     login(nil, "PLAYER_LOGIN")
-    eq(BD.db.fontSize, 13); eq(BD.db.incomingFontSize, 13); eq(BD.db.layoutRevision, 17)
-    assert(BD:ImportSettings(records("shared.fontSize=n:12;shared.incomingFontSize=n:10")))
-    eq(BD.db.fontSize, 13); eq(BD.db.incomingFontSize, 13)
+    eq(BD.db.fontSize, 8); eq(BD.db.incomingFontSize, 10); eq(BD.db.layoutRevision, 17)
+    assert(BD:ImportSettings(records("shared.fontSize=n:12;shared.incomingFontSize=n:8")))
+    eq(BD.db.fontSize, 12); eq(BD.db.incomingFontSize, 8)
     local region = { SetFont = function(self, path, size) self.size = size; return true end }
     BD.SafeSetFont(region, nil, 8)
-    eq(region.size, 13, "critical labels and counters use the same floor")
+    eq(region.size, 13, "counters and debug text keep the readability floor")
+    BD.SafeSetFont(region, nil, 6, nil, BD.MIN_NUMBER_FONT_SIZE)
+    eq(region.size, 8, "combat numbers use the number floor")
     BD.SafeSetFont(region, nil, 20)
     eq(region.size, 20, "larger fonts remain unchanged")
     local text = assert(BD:ExportSettings())
     local receiver = new("classic")
     assert(receiver:ImportSettings(text))
-    eq(receiver.db.fontSize, 13); eq(receiver.db.incomingFontSize, 13)
+    eq(receiver.db.fontSize, 12); eq(receiver.db.incomingFontSize, 8)
 end)
 
 print(string.format("%d settings transfer tests passed (%s).", passed, _VERSION))

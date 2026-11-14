@@ -1,6 +1,9 @@
 local _, BD = ...
 
+-- Readability floor for settings text, spell icon counters and the debug window.
 BD.MIN_FONT_SIZE = 13
+-- Smallest Font size setting for combat numbers. Critical labels follow the number down.
+BD.MIN_NUMBER_FONT_SIZE = 8
 
 BD.DEFAULTS = {
     enabled = true,
@@ -50,6 +53,7 @@ BD.DEFAULTS = {
     impactOffsetY = 0,
     impactPosition = "side",
     useSchoolColors = false,
+    whiteAutoAttacks = true, -- auto attacks (melee swings, Auto Shot, wand Shoot) in BD.AUTO_ATTACK_COLOR
     animHit = "platesct",
     animCrit = "platesct",
     animMiss = "platesct",
@@ -88,6 +92,7 @@ BD.DEFAULTS = {
 
 BD.INCOMING_COLOR = { 1.0, 0.32, 0.28 }
 BD.HEAL_COLOR = { 0.25, 0.95, 0.35 }
+BD.AUTO_ATTACK_COLOR = { 1.0, 1.0, 1.0 }
 
 -- Built-in font faces. Paths are under the WoW install; "game" uses STANDARD_TEXT_FONT.
 BD.BUILTIN_FONTS = {
@@ -374,6 +379,24 @@ BD.CLASS_SCHOOL_MASKS = {
 }
 
 BD.AUTO_ATTACK_SPELL_ID = 6603
+BD.AUTO_SHOT_SPELL_ID = 75
+-- Your repeating attacks: Auto Attack, Auto Shot and wand Shoot. Their hits are auto attacks.
+BD.AUTO_REPEAT_SPELL_IDS = {
+    [6603] = true,
+    [75] = true,
+    [5019] = true,
+}
+-- Abilities that wait for your next melee swing and replace it (Classic-era ranks, as on Forever):
+-- Heroic Strike, Cleave, Raptor Strike, Maul.
+BD.NEXT_MELEE_SPELL_IDS = {}
+for _, id in ipairs({
+    78, 284, 285, 1608, 11564, 11565, 11566, 11567, 25286,
+    845, 7369, 11608, 11609, 20569,
+    2973, 14260, 14261, 14262, 14263, 14264, 14265, 14266,
+    6807, 6808, 6809, 8972, 9745, 9880, 9881,
+}) do
+    BD.NEXT_MELEE_SPELL_IDS[id] = true
+end
 BD.GENERIC_PET_ICON = "Interface\\Icons\\Ability_Hunter_BeastTaming"
 BD.POOL_SIZE = 24
 -- Live numbers at most per enemy, on your target, and in total (Cap.lua).
