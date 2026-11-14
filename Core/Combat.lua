@@ -9,6 +9,7 @@ local lastPersonalTime = 0
 local lastPersonalAmount
 local lastPersonalCrit
 local lastPersonalSpell
+local lastPersonalAuto = false
 local lastPersonalPaired = false
 local PERSONAL_DUP_WINDOW = 0.05
 
@@ -46,16 +47,17 @@ local function IsNextMeleeCompanion(key, amount)
     return (GetTime() - lastPersonalTime) <= PERSONAL_DUP_WINDOW
 end
 
-local function RememberPersonalHit(key, amount, isCrit, spellID, paired)
+local function RememberPersonalHit(key, amount, isCrit, spellID, paired, isAutoAttack)
     lastPersonalKey = key
     lastPersonalTime = GetTime()
     lastPersonalAmount = amount
     lastPersonalCrit = isCrit
     lastPersonalSpell = spellID
+    lastPersonalAuto = isAutoAttack and true or false
     lastPersonalPaired = paired and true or false
 end
 
-local function ShowPersonalDamage(unit, key, amount, isCrit, schoolMask)
+local function ShowPersonalDamage(unit, key, amount, isCrit, schoolMask, flagText)
     if key == lastPersonalKey then
         BD:DebugPrint("personal gap", GetTime() - lastPersonalTime)
     end
@@ -76,12 +78,12 @@ local function ShowPersonalDamage(unit, key, amount, isCrit, schoolMask)
         return false
     end
 
-    local spellID, usedAuto
+    local spellID, isAutoAttack, swingHand
     if companion then
-        -- Must not spend a cast's hit or the auto-attack gap, or whichever arrives second is lost.
-        spellID = lastPersonalSpell
+        -- Must not spend a cast's hit or a swing, or whichever arrives second is lost.
+        spellID, isAutoAttack = lastPersonalSpell, lastPersonalAuto
     else
-        spellID, usedAuto = BD:MatchOutgoingHit(unit, schoolMask)
+        spellID, isAutoAttack, swingHand = BD:MatchOutgoingHit(unit, schoolMask, false, flagText)
     end
     if not spellID then
         BD:DebugPrint("personal skip, no outgoing match")
@@ -95,10 +97,11 @@ local function ShowPersonalDamage(unit, key, amount, isCrit, schoolMask)
         r, g, b = preset.defaultColor[1], preset.defaultColor[2], preset.defaultColor[3]
     end
     local hitKind = isCrit and "crit" or "hit"
-    BD:DebugPrint("personal", unit, display, hitKind, usedAuto and "auto" or spellID, companion and "companion" or "")
-    RememberPersonalHit(key, amount, isCrit, spellID, companion)
+    BD:DebugPrint("personal", unit, display, hitKind, spellID, isAutoAttack and ("auto " .. (swingHand or "")) or "",
+        companion and "companion" or "")
+    RememberPersonalHit(key, amount, isCrit, spellID, companion, isAutoAttack)
     -- Modern-only: spellId comes from attribution, not UNIT_COMBAT.
-    BD:ShowOutgoing(unit, key, display, r, g, b, amount, isCrit, false, nil, hitKind, spellID)
+    BD:ShowOutgoing(unit, key, display, r, g, b, amount, isCrit, false, nil, hitKind, spellID, isAutoAttack)
     return true
 end
 
@@ -118,9 +121,9 @@ local function ShowPersonalHeal(unit, key, amount, isCrit, schoolMask)
         return false
     end
 
-    local spellID, usedAuto = BD:MatchOutgoingHit(unit, schoolMask, true)
-    -- Heals must match a cast; auto-attack fallback is damage-only.
-    if not spellID or usedAuto then
+    local spellID, isAutoAttack = BD:MatchOutgoingHit(unit, schoolMask, true)
+    -- Heals must match a cast; auto attacks are damage-only.
+    if not spellID or isAutoAttack then
         BD:DebugPrint("personal heal skip, no outgoing match")
         return false
     end
@@ -231,9 +234,13 @@ ProcessUnitCombat = function(self, unit, action, flagText, amount, schoolMask)
             return
         end
         if action ~= "WOUND" then
+            if self.MISS_ACTIONS[action] then
+                -- A missed swing still restarts that hand's swing timer.
+                BD:NoteOutgoingSwingMiss(unit)
+            end
             return
         end
-        ShowPersonalDamage(unit, key, amount, isCrit, schoolMask)
+        ShowPersonalDamage(unit, key, amount, isCrit, schoolMask, flagText)
         return
     end
 

@@ -316,7 +316,8 @@ local function Spawn(self, area, frame, preset, numberStyle, text, r, g, b, amou
 end
 
 -- Outgoing numbers in screen mode (BD:ShowOutgoing). destKey separates enemies for combining.
-function BD:ShowInArea(destKey, text, r, g, b, amountForThreshold, isCrit, isHeal, spellIcon, hitKind, spellId)
+function BD:ShowInArea(destKey, text, r, g, b, amountForThreshold, isCrit, isHeal, spellIcon, hitKind, spellId,
+    isAutoAttack)
     if not Render.PassesFilters(self, hitKind, isCrit, isHeal) then
         return
     end
@@ -335,7 +336,7 @@ function BD:ShowInArea(destKey, text, r, g, b, amountForThreshold, isCrit, isHea
     end
 
     local frame, preset, numberStyle = Render.Begin(self, kind, isCrit, isHeal, false, "area", area)
-    r, g, b = Render.OutgoingColor(self, preset, r, g, b, isHeal)
+    r, g, b = Render.OutgoingColor(self, preset, r, g, b, isHeal, isAutoAttack)
     local icon = self:ResolveOutgoingSpellIcon(spellIcon, spellId)
     if not Spawn(self, area, frame, preset, numberStyle, text, r, g, b, amountForThreshold, icon, OUTGOING_LEVEL,
         combineKey, runtime) then

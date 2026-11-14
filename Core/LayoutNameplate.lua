@@ -12,7 +12,8 @@ local function PlaintextGuid(unit)
     return nil
 end
 
-function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isHeal, spellIcon, hitKind, spellId)
+function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isHeal, spellIcon, hitKind, spellId,
+    isAutoAttack)
     if not Render.PassesFilters(self, hitKind, isCrit, isHeal) then
         return
     end
@@ -57,7 +58,7 @@ function BD:ShowOnNameplate(unit, text, r, g, b, amountForThreshold, isCrit, isH
         baseY = frame.spawnCritY or preset.spawnCritY or 8
     end
 
-    r, g, b = Render.OutgoingColor(self, preset, r, g, b, isHeal)
+    r, g, b = Render.OutgoingColor(self, preset, r, g, b, isHeal, isAutoAttack)
     local icon = self:ResolveOutgoingSpellIcon(spellIcon, spellId)
     local fontSize, fontPath, layoutOpts = Render.Paint(self, frame, preset, numberStyle, text, r, g, b,
         amountForThreshold, icon)

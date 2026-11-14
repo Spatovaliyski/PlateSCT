@@ -285,8 +285,9 @@ local function PlatelessDestinationAllowed(destFlags, isHeal)
 end
 
 -- unit is the destination's nameplate token, or nil when it has no plate.
+-- isAutoAttack: your own melee swing, Auto Shot or wand Shoot (pets keep their color).
 local function ShowOutgoingNumber(unit, destGUID, destFlags, text, amount, isCrit, school, spellId, hitKind,
-    spellIcon, isHeal)
+    spellIcon, isHeal, isAutoAttack)
     if not unit then
         if not PlatelessDestinationAllowed(destFlags, isHeal) then
             return
@@ -314,7 +315,8 @@ local function ShowOutgoingNumber(unit, destGUID, destFlags, text, amount, isCri
     end
 
     -- Classic: spellId from CLEU; pet melee uses the pet icon, not auto-attack.
-    BD:ShowOutgoing(unit, destGUID, text, r, g, b, amount, isCrit, isHeal and true or false, spellIcon, hitKind, spellId)
+    BD:ShowOutgoing(unit, destGUID, text, r, g, b, amount, isCrit, isHeal and true or false, spellIcon, hitKind, spellId,
+        isAutoAttack and not isHeal and hitKind ~= "miss")
 end
 
 local function HandleHeal(sourceGUID, sourceFlags, destGUID, destFlags, spellId, spellSchool, amount, critical)
@@ -379,7 +381,7 @@ local function HandleSwing(subEvent, sourceGUID, sourceFlags, destGUID, destFlag
     local display = BD.FormatAmount(amount, BD.db.abbreviate)
     local swingSpellId, swingIcon = IconForOutgoing(sourceGUID, BD.AUTO_ATTACK_SPELL_ID)
     ShowOutgoingNumber(unit, destGUID, destFlags, display, amount, critical, school, swingSpellId,
-        critical and "crit" or "hit", swingIcon)
+        critical and "crit" or "hit", swingIcon, nil, IsPlayerGUID(sourceGUID))
 end
 
 local function HandleSpell(subEvent, sourceGUID, sourceFlags, destGUID, destFlags, spellId, spellName, spellSchool, amount, overkill, school, resisted, blocked, absorbed, critical, glancing, crushing, isOffHand, missType)
@@ -411,8 +413,11 @@ local function HandleSpell(subEvent, sourceGUID, sourceFlags, destGUID, destFlag
 
     local display = BD.FormatAmount(amount, BD.db.abbreviate)
     local outSpellId, outIcon = IconForOutgoing(sourceGUID, spellId)
+    -- Auto Shot and wand Shoot arrive as RANGE_DAMAGE; they are auto attacks, not abilities.
+    local isAutoAttack = subEvent ~= "SPELL_PERIODIC_DAMAGE" and IsPlayerGUID(sourceGUID)
+        and BD.AUTO_REPEAT_SPELL_IDS[spellId] and true or false
     ShowOutgoingNumber(unit, destGUID, destFlags, display, amount, critical, school or spellSchool, outSpellId,
-        critical and "crit" or "hit", outIcon)
+        critical and "crit" or "hit", outIcon, nil, isAutoAttack)
 end
 
 function BD:HandleClassicCombatLog()

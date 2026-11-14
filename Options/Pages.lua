@@ -150,16 +150,23 @@ local function BuildAppearance(parent, root)
     layout:Choice("fontFace", L["Font"], BD.GetFontFaceOptions(),
         L["Game fonts, plus SharedMedia fonts when that library is loaded by another addon."])
     layout:Note(L["Hover over a font to preview 12345."])
-    layout:Slider("fontSize", L["Font size"], BD.MIN_FONT_SIZE, 48, 1, tostring)
+    layout:Slider("fontSize", L["Font size"], BD.MIN_NUMBER_FONT_SIZE, 48, 1, tostring)
     layout:When(function() return BD.db.showIncoming end, function()
         layout:Heading(L["Incoming font"])
         layout:Choice("incomingFontFace", L["Font"], BD.GetFontFaceOptions(),
             L["Game fonts, plus SharedMedia fonts when that library is loaded by another addon."])
-        layout:Slider("incomingFontSize", L["Font size"], BD.MIN_FONT_SIZE, 48, 1, tostring)
+        layout:Slider("incomingFontSize", L["Font size"], BD.MIN_NUMBER_FONT_SIZE, 48, 1, tostring)
     end)
     layout:Heading(L["Text style"])
     layout:Checkbox("useSchoolColors", L["Color by damage school"],
         L["Tint numbers by school (fire orange, frost blue, and so on). Off keeps the default yellow."])
+    layout:Checkbox("whiteAutoAttacks", L["Auto attacks in white"],
+        L["Show your melee swings, Auto Shot, and wand shots in white, like the default combat text. Overrides school colors."])
+    if IsModernAPI() then
+        layout:When(function() return BD.db.whiteAutoAttacks end, function()
+            layout:Warning(L["White auto attacks are a best guess. The game no longer says which hits are swings, so PlateSCT predicts your swings from your attack speed."])
+        end)
+    end
     layout:Heading(L["Critical text"])
     layout:Checkbox("showCritLabel", L["Show CRITICAL: scrolling styles"],
         L["Applies to non-Impact numbers in both layouts."])

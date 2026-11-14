@@ -78,11 +78,14 @@ end
 
 -- Outgoing number entry point for both combat flavors. destKey identifies the enemy for screen
 -- areas (a plate, a Classic GUID, or "target"); the nameplate layout needs the unit's plate.
-function BD:ShowOutgoing(unit, destKey, text, r, g, b, amount, isCrit, isHeal, spellIcon, hitKind, spellId)
+-- isAutoAttack marks your auto attack, painted in BD.AUTO_ATTACK_COLOR (Render.OutgoingColor).
+function BD:ShowOutgoing(unit, destKey, text, r, g, b, amount, isCrit, isHeal, spellIcon, hitKind, spellId,
+    isAutoAttack)
     if Layout.IsScreen() then
-        self:ShowInArea(destKey or unit, text, r, g, b, amount, isCrit, isHeal, spellIcon, hitKind, spellId)
+        self:ShowInArea(destKey or unit, text, r, g, b, amount, isCrit, isHeal, spellIcon, hitKind, spellId,
+            isAutoAttack)
     elseif unit then
-        self:ShowOnNameplate(unit, text, r, g, b, amount, isCrit, isHeal, spellIcon, hitKind, spellId)
+        self:ShowOnNameplate(unit, text, r, g, b, amount, isCrit, isHeal, spellIcon, hitKind, spellId, isAutoAttack)
     end
 end
 

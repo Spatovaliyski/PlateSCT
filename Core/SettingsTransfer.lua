@@ -28,7 +28,7 @@ local schema = {
     combineShowCount = Boolean(68), combineWindow = Number(69, 0.1, 1),
     thousandSeparator = Choice(4, BD.THOUSAND_SEPARATORS),
     showSpellIcon = Boolean(5), iconPosition = Choice(6, BD.ICON_POSITIONS),
-    fontSize = Number(7, 10, 48), duration = Number(8, 0.5, 4),
+    fontSize = Number(7, BD.MIN_NUMBER_FONT_SIZE, 48), duration = Number(8, 0.5, 4),
     floatDistance = Number(9, 10, 120), scrollSpeed = Number(10, 0.5, 3),
     fontFace = Choice(11, BD.BUILTIN_FONTS), hideBlizzardFCT = Boolean(12),
     onlyMyDamage = Boolean(13, "modern"), allNameplates = Boolean(14, "modern"),
@@ -54,7 +54,7 @@ local schema = {
     schoolFilterFire = Boolean(57, "modern"), schoolFilterNature = Boolean(58, "modern"),
     schoolFilterFrost = Boolean(59, "modern"), schoolFilterShadow = Boolean(60, "modern"),
     schoolFilterArcane = Boolean(61, "modern"),
-    incomingFontFace = Choice(62, BD.BUILTIN_FONTS), incomingFontSize = Number(63, 10, 48),
+    incomingFontFace = Choice(62, BD.BUILTIN_FONTS), incomingFontSize = Number(63, BD.MIN_NUMBER_FONT_SIZE, 48),
     onlyCriticalDamage = Boolean(64),
     showMisses = Boolean(71),
     displayMode = Choice(72, BD.Layout.MODES),
@@ -62,7 +62,7 @@ local schema = {
     routeOutgoingMiss = AreaRef(76), routeIncomingHit = AreaRef(77), routeIncomingCrit = AreaRef(78),
     routeIncomingMiss = AreaRef(79),
     screenStyle = Choice(90, BD.SCREEN_STYLES),
-    showDamageOverTime = Boolean(101),
+    showDamageOverTime = Boolean(101), whiteAutoAttacks = Boolean(102),
 }
 -- IDs 80-89: one record per saved screen area, in list order. Separate records stay far below
 -- MAX_STRING, so older readers skip them as unknown instead of rejecting the string. A string
@@ -329,8 +329,6 @@ function BD:ExportSettings()
             end
             if value ~= nil then
                 if not ValidValue(key, value) then return Failure("Invalid setting: %s.", key) end
-                -- New exports use today's readability floor without changing permanent wire IDs.
-                if key == "fontSize" or key == "incomingFontSize" then value = math.max(BD.MIN_FONT_SIZE, value) end
                 records[#records + 1] = CompactRecord(key, value)
             end
         end
@@ -374,8 +372,6 @@ function BD:PreviewSettingsImport(text)
                 result.ignored[#result.ignored + 1] = name
             else
                 if not ValidValue(key, value) then return Failure("Invalid setting: %s.", key) end
-                -- Historical strings remain valid; their small fonts are raised on import.
-                if key == "fontSize" or key == "incomingFontSize" then value = math.max(BD.MIN_FONT_SIZE, value) end
                 if rule.areaSlot then
                     areaRecords[#areaRecords + 1] = { slot = rule.areaSlot, area = BD.DecodeScreenArea(value) }
                 elseif rule.motionSlot then
